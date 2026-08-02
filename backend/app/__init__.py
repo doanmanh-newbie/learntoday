@@ -1,0 +1,44 @@
+# app/__init__.py
+from flask import Flask, jsonify
+from flask_cors import CORS
+from flask_sqlalchemy import SQLAlchemy
+from .config import Config
+
+db = SQLAlchemy()
+
+def create_app():
+    app = Flask(__name__)
+    app.config.from_object(Config)
+
+    CORS(app)
+    db.init_app(app)
+
+    # Import model
+    from .models import User
+
+    # Đăng ký Blueprint
+    from .routes import auth_bp
+    app.register_blueprint(auth_bp)
+
+    @app.route('/')
+    def health_check():
+        return jsonify({"status": "ok", "message": "Backend đang chạy"})
+
+    @app.route('/test-db')
+    def test_db():
+        try:
+            user = User.query.first()
+            return jsonify({
+                "status": "ok",
+                "connected": True,
+                "sample_user": user.username if user else None,
+                "note": "Bảng users đang trống, nhưng kết nối OK" if not user else None
+            })
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "connected": False,
+                "message": str(e)
+            }), 500
+
+    return app
