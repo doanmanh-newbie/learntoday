@@ -46,3 +46,13 @@ def verify_reset_token(token: str):
         return None
     except jwt.InvalidTokenError:
         return None
+
+def decode_token(token: str):
+    """Giải mã Access Token, trả về user_id nếu hợp lệ, None nếu sai/hết hạn"""
+    try:
+        payload = jwt.decode(token, os.getenv('JWT_SECRET', 'dev-secret-key'), algorithms=['HS256'])
+        return payload.get('user_id')
+    except jwt.ExpiredSignatureError:
+        return None
+    except jwt.InvalidTokenError:
+        return None

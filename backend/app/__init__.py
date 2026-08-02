@@ -17,8 +17,9 @@ def create_app():
     from .models import User
 
     # Đăng ký Blueprint
-    from .routes import auth_bp
+    from .routes import auth_bp, folders_bp
     app.register_blueprint(auth_bp)
+    app.register_blueprint(folders_bp)
 
     @app.route('/')
     def health_check():

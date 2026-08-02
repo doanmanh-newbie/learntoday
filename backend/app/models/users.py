@@ -8,7 +8,7 @@ class User(db.Model):
     username = db.Column(db.String(50), unique=True, nullable=False)
     email = db.Column(db.String(100), unique=True, nullable=False)
     password_hash = db.Column(db.String(255), nullable=False)
-
+    role = db.Column(db.String(20), default='user', nullable=False)
     level = db.Column(db.String(10), default='A1')
     daily_goal = db.Column(db.Integer, default=10)
     review_limit = db.Column(db.Integer, default=10)
@@ -23,9 +23,10 @@ class User(db.Model):
     
     def to_dict(self):
         return {
-            'id': str(self.id),
-            'username': self.username,
-            'email': self.email,
-            'level': self.level,
-            'streak': self.streak
-        }
+        'id': str(self.id),
+        'username': self.username,
+        'email': self.email,
+        'level': self.level,
+        'streak': self.streak,
+        'role': self.role
+    }

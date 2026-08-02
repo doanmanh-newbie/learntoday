@@ -1,15 +1,15 @@
 from flask import Blueprint, request, jsonify
 from app import db
 from app.models import User
-from app.utils.auth import hash_password, generate_token
 import uuid
-from app.utils.auth import hash_password, generate_token, generate_refresh_token, check_password
 from app.models import RefreshToken
 import datetime
+from app.utils.middleware import token_required
 from app.utils.auth import (
     hash_password, generate_token, generate_refresh_token,
     check_password, generate_reset_token, verify_reset_token
 )
+from app.utils.middleware import token_required, admin_required
 
 # ✅ PHẢI CÓ DÒNG NÀY - Tạo Blueprint
 bp = Blueprint('auth', __name__, url_prefix='/api/auth')
@@ -159,4 +159,35 @@ def reset_password():
     except Exception as e:
         db.session.rollback()
         return jsonify({'message': f'Lỗi server: {str(e)}'}), 500
+    
+@bp.route('/me', methods=['GET'])
+@token_required
+def get_current_user():
+    user = User.query.get(request.user_id)
+    if not user:
+        return jsonify({'message': 'Người dùng không tồn tại!'}), 404
+    return jsonify({'user': user.to_dict()}), 200
+
+@bp.route('/users/<user_id>/role', methods=['PUT'])
+@token_required
+@admin_required
+def update_user_role(user_id):
+    """Cấp hoặc thu hồi quyền admin - chỉ admin mới gọi được"""
+    data = request.get_json()
+    new_role = data.get('role')
+
+    if new_role not in ['user', 'admin']:
+        return jsonify({'message': "role phải là 'user' hoặc 'admin'!"}), 400
+
+    target_user = User.query.get(user_id)
+    if not target_user:
+        return jsonify({'message': 'Không tìm thấy người dùng!'}), 404
+
+    target_user.role = new_role
+    db.session.commit()
+
+    return jsonify({
+        'message': f'Đã cập nhật quyền thành {new_role}!',
+        'user': target_user.to_dict()
+    }), 200
     
