@@ -1,0 +1,223 @@
+# Ctrl + Shift + V Open Preview to the Side
+
+# 📋 TỔNG HỢP CÂU LỆNH ĐÃ CHẠY TRONG DỰ ÁN
+
+Dưới đây là toàn bộ các câu lệnh quan trọng bạn đã chạy, được phân loại và có ghi chú rõ ràng. Bạn có thể lưu vào file `commands.md` để sau này tra cứu.
+---
+## 1. KHỞI TẠO DỰ ÁN & MÔI TRƯỜNG
+```bash
+# Di chuyển vào thư mục dự án
+cd D:\learntoday\learntoday-app
+# Tạo cấu trúc thư mục
+mkdir backend frontend docs
+# Di chuyển vào backend
+cd backend
+# Tạo virtual environment
+python -m venv venv
+# Kích hoạt venv (Windows)
+venv\Scripts\activate
+# Kích hoạt venv (Mac/Linux)
+source venv/bin/activate
+# Thoát khỏi venv
+deactivate
+```
+---
+## 2. CÀI ĐẶT THƯ VIỆN
+```bash
+# Cài tất cả thư viện cần thiết
+pip install Flask Flask-CORS Flask-SQLAlchemy Flask-Migrate python-dotenv psycopg2-binary bcrypt PyJWT
+# Hoặc cài từ requirements.txt
+pip install -r requirements.txt
+# Xem danh sách thư viện đã cài
+pip list
+# Lưu danh sách thư viện vào file
+pip freeze > requirements.txt
+```
+---
+## 3. FLASK-MIGRATE (QUẢN LÝ DATABASE)
+```bash
+# Khởi tạo migration (chỉ làm 1 lần)
+flask db init
+# Tạo file migration mới
+flask db migrate -m "Initial migration"
+# Áp dụng migration lên database
+flask db upgrade
+# Rollback migration gần nhất
+flask db downgrade
+# Xem lịch sử migration
+flask db history
+# Xem version hiện tại
+flask db current
+# Nếu lệnh flask không chạy, dùng python -m flask
+python -m flask db init
+python -m flask db migrate -m "Initial migration"
+python -m flask db upgrade
+```
+---
+## 4. CHẠY SERVER
+```bash
+# Chạy server (development)
+python run.py
+# Hoặc
+flask run
+# Nếu đã cài nodemon (tự restart khi code thay đổi)
+# pip install nodemon
+# nodemon run.py
+```
+---
+## 5. QUẢN LÝ THƯ MỤC & FILE
+```bash
+# Xem cấu trúc thư mục
+tree /f
+# Xóa thư mục migrations (khi cần tạo lại)
+# Windows (PowerShell)
+Remove-Item -Recurse -Force migrations
+# Windows (CMD)
+rmdir /s migrations
+# Mac/Linux
+rm -rf migrations
+# Xóa thư mục __pycache__
+# Windows (PowerShell)
+Remove-Item -Recurse -Force __pycache__
+# Windows (CMD)
+rmdir /s __pycache__
+# Mac/Linux
+rm -rf __pycache__
+```
+---
+## 6. GIT (QUẢN LÝ MÃ NGUỒN)
+```bash
+# Khởi tạo git
+git init
+# Xem trạng thái
+git status
+# Thêm tất cả file vào staging
+git add .
+# Commit
+git commit -m "Mô tả thay đổi"
+# Push lên GitHub
+git push origin main
+# Pull từ GitHub
+git pull origin main
+# Tạo nhánh mới
+git checkout -b ten-nhanh
+# Chuyển nhánh
+git checkout ten-nhanh
+```
+---
+## 7. SUPABASE (DATABASE)
+```sql
+-- Kiểm tra bảng đã tồn tại
+SELECT EXISTS (
+    SELECT FROM information_schema.tables
+    WHERE table_name = 'user_words'
+);
+-- Xóa toàn bộ bảng (cẩn thận!)
+DROP TABLE IF EXISTS users CASCADE;
+DROP TABLE IF EXISTS folders CASCADE;
+DROP TABLE IF EXISTS words CASCADE;
+-- ... các bảng khác
+
+-- Cấp quyền admin
+UPDATE users SET role = 'admin' WHERE email = 'admin@example.com';
+
+-- Xem dữ liệu
+SELECT * FROM users;
+SELECT * FROM folders;
+SELECT * FROM user_words;
+```
+---
+## 8. TEST API (THUNDER CLIENT / POSTMAN)
+```http
+### Đăng nhập
+POST http://127.0.0.1:5000/api/auth/login
+Content-Type: application/json
+{
+    "email": "admin@example.com",
+    "password": "admin123"
+}
+
+### Lấy thông tin user (cần token)
+GET http://127.0.0.1:5000/api/auth/me
+Authorization: Bearer {{token}}
+
+### Lấy danh sách folder
+GET http://127.0.0.1:5000/api/folders
+Authorization: Bearer {{token}}
+
+### Tạo folder
+POST http://127.0.0.1:5000/api/folders
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "name": "Test folder"
+}
+
+### Lấy từ trong folder (có lọc level)
+GET http://127.0.0.1:5000/api/folders/<folder_id>/words?level=1
+Authorization: Bearer {{token}}
+
+### Học từ mới - lấy batch
+GET http://127.0.0.1:5000/api/learning/folders/<folder_id>/new-words?limit=5
+Authorization: Bearer {{token}}
+
+### Chấm điểm 1 bước
+POST http://127.0.0.1:5000/api/learning/words/<word_id>/check-answer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+    "step": "spelling",
+    "answer": "apple"
+}
+
+### Hoàn thành 1 từ (học mới)
+POST http://127.0.0.1:5000/api/learning/words/<word_id>/complete-learn
+Authorization: Bearer {{token}}
+```
+---
+## 9. CẤU HÌNH FILE `.env`
+```env
+# Database
+DATABASE_URL=postgresql://postgres:password@host:5432/postgres
+
+# Flask
+SECRET_KEY=your-secret-key
+JWT_SECRET=your-jwt-secret
+
+# Server
+FLASK_APP=run.py
+FLASK_ENV=development
+```
+---
+## 10. CÁC LỖI THƯỜNG GẶP VÀ CÁCH SỬA
+```bash
+# Lỗi: 'flask' không được nhận dạng
+# Nguyên nhân: chưa kích hoạt venv
+venv\Scripts\activate
+# Lỗi: ModuleNotFoundError
+# Nguyên nhân: thiếu thư viện
+pip install <ten-thu-vien>
+# Lỗi: database connection failed
+# Kiểm tra DATABASE_URL trong .env
+# Hoặc kiểm tra Supabase có đang chạy không
+# Lỗi: 401 Unauthorized
+# Token hết hạn -> đăng nhập lại
+POST /api/auth/login
+# Lỗi: 403 Forbidden
+# Không có quyền -> kiểm tra role (user/admin)
+# Xóa __pycache__ khi gặp lỗi import lạ
+Remove-Item -Recurse -Force __pycache__
+```
+---
+## 📁 TẠO FILE `commands.md` TRONG DỰ ÁN
+```bash
+# Tạo file trong thư mục docs
+cd docs
+touch commands.md
+
+# Hoặc tạo trong VS Code
+# File -> New File -> commands.md
+```
+---

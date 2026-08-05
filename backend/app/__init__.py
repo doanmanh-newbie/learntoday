@@ -2,6 +2,7 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
+from flask_migrate import Migrate
 from .config import Config
 
 db = SQLAlchemy()
@@ -13,13 +14,17 @@ def create_app():
     CORS(app)
     db.init_app(app)
 
-    # Import model
-    from .models import User
+    # ✅ Khởi tạo Migrate
+    migrate = Migrate(app, db)
 
-    # Đăng ký Blueprint
-    from .routes import auth_bp, folders_bp
+    # ✅ Import tất cả models (bao gồm LearningLog)
+    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog
+
+    # ✅ Đăng ký tất cả Blueprint
+    from .routes import auth_bp, folders_bp, learning_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(folders_bp)
+    app.register_blueprint(learning_bp)
 
     @app.route('/')
     def health_check():
@@ -32,8 +37,7 @@ def create_app():
             return jsonify({
                 "status": "ok",
                 "connected": True,
-                "sample_user": user.username if user else None,
-                "note": "Bảng users đang trống, nhưng kết nối OK" if not user else None
+                "sample_user": user.username if user else None
             })
         except Exception as e:
             return jsonify({

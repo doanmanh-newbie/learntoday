@@ -95,3 +95,7 @@ def admin_required(f):
         return f(*args, **kwargs)
 
     return decorated
+
+def is_same_user(id_a, id_b) -> bool:
+    """So sánh 2 user_id an toàn, không phân biệt kiểu UUID object hay string"""
+    return str(id_a) == str(id_b)
