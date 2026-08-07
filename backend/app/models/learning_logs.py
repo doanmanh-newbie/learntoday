@@ -3,9 +3,10 @@ from app import db
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import uuid
+import pytz
 
-VN_TZ = ZoneInfo('Asia/Ho_Chi_Minh')
-UTC_TZ = ZoneInfo('UTC')
+VN_TZ = pytz.timezone('Asia/Ho_Chi_Minh')
+UTC_TZ = pytz.UTC
 
 
 class LearningLog(db.Model):
@@ -23,6 +24,9 @@ class LearningLog(db.Model):
     choice = db.Column(db.String(20), nullable=True)    # 'hoan_thanh' | 'quay_ve_lv1' | 'lui_1_lv' | 'bo_qua'
     level_before = db.Column(db.Integer, nullable=True)
     level_after = db.Column(db.Integer, nullable=True)
+    
+    # ✅ THÊM CỘT MỚI - Lưu số lần sai trong buổi học/ôn tập
+    wrong_count = db.Column(db.Integer, default=0, nullable=True)
 
     # ===== TIMESTAMPS =====
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
@@ -44,6 +48,7 @@ class LearningLog(db.Model):
             'choice': self.choice,
             'level_before': self.level_before,
             'level_after': self.level_after,
+            'wrong_count': self.wrong_count,  # ✅ THÊM
             'created_at': self.created_at.isoformat() if self.created_at else None
         }
 
@@ -51,9 +56,7 @@ class LearningLog(db.Model):
     def count_learned_today(cls, user_id):
         """
         Đếm số từ đã học mới (action='learn') trong ngày hôm nay - dùng cho STT 6.
-        Mốc "hôm nay" tính theo giờ Việt Nam (UTC+7), không phải UTC, vì created_at
-        lưu bằng datetime.utcnow() (naive UTC) - nếu tính theo mốc 00:00 UTC thì
-        "ngày mới" sẽ lệch tới 7 tiếng so với thực tế của người dùng VN.
+        Mốc "hôm nay" tính theo giờ Việt Nam (UTC+7).
         """
         now_vn = datetime.now(VN_TZ)
         start_vn = now_vn.replace(hour=0, minute=0, second=0, microsecond=0)

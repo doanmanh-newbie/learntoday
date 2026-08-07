@@ -17,14 +17,18 @@ def create_app():
     # ✅ Khởi tạo Migrate
     migrate = Migrate(app, db)
 
-    # ✅ Import tất cả models (bao gồm LearningLog)
+    # ✅ Import tất cả models
     from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog
 
+    # ✅ Import tất cả Blueprint
+    from .routes import auth_bp, folders_bp, learning_bp, review_bp, words_bp
+
     # ✅ Đăng ký tất cả Blueprint
-    from .routes import auth_bp, folders_bp, learning_bp
     app.register_blueprint(auth_bp)
     app.register_blueprint(folders_bp)
     app.register_blueprint(learning_bp)
+    app.register_blueprint(review_bp)
+    app.register_blueprint(words_bp)
 
     @app.route('/')
     def health_check():
@@ -37,7 +41,8 @@ def create_app():
             return jsonify({
                 "status": "ok",
                 "connected": True,
-                "sample_user": user.username if user else None
+                "sample_user": user.username if user else None,
+                "note": "Bảng users đang trống, nhưng kết nối OK" if not user else None
             })
         except Exception as e:
             return jsonify({
