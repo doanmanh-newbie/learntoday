@@ -9,8 +9,8 @@ const footerLinks = [
 
 export default function SiteFooterSection() {
   return (
-    <footer className="flex h-[234px] w-full   flex-col items-start gap-12 bg-indigo-950 px-20 pt-16 pb-12">
-      <div className="flex w-full items-center justify-between">
+    <footer className="flex w-full flex-col items-start gap-8 bg-indigo-950 px-6 pt-12 pb-10 sm:px-10 sm:gap-12 sm:pt-16 sm:pb-12 lg:px-20">
+      <div className="flex w-full flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
         <a
           href="/"
           className="inline-flex items-center gap-2 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
@@ -27,7 +27,7 @@ export default function SiteFooterSection() {
           </span>
         </a>
         <nav aria-label="Liên kết chân trang">
-          <ul className="inline-flex items-start gap-6">
+          <ul className="flex flex-wrap items-start gap-x-6 gap-y-2">
             {footerLinks.map((link) => (
               <li key={link.href}>
                 <a
@@ -41,7 +41,7 @@ export default function SiteFooterSection() {
           </ul>
         </nav>
       </div>
-      <div className="flex w-full items-start justify-between border-t border-indigo-900 pt-6">
+      <div className="flex w-full flex-col items-start gap-2 border-t border-indigo-900 pt-6 sm:flex-row sm:items-start sm:justify-between sm:gap-0">
         <p className="mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-sm font-normal leading-[normal] tracking-[0] text-slate-500">
           © 2024 Learn Today. All rights reserved.
         </p>

@@ -25,7 +25,7 @@ export default function SiteHeaderSection() {
   };
 
   return (
-    <header className="relative flex h-20 w-accent-full items-center justify-between border border-solid border-slate-200 bg-white px-20 py-0">
+    <header className="relative flex w-full flex-wrap items-center justify-between gap-4 border border-solid border-slate-200 bg-white px-4 py-3 sm:px-8 lg:h-20 lg:flex-nowrap lg:px-20 lg:py-0">
       <div className="relative inline-flex flex-[0_0_auto] items-center gap-2">
         <img
           className="relative h-9 w-9"
@@ -38,7 +38,7 @@ export default function SiteHeaderSection() {
         </div>
       </div>
       <form
-        className="relative flex h-11 w-[430px] items-center gap-2 rounded-[99px] border border-solid border-slate-200 bg-slate-50 px-4 py-0"
+        className="relative order-3 flex h-11 w-full min-w-0 items-center gap-2 rounded-[99px] border border-solid border-slate-200 bg-slate-50 px-4 py-0 sm:max-w-[430px] lg:order-none lg:w-[430px] lg:flex-1"
         role="search"
         onSubmit={handleSearchSubmit}
       >
@@ -66,13 +66,13 @@ export default function SiteHeaderSection() {
           autoComplete="off"
         />
       </form>
-      <div className="relative inline-flex flex-[0_0_auto] items-center gap-3">
+      <div className="relative inline-flex flex-[0_0_auto] flex-wrap items-center gap-2 sm:gap-3">
         <button
-          className="all-unset box-border relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-[#eef2f6] px-6 py-3"
+          className="all-unset box-border relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-[#eef2f6] px-4 py-2.5 sm:px-6 sm:py-3"
           type="button"
           onClick={handlePremiumClick}
         >
-          <span className="relative mt-[-1.00px] w-fit [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-indigo-600">
+          <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-indigo-600">
             Nâng cấp Premium
           </span>
         </button>
@@ -80,15 +80,15 @@ export default function SiteHeaderSection() {
           className="relative inline-flex flex-[0_0_auto] items-start px-3 py-2 no-underline"
           href="/login"
         >
-          <span className="relative mt-[-1.00px] w-fit [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-slate-600">
+          <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-slate-600">
             Đăng nhập
           </span>
         </a>
         <a
-          className="relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 no-underline"
+          className="relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 no-underline sm:px-6 sm:py-3"
           href="/register"
         >
-          <span className="relative mt-[-1.00px] w-fit [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-white">
+          <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-white">
             Đăng ký
           </span>
         </a>

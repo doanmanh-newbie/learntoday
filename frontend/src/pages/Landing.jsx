@@ -35,43 +35,39 @@ export default function LearnTodayLanding() {
         <SiteHeaderSection />
         <nav
           aria-label="Điều hướng chính"
-          className="flex w-accent-full border border-solid border-slate-200 bg-white"
+          className="flex w-full flex-wrap items-center gap-x-8 gap-y-2 overflow-x-auto border border-solid border-slate-200 bg-white px-4 sm:px-8 lg:px-20"
         >
-          {primaryNavigationItems.map((item, index) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`${item.widthClass} ${
-                index === 0 ? "ml-20" : "ml-[31px]"
-              } inline-flex h-14 flex-col items-start`}
-            >
-              <span className="flex h-14 w-full flex-col items-center justify-center">
-                <span className="relative w-fit [-webkit-text-stroke:1px_#475569] [font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-transparent">
+          <div className="flex items-center gap-8">
+            {primaryNavigationItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="inline-flex h-14 flex-col items-start justify-center"
+              >
+                <span className="[font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-slate-600 whitespace-nowrap">
                   {item.label}
                 </span>
-              </span>
-            </a>
-          ))}
+              </a>
+            ))}
+          </div>
 
           <div
             aria-hidden="true"
-            className="ml-[348px] flex h-14 w-px flex-col items-center justify-center"
+            className="hidden h-14 w-px flex-col items-center justify-center bg-slate-200 sm:flex sm:ml-auto"
           />
-          {secondaryNavigationItems.map((item, index) => (
-            <a
-              key={item.label}
-              href={item.href}
-              className={`${item.widthClass} ${
-                index === 0 ? "ml-[267px]" : "ml-[60px]"
-              } inline-flex h-14 flex-col items-start`}
-            >
-              <span className="flex h-14 w-accent-full  items-center justify-center">
-                <span className="relative w-fit [-webkit-text-stroke:1px_#475569] [font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-slate-600">
+          <div className="flex items-center gap-6">
+            {secondaryNavigationItems.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="inline-flex h-14 flex-col items-start justify-center"
+              >
+                <span className="[font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-slate-600 whitespace-nowrap">
                   {item.label}
                 </span>
-              </span>
-            </a>
-          ))}
+              </a>
+            ))}
+          </div>
         </nav>
       </header>
 

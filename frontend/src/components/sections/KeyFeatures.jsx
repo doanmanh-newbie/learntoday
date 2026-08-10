@@ -31,7 +31,7 @@ const learningTools = [
 export default function LearningToolsFeaturesSection() {
   return (
     <section
-      className="flex h-[607px] w-[1440px] flex-col items-center gap-12 bg-white px-20 py-24"
+      className="flex w-full flex-col items-center gap-12 bg-white px-6 py-16 sm:px-10 lg:px-20 lg:py-24"
       aria-labelledby="learning-tools-heading"
     >
       <header className="relative flex w-full flex-[0_0_auto] flex-col items-center gap-4">
@@ -50,7 +50,7 @@ export default function LearningToolsFeaturesSection() {
           (toolRow, rowIndex) => (
             <div
               key={`learning-tools-row-${rowIndex}`}
-              className="relative flex w-full flex-[0_0_auto] items-start gap-6"
+              className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-6 sm:flex-row"
             >
               {toolRow.map((tool) => (
                 <article

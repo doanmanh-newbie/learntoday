@@ -25,11 +25,11 @@ export default function AiSentenceCorrectionSection() {
 
   return (
     <section
-      className="relative flex h-[620px] w-[1440px] flex-col items-center gap-12 bg-[linear-gradient(112deg,rgba(30,27,75,1)_0%,rgba(46,16,101,1)_100%),linear-gradient(0deg,rgba(30,27,75,1)_0%,rgba(30,27,75,1)_100%)] px-20 py-24"
+      className="relative flex w-full flex-col items-center gap-12 bg-[linear-gradient(112deg,rgba(30,27,75,1)_0%,rgba(46,16,101,1)_100%),linear-gradient(0deg,rgba(30,27,75,1)_0%,rgba(30,27,75,1)_100%)] px-6 py-16 sm:px-10 lg:px-20 lg:py-24"
       aria-labelledby="ai-sentence-correction-heading"
     >
       {/* Phần còn lại giữ nguyên */}
-      <div className="relative flex w-full flex-[0_0_auto] items-center gap-12 self-stretch">
+      <div className="relative flex w-full flex-[0_0_auto] flex-col items-center gap-12 self-stretch lg:flex-row">
         <div className="relative flex flex-1 grow flex-col items-start gap-8">
           <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-3 self-stretch">
             <div className="relative inline-flex flex-[0_0_auto] items-start rounded-[99px] border border-solid border-amber-500 bg-[#f59e0b20] px-3 py-1">

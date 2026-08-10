@@ -25,7 +25,7 @@ const learningResults = [
 export default function LearningResultsSection() {
   return (
     <section
-      className="flex w-full h-[500px] relative flex-col items-center gap-12 px-20 py-24 bg-slate-50"
+      className="flex w-full relative flex-col items-center gap-12 px-6 py-16 sm:px-10 lg:px-20 lg:py-24 bg-slate-50"
       aria-labelledby="learning-results-heading"
     >
       <header className="flex flex-col items-center gap-4 relative self-stretch w-full flex-[0_0_auto]">
@@ -39,7 +39,7 @@ export default function LearningResultsSection() {
           Chứng minh hiệu quả qua các con số
         </h2>
       </header>
-      <div className="flex items-start gap-8 relative self-stretch w-full flex-[0_0_auto]">
+      <div className="flex flex-col items-start gap-8 relative self-stretch w-full flex-[0_0_auto] sm:flex-row">
         {learningResults.map((result) => (
           <article
             key={result.title}

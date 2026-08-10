@@ -10,7 +10,7 @@ const audioControlsUrl =
 export default function VocabularyLearningHeroSection() {
   return (
     <section
-      className="relative flex h-[560px] w--accent-full  items-center gap-8 bg-[linear-gradient(117deg,rgba(49,46,129,0.5)_0%,rgba(79,70,229,0.5)_100%),linear-gradient(0deg,rgba(30,27,75,1)_0%,rgba(30,27,75,1)_100%)] px-20 py-12 max-[1439px]:w-full max-[767px]:h-auto max-[767px]:flex-col max-[767px]:px-6 max-[767px]:py-12"
+      className="relative flex min-h-[560px] w-full items-center gap-8 bg-[linear-gradient(117deg,rgba(49,46,129,0.5)_0%,rgba(79,70,229,0.5)_100%),linear-gradient(0deg,rgba(30,27,75,1)_0%,rgba(30,27,75,1)_100%)] px-6 py-12 sm:px-10 lg:px-20 max-[767px]:h-auto max-[767px]:flex-col max-[767px]:px-6 max-[767px]:py-12"
       aria-labelledby="vocabulary-learning-heading"
     >
       <div className="relative flex flex-1 grow flex-col items-start gap-7 max-[767px]:w-full">
@@ -52,7 +52,7 @@ export default function VocabularyLearningHeroSection() {
         style={{ backgroundImage: `url(${heroImageUrl})` }}
         aria-label="Minh họa thẻ học từ vựng Learn Today"
       >
-        <div className="relative flex h-[480px] w-[624px] flex-col items-center justify-center rounded-3xl bg-indigo-50 p-8 max-[767px]:w-full max-[479px]:p-4">
+        <div className="relative flex h-[480px] w-full max-w-[624px] flex-col items-center justify-center rounded-3xl bg-indigo-50 p-8 max-[479px]:p-4">
           <article
             className="relative flex w-[380px] flex-[0_0_auto] flex-col items-start gap-5 rounded-[20px] bg-white p-6 shadow-[0px_12px_32px_#4f46e520] max-[479px]:w-full max-[479px]:p-5"
             aria-label="Thẻ từ vựng Travel"

@@ -25,7 +25,7 @@ export default function ForgettingProblemSolutionSection() {
 
   return (
     <section
-      className="relative flex h-[686px] w-[1440px] flex-col items-center gap-12 bg-white px-20 py-24"
+      className="relative flex w-full flex-col items-center gap-12 bg-white px-6 py-16 sm:px-10 lg:px-20 lg:py-24"
       aria-labelledby="forgetting-problem-heading"
     >
       <header className="relative flex w-full flex-[0_0_auto] flex-col items-center gap-6 self-stretch">
@@ -45,7 +45,7 @@ export default function ForgettingProblemSolutionSection() {
           </p>
         </div>
       </header>
-      <div className="relative flex w-full flex-[0_0_auto] items-start gap-8 self-stretch">
+      <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-8 self-stretch md:flex-row">
         <article className="relative flex flex-1 grow flex-col items-start gap-6 rounded-2xl border border-solid border-red-100 bg-[#fff5f5] p-8">
           <div className="relative inline-flex flex-[0_0_auto] items-center gap-3">
             <div className="relative flex h-10 w-10 items-center justify-center rounded-[20px] bg-red-100">

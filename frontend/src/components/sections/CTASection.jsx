@@ -16,7 +16,7 @@ export default function VocabularyLearningCtaSection() {
 
   return (
     <section
-      className="w-accent h-[550px] relative bg-slate-900 border border-solid border-black"
+      className="w-accent-full h-[550px] relative bg-slate-900 border border-solid border-black"
       aria-labelledby="vocabulary-learning-cta-title"
     >
       <aside

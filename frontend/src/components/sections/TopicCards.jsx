@@ -11,16 +11,16 @@ const topics = [
 
 export default function AdditionalTopicCardsSection() {
   return (
-    <section className="relative ml-[81px] flex h-[323px] w-[1280px] flex-col items-start gap-4" aria-labelledby="additional-topics-heading">
+    <section className="relative flex w-full flex-col items-start gap-4 px-6 py-12 sm:px-10 lg:px-20" aria-labelledby="additional-topics-heading">
       <header className="inline-flex items-center gap-2">
         <span className="relative mt-[-1px] w-fit [font-family:'Lexend_Deca',Helvetica] text-sm font-extrabold leading-[normal] tracking-[0.21px] text-slate-500">VARIANT B</span>
         <span className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-sm font-normal leading-[normal] tracking-[0] text-slate-400" aria-hidden="true">•</span>
         <h2 id="additional-topics-heading" className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-sm font-semibold leading-[normal] tracking-[0] text-slate-600">User Upload (Tự do thiết lập cá nhân)</h2>
       </header>
-      <ul className="relative flex w-full flex-[0_0_auto] list-none items-start gap-6 p-0">
+      <ul className="grid w-full list-none grid-cols-2 gap-4 p-0 sm:grid-cols-3 lg:grid-cols-5 lg:gap-6">
         {topics.map((topic) => (
           <li key={topic.title}>
-            <button type="button" className="relative flex w-[232px] flex-col items-start gap-4 rounded-2xl border border-solid border-slate-200 bg-white p-3 text-left shadow-[0px_4px_16px_#0f172a0a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500" aria-label={`Chọn chủ đề ${topic.title}, ${topic.wordCount}`}>
+            <button type="button" className="relative flex w-full flex-col items-start gap-4 rounded-2xl border border-solid border-slate-200 bg-white p-3 text-left shadow-[0px_4px_16px_#0f172a0a] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-slate-500" aria-label={`Chọn chủ đề ${topic.title}, ${topic.wordCount}`}>
               <img className="relative aspect-[1] w-full flex-[0_0_auto]" alt="" aria-hidden="true" src={topic.imageSrc} />
               <span className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-1">
                 <span className="relative mt-[-1px] w-full [font-family:'Lexend_Deca',Helvetica] text-base font-bold leading-[normal] tracking-[0] text-slate-900">{topic.title}</span>

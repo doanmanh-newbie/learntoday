@@ -32,7 +32,7 @@ const vocabularyCategories = [
 export default function VocabularyLibraryStatsSection() {
   return (
     <section
-      className="flex w-[1440px] h-[482px] relative flex-col items-center gap-12 px-20 py-24 bg-white"
+      className="flex w-full relative flex-col items-center gap-12 px-6 py-16 sm:px-10 lg:px-20 lg:py-24 bg-white"
       aria-labelledby="vocabulary-library-heading"
     >
       <header className="flex flex-col items-center gap-4 relative self-stretch w-full flex-[0_0_auto]">
@@ -46,11 +46,11 @@ export default function VocabularyLibraryStatsSection() {
           3000+ từ vựng theo mọi chủ đề bạn chọn
         </h2>
       </header>
-      <ul className="flex items-start gap-5 relative self-stretch w-full flex-[0_0_auto] list-none m-0 p-0">
+      <ul className="grid grid-cols-2 gap-5 relative self-stretch w-full list-none m-0 p-0 sm:grid-cols-3 lg:grid-cols-5">
         {vocabularyCategories.map((category) => (
           <li
             key={category.name}
-            className="flex flex-col items-center gap-4 p-6 relative flex-1 grow bg-white rounded-2xl border border-solid border-slate-200 shadow-[0px_4px_10px_#0f172a04]"
+            className="flex flex-col items-center gap-4 p-6 relative bg-white rounded-2xl border border-solid border-slate-200 shadow-[0px_4px_10px_#0f172a04]"
           >
             <img
               className="relative w-14 h-14"
