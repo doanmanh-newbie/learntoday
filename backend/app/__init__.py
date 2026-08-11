@@ -1,9 +1,17 @@
 # app/__init__.py
+import logging
 from flask import Flask, jsonify
 from flask_cors import CORS
 from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from .config import Config
+
+# Cấu hình logging cơ bản - trước đây middleware.py gọi logger.info() nhưng
+# chưa từng có basicConfig() nào, nên log không có format/level rõ ràng.
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
+)
 
 db = SQLAlchemy()
 

@@ -50,13 +50,24 @@ def register():
         
         db.session.add(new_user)
         db.session.commit()
-        
-        # Tạo token
-        token = generate_token(new_user.id)
-        
+
+        # Tạo cả Access Token và Refresh Token (đúng luồng STT 2, giống /login)
+        access_token = generate_token(new_user.id)
+        refresh_token = generate_refresh_token(new_user.id)
+
+        new_refresh_token = RefreshToken(
+            id=str(uuid.uuid4()),
+            user_id=new_user.id,
+            token=refresh_token,
+            expires_at=datetime.datetime.utcnow() + datetime.timedelta(days=7)
+        )
+        db.session.add(new_refresh_token)
+        db.session.commit()
+
         return jsonify({
             'message': 'Đăng ký thành công!',
-            'token': token,
+            'access_token': access_token,
+            'refresh_token': refresh_token,
             'user': new_user.to_dict()
         }), 201
         
