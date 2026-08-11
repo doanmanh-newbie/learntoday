@@ -1,5 +1,6 @@
 // Header.jsx - Đã sửa hoàn chỉnh
 import React, { useState } from "react";
+import { Link } from "react-router-dom";
 
 export default function SiteHeaderSection() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -26,17 +27,21 @@ export default function SiteHeaderSection() {
 
   return (
     <header className="relative flex w-full flex-wrap items-center justify-between gap-4 border border-solid border-slate-200 bg-white px-4 py-3 sm:px-8 lg:h-20 lg:flex-nowrap lg:px-20 lg:py-0">
-      <div className="relative inline-flex flex-[0_0_auto] items-center gap-2">
-        <img
-          className="relative h-9 w-9"
-          alt=""
-          aria-hidden="true"
-          src="https://c.animaapp.com/zdBS24aH/img/frame.svg"
-        />
-        <div className="relative w-fit [font-family:'Lexend_Deca',Helvetica] text-[22px] font-extrabold leading-[normal] tracking-[0] text-indigo-600">
-          Learn Today
+      <Link
+      to="/"
+      className="relative inline-flex flex-[0_0_auto] items-center gap-2 rounded-md no-underline transition-opacity duration-200 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
+      aria-label="Learn Today - Về trang chủ"
+    >
+      <img
+        className="relative h-9 w-9"
+        alt=""
+        aria-hidden="true"
+        src="https://c.animaapp.com/zdBS24aH/img/frame.svg"
+      />
+      <div className="relative w-fit [font-family:'Lexend_Deca',Helvetica] text-[22px] font-extrabold leading-[normal] tracking-[0] text-indigo-600">
+        Learn Today
         </div>
-      </div>
+      </Link>
       <form
         className="relative order-3 flex h-11 w-full min-w-0 items-center gap-2 rounded-[99px] border border-solid border-slate-200 bg-slate-50 px-4 py-0 sm:max-w-[430px] lg:order-none lg:w-[430px] lg:flex-1"
         role="search"

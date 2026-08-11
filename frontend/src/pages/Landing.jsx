@@ -11,8 +11,6 @@ import VocabularyLearningFeaturesSection from "../components/sections/KeyFeature
 import AiSentenceCorrectionSection from "../components/sections/AIPractice";
 import SpacedRepetitionProcessSection from "../components/sections/LearningLoop";
 import VocabularyTopicLibrarySection from "../components/sections/Topics";
-import VocabularyLibraryStatsSection from "../components/sections/Stats";
-import AdditionalTopicCardsSection from "../components/sections/TopicCards";
 import VocabularyLearningCtaSection from "../components/sections/CTASection";
 
 // Menu điều hướng
@@ -42,10 +40,11 @@ export default function LearnTodayLanding() {
               <a
                 key={item.label}
                 href={item.href}
-                className="inline-flex h-14 flex-col items-start justify-center"
+                className="group relative inline-flex h-14 flex-col items-start justify-center"
               >
-                <span className="[font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-slate-600 whitespace-nowrap">
+                <span className="relative [font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-slate-600 whitespace-nowrap transition-colors duration-200 group-hover:text-slate-900">
                   {item.label}
+                  <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-slate-900 transition-all duration-200 ease-out group-hover:w-full" />
                 </span>
               </a>
             ))}
@@ -60,10 +59,11 @@ export default function LearnTodayLanding() {
               <a
                 key={item.label}
                 href={item.href}
-                className="inline-flex h-14 flex-col items-start justify-center"
+                className="group relative inline-flex h-14 flex-col items-start justify-center"
               >
-                <span className="[font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-slate-600 whitespace-nowrap">
+                <span className="relative [font-family:'Rethink_Sans-Medium',Helvetica] text-[15px] font-medium leading-[normal] tracking-[0] text-slate-600 whitespace-nowrap transition-colors duration-200 group-hover:text-slate-900">
                   {item.label}
+                  <span className="absolute -bottom-1 left-0 h-0.5 w-0 bg-slate-900 transition-all duration-200 ease-out group-hover:w-full" />
                 </span>
               </a>
             ))}
@@ -93,12 +93,6 @@ export default function LearnTodayLanding() {
         </section>
         <section id="chu-de-tu-vung">
           <VocabularyTopicLibrarySection />
-        </section>
-        <section aria-label="Danh mục chủ đề từ vựng">
-          <VocabularyLibraryStatsSection />
-        </section>
-        <section aria-label="Mẫu chủ đề từ vựng">
-          <AdditionalTopicCardsSection />
         </section>
         <section aria-label="Bắt đầu học từ vựng">
           <VocabularyLearningCtaSection />

@@ -1,6 +1,6 @@
 // Footer.jsx - Đã sửa hoàn chỉnh
 import React from "react";
-
+import { Link } from "react-router-dom";
 const footerLinks = [
   { label: "Chính sách bảo mật", href: "/privacy-policy" },
   { label: "Điều khoản sử dụng", href: "/terms-of-service" },
@@ -11,9 +11,9 @@ export default function SiteFooterSection() {
   return (
     <footer className="flex w-full flex-col items-start gap-8 bg-indigo-950 px-6 pt-12 pb-10 sm:px-10 sm:gap-12 sm:pt-16 sm:pb-12 lg:px-20">
       <div className="flex w-full flex-col items-start gap-6 sm:flex-row sm:items-center sm:justify-between">
-        <a
-          href="/"
-          className="inline-flex items-center gap-2 focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 no-underline focus-visible:rounded-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-white"
           aria-label="Learn Today - Trang chủ"
         >
           <img
@@ -25,7 +25,7 @@ export default function SiteFooterSection() {
           <span className="w-fit [font-family:'Lexend_Deca',Helvetica] text-xl font-extrabold leading-[normal] tracking-[0] text-white">
             Learn Today
           </span>
-        </a>
+        </Link>
         <nav aria-label="Liên kết chân trang">
           <ul className="flex flex-wrap items-start gap-x-6 gap-y-2">
             {footerLinks.map((link) => (
