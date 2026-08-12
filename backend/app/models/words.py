@@ -23,5 +23,9 @@ class Word(db.Model):
             'pronunciation': self.pronunciation,
             'word_type': self.word_type,
             'meaning': self.meaning,
-            'example': self.example
+            'example': self.example,
+            'example_meaning': self.example_meaning,
+            'difficulty': self.difficulty,
+            'category': self.category,
+            'audio_url': self.audio_url,
         }

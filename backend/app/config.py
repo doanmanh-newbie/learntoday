@@ -21,4 +21,4 @@ class Config:
     JWT_SECRET = os.environ.get('JWT_SECRET', 'dev-secret-key')
     JWT_ALGORITHM = 'HS256'
     JWT_ACCESS_TOKEN_EXPIRES = 3600  # 1 giờ
-    JWT_REFRESH_TOKEN_EXPIRES = 604800  # 7
+    JWT_REFRESH_TOKEN_EXPIRES = 604800  # 7 ngày

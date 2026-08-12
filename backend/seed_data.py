@@ -126,6 +126,10 @@ def seed():
 
             order_index += 1
 
+        # Cập nhật word_count cho folder
+        folder.word_count = FolderWord.query.filter_by(folder_id=folder.id).count()
+        db.session.commit()
+
         print('\n🎉 Seed xong! Dùng thông tin sau để test:')
         print(f'   Email: test@test.com | Password: 123456')
         print(f'   Folder ID: {folder.id}')

@@ -3,3 +3,10 @@ from .folders import bp as folders_bp
 from .learning import bp as learning_bp
 from .review import bp as review_bp
 from .words import bp as words_bp
+from .profile import bp as profile_bp
+from .history import bp as history_bp
+from .search import bp as search_bp
+from .translate import bp as translate_bp
+from .study import bp as study_bp
+from .pass_test import bp as pass_test_bp
+from .ai_practice import bp as ai_practice_bp

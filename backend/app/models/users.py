@@ -17,8 +17,11 @@ class User(db.Model):
     reminder_time = db.Column(db.Time, nullable=True)
 
     streak = db.Column(db.Integer, default=0)
+    last_goal_date = db.Column(db.Date, nullable=True)
     total_words_learned = db.Column(db.Integer, default=0)
     total_study_minutes = db.Column(db.Integer, default=0)
+    tts_voice = db.Column(db.String(10), default='en-US')  # STT 15: en-US | en-GB
+    badges = db.Column(db.Text, default='[]')  # JSON danh sách huy hiệu
 
     def __repr__(self):
         return f'<User {self.username}>'
@@ -36,5 +39,22 @@ class User(db.Model):
             'email_reminder': self.email_reminder,
             'reminder_time': self.reminder_time.isoformat() if self.reminder_time else None,
             'total_words_learned': self.total_words_learned,
-            'total_study_minutes': self.total_study_minutes
+            'total_study_minutes': self.total_study_minutes,
+            'tts_voice': self.tts_voice or 'en-US',
+            'last_goal_date': self.last_goal_date.isoformat() if self.last_goal_date else None,
+            'badges': self._parse_badges(),
         }
+
+    def _parse_badges(self):
+        import json
+        try:
+            return json.loads(self.badges or '[]')
+        except (json.JSONDecodeError, TypeError):
+            return []
+
+    def add_badge(self, badge_id: str):
+        import json
+        current = self._parse_badges()
+        if badge_id not in current:
+            current.append(badge_id)
+            self.badges = json.dumps(current)

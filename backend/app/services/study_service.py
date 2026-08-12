@@ -6,6 +6,8 @@ Module 6.5 - Quy trình học từ vựng (CỐT LÕI).
 from app import db
 from app.models import Word, UserWord, LearningLog, User
 from app.utils.srs import get_next_review
+from app.services.streak_service import update_streak_if_goal_met
+from app.services.pass_test_service import check_and_create_milestones
 from datetime import datetime
 import unicodedata
 import uuid
@@ -160,14 +162,21 @@ def complete_learn(user_id, word_id):
     db.session.add(log)
 
     user = User.query.get(user_id)
+    new_milestones = []
+    new_streak = None
     if user:
         user.total_words_learned = (user.total_words_learned or 0) + 1
+        new_milestones = check_and_create_milestones(user_id, user.total_words_learned)
 
     db.session.commit()
 
+    new_streak = update_streak_if_goal_met(user_id)
+
     return {
         'result': 'hoan_thanh',
-        'user_word': user_word.to_dict()
+        'user_word': user_word.to_dict(),
+        'streak': new_streak,
+        'new_milestones': new_milestones,
     }
 
 

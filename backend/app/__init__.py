@@ -19,17 +19,21 @@ def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
 
-    CORS(app)
+    CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173'], supports_credentials=True)
     db.init_app(app)
 
     # ✅ Khởi tạo Migrate
     migrate = Migrate(app, db)
 
     # ✅ Import tất cả models
-    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog
+    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog, SearchHistory, UserMilestone
 
     # ✅ Import tất cả Blueprint
-    from .routes import auth_bp, folders_bp, learning_bp, review_bp, words_bp
+    from .routes import (
+        auth_bp, folders_bp, learning_bp, review_bp, words_bp,
+        profile_bp, history_bp, search_bp, translate_bp, study_bp,
+        pass_test_bp, ai_practice_bp,
+    )
 
     # ✅ Đăng ký tất cả Blueprint
     app.register_blueprint(auth_bp)
@@ -37,6 +41,13 @@ def create_app():
     app.register_blueprint(learning_bp)
     app.register_blueprint(review_bp)
     app.register_blueprint(words_bp)
+    app.register_blueprint(profile_bp)
+    app.register_blueprint(history_bp)
+    app.register_blueprint(search_bp)
+    app.register_blueprint(translate_bp)
+    app.register_blueprint(study_bp)
+    app.register_blueprint(pass_test_bp)
+    app.register_blueprint(ai_practice_bp)
 
     @app.route('/')
     def health_check():
