@@ -1,334 +1,264 @@
-
-STT
-Chức năng
-Mô tả chi tiết
-1
-Đăng ký tài khoản
-Mô tả chi tiết:
-Người dùng nhập: Username, Email, Password.
-Hệ thống kiểm tra email chưa tồn tại.
-Mã hóa password bằng bcrypt (salt rounds = 10).
-Lưu vào database.
-2
-Đăng nhập
-Mô tả chi tiết:
+# LearnToday — Đặc tả & Trạng thái triển khai (Nguồn tham chiếu duy nhất)
 
-🔹 Bước 1: Xác thực
-Người dùng nhập Email + Password.
-Hệ thống kiểm tra email tồn tại và password khớp với bcrypt.
+> File này là bản tổng hợp giữa đặc tả gốc (STT.docx) và thực tế code đã có.
+> Nguyên tắc từ giờ: khi làm 1 STT, code **đầy đủ mọi API liệt kê trong mục
+> "API cần có"** ngay trong 1 lượt, không làm nửa vời rồi quay lại vá nhiều lần.
+> Cập nhật cột Trạng thái + API thực tế mỗi khi hoàn thành thêm việc.
 
-🔹 Bước 2: Cấp Token
-Sau khi xác thực thành công, hệ thống cấp 2 loại token:
-Loại token
-Thời gian hết hạn
-Mục đích
-Access Token (AT)
-1 giờ
-Dùng để gọi API, xác thực các chức năng khác
-Refresh Token (RT)
-7 ngày
-Dùng để lấy Access Token mới khi AT hết hạn
-Cả 2 token đều là JWT.
-Refresh Token được lưu vào database (bảng refresh_tokens) để có thể thu hồi khi cần.
-🔹 Bước 3: Lưu token trên client
-Access Token: Lưu trong memory (hoặc cookie HttpOnly).
-Refresh Token: Lưu trong cookie HttpOnly, Secure, SameSite=Strict (hoặc lưu trong database tùy kiến trúc)
-🔹 Bước 4: Tự động làm mới Access Token
-Khi Access Token hết hạn: Client gọi API /refresh-token với Refresh Token.
-Hệ thống kiểm tra Refresh Token hợp lệ và chưa bị thu hồi.
-Nếu hợp lệ → Cấp Access Token mới (thời gian hết hạn = 1 giờ).
-Nếu không hợp lệ → Yêu cầu đăng nhập lại
-🔹 Bước 5: Đăng xuất (Logout)
-Hủy Refresh Token trên server (xóa khỏi database).
-Xóa token trên client.
-3
-Xem danh sách Folder và từ trong Folder
-🔹 Phần A: Xem danh sách Folder
-Hiển thị danh sách Folder:
-📂 Folder hệ thống (chủ đề có sẵn): Gia đình, Trường học, Du lịch, Ẩm thực, 3000 Từ thông dụng, IELTS, TOEIC.
-📂 Folder cá nhân (do người dùng tạo): &quot;Từ yêu thích&quot;, &quot;Từ khó&quot;...
-Mỗi folder hiển thị: tên, số lượng từ, loại folder (hệ thống/cá nhân).
-Thao tác:
-Thêm Folder mới (chỉ folder cá nhân)
-Sửa tên (chỉ folder cá nhân)
-Xóa (chỉ folder cá nhân)
+---
 
-🔹 Phần B: Xem danh sách từ trong Folder
-Khi người dùng bấm vào 1 Folder → Hiển thị danh sách từ trong Folder đó.
-Hiển thị dạng cuộn (Infinite Scroll / Scroll):
-Tải 20 từ mỗi lần
-Khi người dùng kéo xuống cuối danh sách, tự động tải thêm 20 từ tiếp theo
-Hỗ trợ kéo lên/xuống để xem tất cả từ trong Folder.
-Mỗi từ hiển thị:
-Từ vựng
-Phiên âm
-Từ loại
-Nghĩa
-Ví dụ
-Có thanh tìm kiếm và bộ lọc (theo từ loại, theo Level).
-Có nút &quot;Bắt đầu học&quot; → Chuyển sang STT 6 (Học từ vựng mới).
-5
-Ôn tập từ vựng (SRS)
-Màn hình chính
-Hiển thị nổi bật:
-&quot;🔔 Bạn có X từ đến lịch ôn tập&quot;[📖 Ôn tập ngay]
-Số từ = các từ có next_review &lt;= ngày hiện tại.
- Trường hợp X = 0 (Không có từ cần ôn):
-Hiển thị thông báo
-&quot;🎉 Chúc mừng! Hôm nay bạn không có từ nào cần ôn tập.&quot;&quot;Hãy học từ mới để duy trì đà nhé!&quot;
-Nút [📖 Học từ mới] → Chuyển sang STT 6
-🔹 Cài đặt số từ ôn mỗi lần:
-Trong Trang cá nhân → Cài đặt (STT 14) có mục:
-Số từ ôn tập mỗi lần: 5 / 10 / 15 / 20 / 30 (mặc định: 10).
-Khi bấm &quot;Ôn tập ngay&quot;, hệ thống lấy đúng số từ đã cài đặt (ưu tiên từ đến hạn sớm nhất)
-🔹 Quá trình ôn tập:
-Gọi Module Quy trình học từ vựng (STT 6.5) với tham số:
-loại = &quot;review”
-danh_sách_từ = [các từ đến hạn ôn
-Lưu ý: Module 6.5 sẽ xử lý TỪNG TỪ RIÊNG LẺ và trả về kết quả cho từng từ.
-🔹 Nhận kết quả từ Module 6.5 cho TỪNG TỪ và xử lý:
-Kết quả &quot;hoàn_thành&quot; → Tăng 1 Level SRS, cập nhật next_review theo Level mới
-Kết quả &quot;quay_về_lv1&quot; → Reset từ về 🌱 Mới học (LV1), next_review = now + 20p
-Kết quả &quot;lùi_1_lv&quot; → Giảm 1 cấp độ SRS (VD: LV3 → LV2), cập nhật next_review
-Kết quả &quot;bỏ_qua&quot; → Giữ nguyên Level hiện tại, chuyển sang từ tiếp theo
+## STT 1 — Đăng ký tài khoản
+**Trạng thái:** ✅ Hoàn thành
 
-🔹 Kết thúc buổi ôn:
-Hiển thị kết quả tổng hợp
-&quot;Đã ôn: X/X từ&quot;&quot;📈 Tăng Level: X từ&quot;&quot;📉 Lùi Level: X từ&quot;&quot;⏭️ Bỏ qua: X từ&quot;&quot;🔄 Quay về LV1: X từ&quot;
-Các nút: [📚 Ôn tiếp] [🏠 Về trang chính]
-6
-Học từ vựng mới (Chu trình 5 từ)
- Cài đặt:
-Người dùng đặt số từ mục tiêu/ngày trong Trang cá nhân (STT 14)
-Các lựa chọn: 5 / 10 / 15 / 20 / 30 từ.
-🔹 Chọn nguồn học:
-Từ màn hình danh sách Folder (STT 3).
-Người dùng chọn 1 Folder → Bấm &quot;Bắt đầu học&quot;
-Hệ thống lấy các từ chưa có Level (LV0) trong Folder đó.
-Nếu số từ trong Folder ít hơn số từ mục tiêu/ngày → Học hết số từ có trong Folder.
-🔹 Trường hợp Folder đã học hết từ (không còn LV0):
-Hiển thị thông báo:
-&quot;📚 Bạn đã học hết từ mới trong folder này!&quot;&quot;Hãy chọn folder khác để tiếp tục học.&quot;
-Nút [📂 Chọn folder khác] → Quay lại STT 3.🔹 Quá trình học:- Gọi 📌 Module Quy trình học từ vựng (STT 6.5) với tham số:loại = &quot;learn&quot;danh_sách_từ = [các từ chưa có Level trong Folder]🔹 Xử lý sau khi Module 6.5 trả về kết quả cho từng từ:
-Module 6.5 chỉ trả về duy nhất 1 kết quả: &quot;hoàn_thành&quot;
-Xử lý: Gán từ về LV1 🌱 Mới học, next_review = now + 20 phút
-Ghi log: { từ, hành_động: &quot;learn&quot;, level: 1 }
-(Lưu ý: Học từ mới KHÔNG có hộp thoại đề xuất, KHÔNG có lùi LV, KHÔNG có bỏ qua
-🔹 Sau khi hoàn thành 5 từ:
-Tiếp tục lấy 5 từ tiếp theo, lặp lại quy trình
-🔹 Đạt đủ số từ mục tiêu trong ngày:
-Hiển thị thông báo hoàn thành
-&quot;🏆 CHÚC MỪNG! Bạn đã hoàn thành mục tiêu học từ mới hôm nay!&quot;&quot;📊 Hôm nay bạn đã học: X/X từ&quot;&quot;🔥 Streak: X ngày liên tục&quot;
-Cập nhật streak, nhận huy hiệu (nếu đạt).
-Ghi nhận người dùng đã học hôm nay vào hệ thống
-6.5 
-Module Quy trình học từ vựng (CỐT LÕI)
+**Mô tả gốc:** Nhập Username, Email, Password → kiểm tra email chưa tồn tại →
+mã hóa bcrypt (salt rounds = 10) → lưu database.
 
-Đây là module CỐT LÕI, được gọi bởi STT 5 và STT 6.
-Đầu vào (Input):
-danh_sách_từ: Danh sách từ cần học (từ STT 5 hoặc STT 6 cung cấp
-loại: &quot;learn&quot; (học mới) hoặc &quot;review&quot; (ôn tập)
-QUY TRÌNH XỬ LÝ TỪNG TỪ (Mỗi từ độc lập)
-Khởi tạo cho từng từ:
-biến_đếm_sai = 0
-Bước 1: Hiển thị từ
-Hiển thị: Từ vựng, Phiên âm, Từ loại, Nghĩa, Ví dụ
-Các nút: [🔊 Nghe phát âm] [✏️ Sửa từ]
-Bước 2: Giai đoạn 1 – Nhập chính tả
-Hiển thị: Nghĩa tiếng Việt + Ví dụ (chừa chỗ trống
-Người dùng nhập từ tiếng Anh
-Xử lý kết quả:
-✅ Đúng: 🎵 Tự động phát âm từ
-Qua bước 3
-❌ Sai:
-🎵 Tự động phát âm từ
-biến_đếm_sai += 1 ← TĂNG ĐẾM KHI SAI
-Hiển thị từ đúng
-Ghi log
-Làm lại Giai đoạn 1 (vẫn giữ nguyên từ, random lại nghĩa và ví dụ)
-Bước 3: Giai đoạn 2 – 3 dạng bài (ngẫu nhiên)
-Quy tắc lấy đáp án sai:
-Mặc định: 3 đáp án sai lấy từ 4 từ còn lại trong cùng lô 5 từ.
-Trường hợp lô cuối &lt; 5 từ:
-Lô có 4 từ → Lấy tối đa 3 từ sai từ 3 từ còn lại.
-Lô có 3 từ → Lấy tối đa 2 từ sai từ 2 từ còn lại.
-Lô có 2 từ → Lấy tối đa 1 từ sai từ 1 từ còn lại.
-Lô có 1 từ → Không có từ sai → Chỉ hiển thị 1 đáp án duy nhất (từ đúng).
-✅ Dạng 1: Trắc nghiệm chọn đáp án đúng
-Hiển thị nghĩa tiếng Việt + 4 đáp án (1 đúng, 3 sai)
-3 đáp án sai lấy từ 4 từ còn lại trong cùng lô 5 từ (random 3 trong 4)
-Người dùng chọn đáp án
-Xử lý kết quả:
-✅ Đúng: 🎵 Tự động phát âm từ
-Qua dạng 2
-❌ Sai
-🎵 Tự động phát âm từ
-biến_đếm_sai += 1 ← TĂNG ĐẾM KHI SAI
-Hiển thị đáp án đúng
-Ghi log
-Làm lại Dạng 1 (vẫn giữ nguyên từ, random lại câu hỏi và đáp án)
-✅ Dạng 2: Điền từ vào chỗ trống (có gợi ý 4 từ)
-Hiển thị câu có chỗ trống (_______) + 4 từ (1 đúng, 3 sai)
-3 từ sai lấy từ 4 từ còn lại trong cùng lô 5 từ (random 3 trong 4)
-Người dùng bấm chọn từ đúng
-Xử lý kết quả:
-✅ Đúng: 🎵 Tự động phát âm từ
-Qua dạng 3
-❌ Sai:
-🎵 Tự động phát âm từ
-biến_đếm_sai += 1 ← TĂNG ĐẾM KHI SAI
-Hiển thị đáp án đúng
-Ghi log
-Làm lại Dạng 2 (vẫn giữ nguyên từ, random lại câu hỏi và 4 từ gợi ý)
-✅ Dạng 3: Ghép từ với nghĩa
-Hiển thị từ tiếng Anh (từ đang học + 3 từ khác) và nghĩa tiếng Việt (bị xáo trộn)
-3 từ khác lấy từ 4 từ còn lại trong cùng lô 5 từ (random 3 trong 4)
-Người dùng kéo thả hoặc chọn cặp để ghép
-Xử lý kết quả:
-✅ Ghép đúng tất cả: 🎵 Tự động phát âm từ
-Hoàn thành từ
-❌ Ghép sai:
-🎵 Tự động phát âm từ
-biến_đếm_sai += 1 ← TĂNG ĐẾM KHI SAI
-Hiển thị đáp án đúng
-Ghi log
-Làm lại Dạng 3 (vẫn giữ nguyên từ, random lại thứ tự từ và nghĩa)
-Bước 4: Sau khi hoàn thành từ (qua hết các bước)
-Trường hợp 1: Nếu là Học mới (loại = &quot;learn&quot;)
-Chỉ có 1 kết quả: &quot;hoàn_thành&quot;
-Không quan tâm biến_đếm_sai
-Gán từ về LV1 🌱 Mới học, next_review = now + 20p
-Ghi log: { từ, hành_động: &quot;learn&quot;, level: 1 }
-(KHÔNG hiển thị hộp thoại)
-Trường hợp 2: Nếu là Ôn tập (loại = &quot;review&quot;)
-Trường hợp A: biến_đếm_sai &lt; 4
-Kết quả: &quot;hoàn_thành&quot;
-Tăng 1 Level SRS, cập nhật next_review
-Trường hợp B: biến_đếm_sai &gt;= 4
-⚠️ HIỂN THỊ HỘP THOẠI ĐỀ XUẤT
-Người dùng chọn 1 trong 3 lựa chọn:
-Lựa chọn 🔄 Quay về LV1 → Kết quả trả về &quot;quay_về_lv1&quot; → Reset từ về 🌱 Mới học (LV1), next_review = now + 20p
-Lựa chọn ⬇️ Lùi 1 LV → Kết quả trả về &quot;lùi_1_lv&quot; → Giảm 1 cấp độ SRS, cập nhật next_review
-Lựa chọn ⏭️ Bỏ qua → Kết quả trả về &quot;bỏ_qua&quot; → Giữ nguyên Level hiện tại
-Ghi log: { từ, hành_động: &quot;review&quot;, lựa_chọn, level_cũ, level_mới }
-Đầu ra (Output):
-Trả kết quả về STT 5 hoặc STT 6 cho TỪNG TỪ riêng lẻ
-Các kết quả có thể trả về:
-&quot;hoàn_thành&quot; → Áp dụng cho Học mới / Ôn tập
-&quot;quay_về_lv1&quot; → Chỉ áp dụng cho Ôn tập
-&quot;lùi_1_lv&quot; → Chỉ áp dụng cho Ôn tập
-&quot;bỏ_qua&quot; → Chỉ áp dụng cho Ôn tập
-6.6 
-Phát âm tự động
+**API thực tế:**
+- `POST /api/auth/register` — trả về `access_token`, `refresh_token`, `user`
 
-Mô tả chi tiết:
-Chức năng này được tích hợp sẵn trong Module Quy trình học từ vựng (STT 6.5).
-Phát âm tự động từ vựng hiện tại SAU MỖI LẦN NGƯỜI DÙNG TƯƠNG TÁC (chọn đáp án, nhập từ, ghép từ), dù đúng hay sai.
-KHÔNG phát âm khi từ mới hiển thị lần đầu.
-Mục đích: Củng cố âm thanh của từ ngay sau khi người dùng vừa tương tác, giúp ghi nhớ tốt hơn.
-Cơ chế hoạt động:
-Sau mỗi lần người dùng chọn đáp án / nhập từ / ghép từ (dù đúng hay sai), hệ thống tự động gọi Text-to-Speech (TTS) để đọc từ đó.
-Người dùng vẫn có thể bấm nút [🔊 Nghe phát âm] để nghe lại bất kỳ lúc nào nếu muốn.
-Âm thanh phát ra:
-Phát âm toàn bộ từ vựng (không phải câu hay nghĩa).
-Sử dụng giọng đọc đã chọn trong cài đặt (STT 15): Anh-Anh hoặc Anh-Mỹ.
+---
 
-Giai đoạn	Thời điểm phát âm tự động
-Bước 1 - Hiển thị từ	KHÔNG phát âm khi từ lần đầu xuất hiện.
-Bước 2 - Nhập chính tả	Phát âm sau khi người dùng nhập xong (đúng hoặc sai).
-Dạng 1 - Trắc nghiệm	Phát âm sau khi người dùng chọn đáp án (đúng hoặc sai).
-Dạng 2 - Điền từ có gợi ý	Phát âm sau khi người dùng chọn từ (đúng hoặc sai).
-Dạng 3 - Ghép từ với nghĩa	Phát âm sau khi người dùng ghép xong (đúng hoặc sai).
-Ôn tập (STT 5)	Phát âm mỗi khi từ được hiển thị trong buổi ôn tập.
+## STT 2 — Đăng nhập
+**Trạng thái:** 🟡 Gần xong — thiếu `/refresh-token` và `/logout`
 
-7
-Xem lịch sử học tập
-- Hiển thị các từ đã học + gợi ý từ mới.- Gồm 2 phần: Danh sách từ đã học (từ, cấp độ, ngày học) + Thống kê (tổng từ đã học, từ thành thạo, streak) và số phút đã vào app.
-8
-Thời gian nhắc lại SRS
-6 cấp độ: Mới LV1 (20p) → Biết LV2 (10h) → Gần thuộc LV3 (24h) → Đã thuộc (1 ngày) → Nhớ dai (3 ngày) → Không quên (5 ngày)
-9
-Tìm kiếm từ vựng
-- Người dùng nhập từ khóa vào thanh tìm kiếm.- Hệ thống tìm kiếm trong cơ sở dữ liệu từ vựng nội bộ của ứng dụng (kho từ có sẵn).- Hiển thị kết quả:+ Từ vựng+ Phiên âm (IPA)+ Từ loại (noun, verb, adjective,...)+ Nghĩa tiếng Việt+ Ví dụ câu (nếu có)- Có nút &quot;Lưu vào Folder&quot; để lưu từ vào folder người dùng chọn.- Lưu lịch sử tìm kiếm của người dùng.
-10
-Hiện từ được lưu nhiều nhất
-Top từ được lưu nhiều → đề xuất cho người khác. Hiển thị: từ, nghĩa, số lần lưu, nút lưu vào folder.
-11
-Dịch từ vựng
-- Người dùng bấm vào icon Dịch.- Nhập từ/câu cần dịch.- Hệ thống gọi API dịch thuật bên ngoài (Google Translate hoặc DeepL).- Hiển thị kết quả:+ Từ gốc+ Ngôn ngữ nguồn (phát hiện tự động hoặc người dùng chọn)+ Từ/câu dịch+ Ngôn ngữ đích (người dùng chọn)- Có nút &quot;Lưu vào Folder&quot; để lưu từ đã dịch vào folder cá nhân.
-12
-Giữ chuỗi học 15 phút
-Học ≥15 phút/ngày → nhận phần thưởng. Tăng streak, nhận huy hiệu &quot;Kiên trì&quot; khi đạt 7 ngày.
-13
-Thông báo nhắc nhở
-- Hiển thị số từ cần học lại trong ngày (dựa trên next_review).📧 Email (Triển khai ngay):- Gửi email nhắc nhở khi đến giờ ôn tập (theo cài đặt trong STT 14).- Dùng SMTP hoặc dịch vụ gửi email (SendGrid, Mailgun, AWS SES).🔄 Web Push / 📱 App Push (Cập nhật sau):- Sẽ bổ sung sau khi có điều kiện (trình duyệt hỗ trợ hoặc có app di động).📌 Người dùng có thể bật/tắt email nhắc nhở trong cài đặt (STT 14).
-14
-Trang cá nhân
-⚙️ Cài đặt Nhắc nhở:- 📧 Email: Bật/tắt gửi email nhắc nhở (mặc định: Bật).- ⏰ Giờ nhắc nhở: Chọn giờ nhận email (8h, 12h, 20h,…).📌 Các kênh Web Push, App Push sẽ được bổ sung sau.
-15
-Phát âm từ vựng (TTS)
-Tích hợp giọng đọc AI (Google TTS/Azure). Chọn giọng Anh-Anh hoặc Anh-Mỹ. Phát từ hiện tại.
-16
-Kiểm tra (Pass)
-Điều kiện kích hoạt:
-Đếm tổng số từ đã học (có Level &gt;= 1) trên toàn hệ thống, không phân biệt Folder.
-Chia thành các mốc: 50, 100, 150, 200, 250, 300...
-Mỗi lần vượt mốc 50 từ → Tự động tạo 1 bài kiểm tra mới.
-Không reset bộ đếm. Chỉ đánh dấu mốc đã được kiểm tra.
-Trong 24h chờ:
-Người dùng vẫn học từ mới bình thường, không bị khóa hay hạn chế.
-Hiển thị thông báo đếm ngược trên màn hình:
-&quot;Bạn đã đạt mốc 50 từ. Bài kiểm tra sẽ có sau 23:45:20.&quot;
-Bài kiểm tra:
-1 bài đọc hiểu (200-300 từ).
-5 câu hỏi trắc nghiệm.
-Thời gian làm bài: 15 phút.
-Lưu tiến độ khi thoát:
-Lưu câu hỏi đã trả lời + thời gian còn lại.
-Quay lại tiếp tục từ câu hỏi đang làm.
-Không bắt buộc ở lại.
-Sau khi hoàn thành:
-Hiển thị điểm số + đáp án đúng + giải thích ngắn.
-Không cho phép làm lại (chỉ làm 1 lần).
-Đánh dấu mốc 50 từ đã được kiểm tra.
-Hệ thống tiếp tục đếm số từ đã học để chuẩn bị cho mốc tiếp theo (100, 150, 200...).
-17
-Đặt câu + Sửa lỗi AI
- Chọn cấp độ:
-Mặc định, hệ thống tự động đề xuất cấp độ dựa trên &quot;Trình độ học&quot; đã cài đặt trong Trang cá nhân (STT 14).
-Người dùng vẫn có thể chọn lại cấp độ ngay trong màn hình luyện tập (dropdown/button) để thay đổi độ khó phù hợp.
-🔄 2 CHẾ ĐỘ LUYỆN TẬP:
-🇻🇳 VI → EN: Hệ thống đề xuất câu tiếng Việt → Người dùng dịch sang tiếng Anh.
-🇬🇧 EN → VI: Hệ thống đề xuất câu tiếng Anh → Người dùng dịch sang tiếng Việt.
-📊 5 CẤP ĐỘ THEO CEFR + IELTS:
-Cấp độ
-IELTS tương đương
-Mô tả
-Độ khó
-A1
-1.0 - 2.0
-Sơ cấp - Người mới bắt đầu
-⭐
-B1
-3.0 - 4.0
-Trung cấp - Giao tiếp cơ bản
-⭐⭐⭐
-B2
-5.0 - 6.0
-Trung cấp cao - Giao tiếp tự tin
-⭐⭐⭐⭐
-C1
-6.5 - 7.5
-Cao cấp - Học thuật
-⭐⭐⭐⭐⭐
-IELTS
-8.0 - 9.0
-Thành thạo - Chuyên sâu
-⭐⭐⭐⭐⭐⭐
+**Mô tả gốc:** Xác thực Email+Password → cấp Access Token (1h) + Refresh
+Token (7 ngày, lưu DB bảng `refresh_tokens`) → client tự làm mới AT qua
+`/refresh-token` khi hết hạn → logout thì thu hồi RT trên server.
 
-💡 VÍ DỤ CÂU THEO CẤP ĐỘ
-A1: &quot;Tôi là sinh viên.&quot; → &quot;I am a student.&quot;
-B1: &quot;Kỷ luật rất quan trọng.&quot; → &quot;Discipline is very important.&quot;
-B2: &quot;Kỷ luật giúp tôi tập trung học tập.&quot; → &quot;Discipline helps me focus on my studies.&quot;
-C1: &quot;Kỷ luật là yếu tố then chốt dẫn đến thành công.&quot; → &quot;Discipline is a key factor leading to success.&quot;
-IELTS: &quot;Kỷ luật nghiêm ngặt trong môi trường giáo dục là nền tảng để đạt được thành tích học tập xuất sắc.&quot; → &quot;Strict discipline in the educational environment is the foundation for achieving academic excellence.&quot;
+**API thực tế:**
+- `POST /api/auth/login` ✅
+- `POST /api/auth/forgot-password` ✅ (trả token trực tiếp, tạm thời chưa gửi email — chờ STT 13)
+- `POST /api/auth/reset-password` ✅
+- `GET /api/auth/me` ✅ (dùng `@token_required`)
+- `PUT /api/auth/users/<user_id>/role` ✅ (cấp/thu hồi quyền admin, dùng `@admin_required`)
+
+**API cần bổ sung (chưa làm):**
+- `POST /api/auth/refresh-token` — nhận Refresh Token, kiểm tra hợp lệ + chưa bị `is_revoked` trong DB, cấp Access Token mới
+- `POST /api/auth/logout` — set `is_revoked = true` cho Refresh Token trong DB
+
+---
+
+## STT 3 — Folder & từ vựng trong Folder
+**Trạng thái:** ✅ Hoàn thành
+
+**Mô tả gốc:** Phần A — CRUD folder (hệ thống do admin quản, cá nhân do user
+quản). Phần B — xem từ trong folder, phân trang 20 từ/lần, tìm kiếm + lọc
+theo từ loại/Level.
+
+**API thực tế:**
+- `GET /api/folders` — danh sách folder hệ thống + cá nhân
+- `POST /api/folders` — tạo folder cá nhân
+- `PUT /api/folders/<id>` — sửa (owner hoặc admin)
+- `DELETE /api/folders/<id>` — xóa mềm (owner hoặc admin)
+- `GET /api/folders/<id>/words?search=&word_type=&level=&page=&limit=` — phân trang + tìm kiếm + lọc
+- `POST /api/folders/<id>/words` — thêm từ vào folder
+- `DELETE /api/folders/<id>/words/<word_id>` — gỡ từ khỏi folder
+- `POST /api/folders/system` — admin tạo folder hệ thống
+- `PUT /api/folders/system/<id>` — admin sửa folder hệ thống
+- `DELETE /api/folders/system/<id>` — admin xóa folder hệ thống
+
+**Quyết định thiết kế đã chốt:** Admin có toàn quyền sửa/xóa cả folder cá
+nhân của user khác (mục đích hỗ trợ), không chỉ folder hệ thống.
+
+---
+
+## STT 5 — Ôn tập từ vựng (SRS)
+**Trạng thái:** ✅ Hoàn thành (routes/review.py, do người dùng tự code)
+
+**Mô tả gốc:** Đếm từ có `next_review <= now`. Lấy đúng số từ theo cài đặt
+`review_limit` (ưu tiên đến hạn sớm nhất), gọi Module 6.5 với `loại="review"`.
+Nhận kết quả từng từ: `hoàn_thành` (tăng Level), `quay_về_lv1` (reset LV1),
+`lùi_1_lv` (giảm 1 cấp), `bỏ_qua` (giữ nguyên). Kết thúc buổi hiển thị tổng hợp.
+
+**API thực tế:** xem `app/routes/review.py` — cần đối chiếu lại chi tiết
+endpoint khi làm tiếp phần frontend cho màn hình này.
+
+---
+
+## STT 6 — Học từ vựng mới (chu trình 5 từ)
+**Trạng thái:** ✅ Hoàn thành (routes/learning.py, do người dùng tự code)
+
+**Mô tả gốc:** Lấy từ LV0 trong 1 folder theo `daily_goal`. Gọi Module 6.5
+với `loại="learn"`. Chỉ có kết quả `hoàn_thành` → gán LV1, `next_review = now
++ 20p`. Không có hộp thoại đề xuất/lùi LV/bỏ qua. Đạt mục tiêu ngày → cập
+nhật streak, xét huy hiệu.
+
+**API thực tế:** xem `app/routes/learning.py`.
+
+---
+
+## STT 6.5 — Module Quy trình học từ vựng (CỐT LÕI)
+**Trạng thái:** ✅ Hoàn thành (`app/services/study_service.py`)
+
+**Mô tả gốc:** Xử lý từng từ độc lập qua 4 bước: (1) hiển thị từ, (2) nhập
+chính tả, (3) 3 dạng bài ngẫu nhiên (trắc nghiệm / điền từ có gợi ý / ghép
+từ-nghĩa, đáp án sai lấy từ tối đa 4 từ còn lại cùng lô 5 từ), (4) tổng kết:
+`learn` → luôn `hoàn_thành`; `review` → sai <4 lần thì `hoàn_thành` tăng
+Level, sai ≥4 lần thì hỏi người dùng chọn 1 trong 3 (`quay_về_lv1` /
+`lùi_1_lv` / `bỏ_qua`).
+
+**API thực tế:** endpoint chấm điểm từng bước (`check-answer` — không cần
+xác thực quyền sở hữu vì stateless, không ghi dữ liệu) — xem
+`app/services/study_service.py` và route gọi tới nó.
+
+---
+
+## STT 6.6 — Phát âm tự động
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** Tự động TTS sau mỗi lần tương tác (không phát khi từ hiện lần
+đầu). Dùng giọng đã chọn trong STT 15 (Anh-Anh/Anh-Mỹ). Trong buổi ôn (STT 5)
+thì phát mỗi khi từ hiển thị.
+
+**Ghi chú:** Đây chủ yếu là logic ở Frontend (gọi Web Speech API hoặc TTS
+service khi nhận response từ STT 6.5), Backend không cần API riêng trừ khi
+dùng TTS server-side (Google TTS/Azure — trùng STT 15).
+
+---
+
+## STT 7 — Xem lịch sử học tập
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** 2 phần — (1) danh sách từ đã học (từ, cấp độ, ngày học), (2)
+thống kê tổng hợp (tổng từ đã học, từ thành thạo, streak, số phút vào app).
+
+**API cần có:**
+- `GET /api/history/words?page=&limit=` — danh sách từ đã học, dùng `user_words` join `words`
+- `GET /api/history/stats` — tổng hợp từ `users` (streak, total_words_learned, total_study_minutes) + đếm `user_words` có `level >= 6` (thành thạo)
+
+---
+
+## STT 8 — Thời gian nhắc lại SRS
+**Trạng thái:** ✅ Hoàn thành (`app/utils/srs.py`)
+
+**Mô tả gốc:** 6 cấp độ: LV1 (20p) → LV2 (10h) → LV3 (24h) → LV4 (1 ngày) →
+LV5 (3 ngày) → LV6 (5 ngày).
+
+---
+
+## STT 9 — Tìm kiếm từ vựng
+**Trạng thái:** ⏳ Chưa làm (đã có phần tìm trong 1 folder ở STT 3, nhưng đây là tìm toàn bộ kho từ)
+
+**Mô tả gốc:** Tìm trong kho `words` toàn hệ thống. Trả về từ vựng, phiên âm,
+từ loại, nghĩa, ví dụ. Có nút "Lưu vào Folder" (tái dùng API `POST
+/api/folders/<id>/words` đã có ở STT 3). Lưu lịch sử tìm kiếm.
+
+**API cần có:**
+- `GET /api/words/search?q=...` — tìm trong toàn bộ `words` (không giới hạn theo folder), ghi vào `search_history`
+- Model mới cần: `SearchHistory` (`user_id`, `keyword`, `search_type`, `searched_at`)
+
+---
+
+## STT 10 — Hiện từ được lưu nhiều nhất
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** Top từ được lưu nhiều nhất (đếm số lần xuất hiện trong
+`folder_words` toàn hệ thống) → đề xuất cho người khác.
+
+**API cần có:**
+- `GET /api/words/top-saved?limit=10` — `SELECT word_id, COUNT(*) FROM folder_words GROUP BY word_id ORDER BY COUNT(*) DESC` (đã bàn từ lúc thiết kế ERD: không cần bảng riêng, tính trực tiếp)
+
+---
+
+## STT 11 — Dịch từ vựng
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** Gọi API dịch thuật ngoài (Google Translate/DeepL). Trả từ
+gốc, ngôn ngữ nguồn, từ dịch, ngôn ngữ đích. Có nút lưu vào folder cá nhân.
+
+**API cần có:**
+- `POST /api/translate` — nhận `text`, `target_lang`, gọi service ngoài, trả kết quả
+- Model mới cần: `TranslationHistory` (nếu muốn lưu lịch sử dịch)
+- Cần thêm biến `.env`: API key dịch thuật (Google Translate hoặc DeepL)
+
+---
+
+## STT 12 — Giữ chuỗi học 15 phút
+**Trạng thái:** ⏳ Chưa làm (đã có `study_sessions` trong DBML nhưng model Python chưa xác nhận có)
+
+**Mô tả gốc:** Học ≥15 phút/ngày → tăng streak, nhận huy hiệu "Kiên trì" khi
+đạt 7 ngày.
+
+**API cần có:**
+- Logic tính trong `study_service.py` khi kết thúc session: kiểm tra tổng
+  thời gian trong ngày ≥ 15p → cập nhật `users.streak`
+- Cần model `Badge`, `UserBadge` (đã thiết kế trong DBML, chưa tạo model Python)
+
+---
+
+## STT 13 — Thông báo nhắc nhở
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** Hiển thị số từ cần ôn trong ngày. Gửi email nhắc nhở theo giờ
+cài đặt (STT 14) bằng SMTP/SendGrid/Mailgun/AWS SES. Web Push/App Push để sau.
+
+**API cần có:**
+- Cron job / scheduled task (vd APScheduler) — quét `users.reminder_time` +
+  `email_reminder = true`, gửi email nếu có từ đến hạn ôn
+- Cần thêm biến `.env`: cấu hình SMTP hoặc SendGrid API key
+
+---
+
+## STT 14 — Trang cá nhân (Cài đặt)
+**Trạng thái:** 🟡 Có sẵn dữ liệu (`User` model đã có đủ field), nhưng chưa có API riêng để user tự sửa
+
+**Mô tả gốc:** Bật/tắt email nhắc nhở, chọn giờ nhận email.
+
+**API cần có:**
+- `GET /api/users/me/settings` — đọc cài đặt hiện tại (có thể dùng chung `/api/auth/me`)
+- `PUT /api/users/me/settings` — sửa `daily_goal`, `review_limit`,
+  `email_reminder`, `reminder_time`, `level`
+
+---
+
+## STT 15 — Phát âm từ vựng (TTS)
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** Tích hợp Google TTS/Azure. Chọn giọng Anh-Anh/Anh-Mỹ.
+
+**Ghi chú:** Cần thêm field lựa chọn giọng đọc vào `User` (hiện chưa có cột
+này trong model, cần bổ sung + migration nếu làm STT này). Có thể làm hoàn
+toàn ở Frontend bằng Web Speech API (miễn phí, không cần backend) thay vì
+gọi Google TTS/Azure (tốn phí) — cân nhắc khi triển khai.
+
+---
+
+## STT 16 — Kiểm tra (Pass)
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** Cứ mỗi mốc 50 từ đã học (level ≥ 1, toàn hệ thống không phân
+biệt folder) → tự tạo 1 bài kiểm tra (đọc hiểu 200-300 từ + 5 câu trắc
+nghiệm, 15 phút). Có 24h chờ trước khi làm được. Lưu tiến độ khi thoát giữa
+chừng. Làm 1 lần duy nhất.
+
+**API cần có:** (đã có model `Test`, `TestQuestion`, `TestAnswer`,
+`Milestone` trong DBML — cần tạo model Python)
+- `GET /api/tests/pending` — kiểm tra có milestone mới chưa test không
+- `POST /api/tests/<id>/start` — bắt đầu làm bài
+- `PUT /api/tests/<id>/save-progress` — lưu tiến độ giữa chừng
+- `POST /api/tests/<id>/submit` — nộp bài, chấm điểm
+
+---
+
+## STT 17 — Đặt câu + Sửa lỗi AI
+**Trạng thái:** ⏳ Chưa làm
+
+**Mô tả gốc:** 2 chế độ (VI→EN / EN→VI), 5 cấp độ CEFR+IELTS (mặc định theo
+`User.level`, có thể đổi tại màn hình). AI chấm và sửa lỗi.
+
+**API cần có:**
+- `POST /api/sentence-practice/generate` — sinh câu đề bài theo cấp độ + chế độ
+- `POST /api/sentence-practice/submit` — nhận câu người dùng dịch, gọi AI chấm + sửa lỗi
+- Cần thêm biến `.env`: API key cho AI (Anthropic/OpenAI...)
+- Model mới cần: `SentencePractice`
+
+---
+
+## Ghi chú chung về hạ tầng đã có sẵn (dùng lại cho các STT sau)
+
+- **Xác thực:** `@token_required` (bắt buộc đăng nhập), `@admin_required` (bắt buộc quyền admin) — trong `app/utils/middleware.py`
+- **Chuẩn UUID:** mọi cột khóa chính/khóa ngoại dùng `db.String(36)`
+- **Soft-delete:** chỉ áp dụng cho `words`, `folders` (cột `deleted_at`), không dùng cho bảng liên kết
+- **Không dùng `ON DELETE CASCADE`** cho FK trỏ tới `words.id`/`folders.id`; có dùng CASCADE cho FK trỏ tới `users.id` ở các bảng phụ thuộc (`refresh_tokens`, `user_words`...)
+- **Cache field** (`folders.word_count`, `users.streak`...): cập nhật ở tầng application, không dùng trigger DB
+- **Migration:** dùng Flask-Migrate (`flask db migrate` / `flask db upgrade`), không sửa SQL tay trực tiếp trên Supabase nữa kể từ khi chuyển sang Flask-Migrate

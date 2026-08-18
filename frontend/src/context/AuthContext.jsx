@@ -1,67 +1,71 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { authApi, setTokens, clearTokens, getAccessToken } from '../api/client';
+// src/context/AuthContext.jsx
+import { createContext, useState, useEffect } from 'react';
+import { registerApi, loginApi, getCurrentUserApi } from '../api/api';
 
-const AuthContext = createContext(null);
+export const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
+  // loading = true trong lúc đang kiểm tra token cũ lúc mới mở app,
+  // tránh việc trang "nháy" sang trạng thái chưa đăng nhập rồi mới nhảy lại
   const [loading, setLoading] = useState(true);
 
-  const loadUser = useCallback(async () => {
-    if (!getAccessToken()) {
-      setUser(null);
+  // Khi app khởi động, nếu localStorage có sẵn accessToken (từ lần đăng nhập
+  // trước), thử gọi /api/auth/me để khôi phục lại thông tin user
+  useEffect(() => {
+    const accessToken = localStorage.getItem('accessToken');
+
+    if (!accessToken) {
       setLoading(false);
       return;
     }
-    try {
-      const data = await authApi.me();
-      setUser(data.user);
-    } catch {
-      clearTokens();
-      setUser(null);
-    } finally {
-      setLoading(false);
-    }
+
+    getCurrentUserApi()
+      .then((data) => {
+        setUser(data.user);
+      })
+      .catch(() => {
+        // Token hết hạn hoặc không hợp lệ - xóa để tránh vòng lặp gọi lỗi
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+      })
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
-  useEffect(() => {
-    loadUser();
-  }, [loadUser]);
+  function saveSession({ access_token, refresh_token, user: userData }) {
+    localStorage.setItem('accessToken', access_token);
+    localStorage.setItem('refreshToken', refresh_token);
+    setUser(userData);
+  }
 
-  const login = async (email, password) => {
-    const data = await authApi.login(email, password);
-    setTokens(data.access_token, data.refresh_token);
-    setUser(data.user);
+  async function register({ username, email, password }) {
+    const data = await registerApi({ username, email, password });
+    saveSession(data);
     return data;
-  };
+  }
 
-  const register = async (username, email, password) => {
-    const data = await authApi.register(username, email, password);
-    setTokens(data.access_token, data.refresh_token);
-    setUser(data.user);
+  async function login({ email, password }) {
+    const data = await loginApi({ email, password });
+    saveSession(data);
     return data;
-  };
+  }
 
-  const logout = async () => {
-    const rt = localStorage.getItem('refresh_token');
-    try {
-      if (rt) await authApi.logout(rt);
-    } catch {
-      /* ignore */
-    }
-    clearTokens();
+  function logout() {
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     setUser(null);
+  }
+
+  const value = {
+    user,
+    loading,
+    isAuthenticated: !!user,
+    register,
+    login,
+    logout,
   };
 
-  return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout, reloadUser: loadUser, setUser }}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
-  return ctx;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

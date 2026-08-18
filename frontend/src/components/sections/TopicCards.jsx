@@ -1,4 +1,5 @@
 // TopicCards.jsx
+{/*
 import React from "react";
 
 const topics = [
@@ -33,3 +34,4 @@ export default function AdditionalTopicCardsSection() {
     </section>
   );
 }
+*/}
