@@ -1,60 +1,60 @@
 // src/context/AuthContext.jsx
-import { createContext, useState, useEffect } from 'react';
-import { registerApi, loginApi, getCurrentUserApi } from '../api/api';
-
-export const AuthContext = createContext(null);
+import { useState, useEffect } from 'react';
+import { authApi, setTokens, clearTokens, getAccessToken, getRefreshToken } from '../api/client';
+import { AuthContext } from './auth-context';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   // loading = true trong lúc đang kiểm tra token cũ lúc mới mở app,
-  // tránh việc trang "nháy" sang trạng thái chưa đăng nhập rồi mới nhảy lại
-  const [loading, setLoading] = useState(true);
+  // tránh việc trang "nháy" sang trạng thái chưa đăng nhập rồi mới nhảy lại.
+  // Khởi tạo dựa thẳng vào việc có token sẵn hay không, để không phải gọi
+  // setState đồng bộ ngay trong effect khi không có token.
+  const [loading, setLoading] = useState(() => !!getAccessToken());
 
-  // Khi app khởi động, nếu localStorage có sẵn accessToken (từ lần đăng nhập
-  // trước), thử gọi /api/auth/me để khôi phục lại thông tin user
+  // Khi app khởi động, nếu đã có sẵn accessToken (từ lần đăng nhập trước),
+  // thử gọi /api/auth/me để khôi phục lại thông tin user
   useEffect(() => {
-    const accessToken = localStorage.getItem('accessToken');
+    const token = getAccessToken();
+    if (!token) return;
 
-    if (!accessToken) {
-      setLoading(false);
-      return;
-    }
-
-    getCurrentUserApi()
+    authApi
+      .me()
       .then((data) => {
         setUser(data.user);
       })
       .catch(() => {
         // Token hết hạn hoặc không hợp lệ - xóa để tránh vòng lặp gọi lỗi
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        clearTokens();
       })
       .finally(() => {
         setLoading(false);
       });
   }, []);
 
-  function saveSession({ access_token, refresh_token, user: userData }) {
-    localStorage.setItem('accessToken', access_token);
-    localStorage.setItem('refreshToken', refresh_token);
-    setUser(userData);
+  function saveSession(data) {
+    setTokens(data.access_token, data.refresh_token);
+    setUser(data.user);
   }
 
   async function register({ username, email, password }) {
-    const data = await registerApi({ username, email, password });
+    const data = await authApi.register(username, email, password);
     saveSession(data);
     return data;
   }
 
   async function login({ email, password }) {
-    const data = await loginApi({ email, password });
+    const data = await authApi.login(email, password);
     saveSession(data);
     return data;
   }
 
-  function logout() {
-    localStorage.removeItem('accessToken');
-    localStorage.removeItem('refreshToken');
+  async function logout() {
+    try {
+      await authApi.logout(getRefreshToken());
+    } catch {
+      // dù API logout lỗi (mất mạng, token đã hết hạn...) vẫn xóa phiên ở client
+    }
+    clearTokens();
     setUser(null);
   }
 

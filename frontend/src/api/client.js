@@ -20,6 +20,10 @@ export function getAccessToken() {
   return accessToken || localStorage.getItem('access_token');
 }
 
+export function getRefreshToken() {
+  return refreshToken || localStorage.getItem('refresh_token');
+}
+
 async function refreshAccessToken() {
   const rt = refreshToken || localStorage.getItem('refresh_token');
   if (!rt) return false;

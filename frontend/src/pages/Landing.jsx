@@ -1,17 +1,16 @@
 // src/pages/Landing.jsx
-import React from "react";
 
 // Import các component đã sửa
-import SiteHeaderSection from "../components/sections/Header";
-import SiteFooterSection from "../components/sections/Footer";
-import VocabularyLearningHeroSection from "../components/sections/HeroSection";
-import ForgettingProblemSolutionSection from "../components/sections/ProblemSolution";
-import LearningResultsSection from "../components/sections/UserResults";
-import VocabularyLearningFeaturesSection from "../components/sections/KeyFeatures";
-import AiSentenceCorrectionSection from "../components/sections/AIPractice";
-import SpacedRepetitionProcessSection from "../components/sections/LearningLoop";
-import VocabularyTopicLibrarySection from "../components/sections/Topics";
-import VocabularyLearningCtaSection from "../components/sections/CTASection";
+import SiteHeaderSection from "../components/sections/landing/Header";
+import SiteFooterSection from "../components/sections/landing/Footer";
+import VocabularyLearningHeroSection from "../components/sections/landing/HeroSection";
+import ForgettingProblemSolutionSection from "../components/sections/landing/ProblemSolution";
+import LearningResultsSection from "../components/sections/landing/UserResults";
+import VocabularyLearningFeaturesSection from "../components/sections/landing/KeyFeatures";
+import AiSentenceCorrectionSection from "../components/sections/landing/AIPractice";
+import SpacedRepetitionProcessSection from "../components/sections/landing/LearningLoop";
+import VocabularyTopicLibrarySection from "../components/sections/landing/Topics";
+import VocabularyLearningCtaSection from "../components/sections/landing/CTASection";
 
 // Menu điều hướng
 const primaryNavigationItems = [

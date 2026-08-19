@@ -1,6 +1,6 @@
 // src/hooks/useAuth.js
 import { useContext } from 'react';
-import { AuthContext } from '../context/AuthContext';
+import { AuthContext } from '../context/auth-context';
 
 /**
  * Hook tiện dùng để lấy trạng thái đăng nhập ở bất kỳ component nào.
