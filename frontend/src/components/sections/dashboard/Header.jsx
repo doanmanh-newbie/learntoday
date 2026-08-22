@@ -10,8 +10,14 @@ import {
   LogOutIcon,
 } from "../../../icons/dashboard/index.jsx";
 
-export default function Header({ minutes }) {
+export default function Header({ minutes, username = 'Bạn', onLogout }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const initials = username
+    .trim()
+    .split(/\s+/)
+    .slice(-2)
+    .map((w) => w[0]?.toUpperCase())
+    .join('');
 
   useEffect(() => {
     if (!dropdownOpen) return;
@@ -151,10 +157,10 @@ export default function Header({ minutes }) {
               color: "white",
             }}
           >
-            MN
+            {initials || 'U'}
           </div>
           <span style={{ fontSize: 13, fontWeight: 500, color: "#c7d2fe" }}>
-            Minh Nguyễn
+            {username}
           </span>
           <span
             style={{
@@ -186,10 +192,17 @@ export default function Header({ minutes }) {
                 margin: "4px 8px",
               }}
             />
-            <div className="dropdown-item danger">
+            <button
+              type="button"
+              className="dropdown-item danger w-full text-left"
+              onClick={(e) => {
+                e.stopPropagation();
+                onLogout?.();
+              }}
+            >
               <LogOutIcon />
               Đăng xuất
-            </div>
+            </button>
           </div>
         )}
       </div>

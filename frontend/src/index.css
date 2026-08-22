@@ -44,10 +44,16 @@ html, body, #root {
 }
 
 body {
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Theme tối chỉ áp dụng trong khu vực /app (Dashboard), không ảnh hưởng
+   Landing/Login/Register vốn dùng nền sáng. */
+.app-shell {
   font-family: 'Inter', sans-serif;
   background: #07091a;
   color: #e8eaf6;
-  -webkit-font-smoothing: antialiased;
+  min-height: 100vh;
 }
 
 /* Scrollbar */

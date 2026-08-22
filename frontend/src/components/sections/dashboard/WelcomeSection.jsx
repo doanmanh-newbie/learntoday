@@ -1,10 +1,17 @@
-const STATS = [
-  { label: "Từ đã học", value: "247", icon: "📖" },
-  { label: "Chuỗi ngày", value: "5", icon: "🔥" },
-  { label: "Độ chính xác", value: "86%", icon: "🎯" },
-];
+export default function WelcomeSection({
+  username = 'bạn',
+  learnedToday = 0,
+  learnTarget = 10,
+  stats = { totalLearned: 0, streak: 0, accuracy: 0 },
+}) {
+  const STATS = [
+    { label: "Từ đã học", value: String(stats.totalLearned), icon: "📖" },
+    { label: "Chuỗi ngày", value: String(stats.streak), icon: "🔥" },
+    { label: "Độ chính xác", value: `${stats.accuracy}%`, icon: "🎯" },
+  ];
 
-export default function WelcomeSection() {
+  const progressPct = learnTarget > 0 ? Math.min(100, Math.round((learnedToday / learnTarget) * 100)) : 0;
+
   const dateStr = new Date().toLocaleDateString("vi-VN", {
     weekday: "long",
     day: "2-digit",
@@ -26,7 +33,7 @@ export default function WelcomeSection() {
               lineHeight: 1.2,
             }}
           >
-            Chào Minh Nguyễn! 👋
+            Chào {username}! 👋
           </h1>
           <p style={{ color: "#8892b0", fontSize: 15 }}>
             Hãy duy trì ngọn lửa học tập ngày hôm nay nhé.
@@ -69,13 +76,13 @@ export default function WelcomeSection() {
               Tiến độ hôm nay
             </span>
             <span style={{ fontSize: 12, fontWeight: 600, color: "#a5b4fc" }}>
-              4 / 10 từ
+              {learnedToday} / {learnTarget} từ
             </span>
           </div>
           <div className="progress-bar-track">
             <div
               className="progress-bar-fill"
-              style={{ "--progress-width": "40%" }}
+              style={{ "--progress-width": `${progressPct}%` }}
             />
           </div>
         </div>

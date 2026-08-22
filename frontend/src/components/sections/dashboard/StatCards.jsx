@@ -1,6 +1,6 @@
 import { RotateCcwIcon, TargetIcon } from "../../../icons/dashboard/index.jsx";
 
-function ReviewCard() {
+function ReviewCard({ dueCount = 0, onReview }) {
   return (
     <div className="glass-card animate-fade-in-up delay-150 p-6 flex flex-col gap-4">
       {/* Label */}
@@ -31,7 +31,7 @@ function ReviewCard() {
             lineHeight: 1,
           }}
         >
-          18
+          {dueCount}
         </span>
         <span
           style={{
@@ -55,13 +55,15 @@ function ReviewCard() {
         <div
           className="progress-bar-fill"
           style={{
-            "--progress-width": "0%",
+            "--progress-width": dueCount > 0 ? "100%" : "0%",
             background: "linear-gradient(90deg,#10b981,#059669)",
           }}
         />
       </div>
 
       <button
+        type="button"
+        onClick={onReview}
         className="btn-primary w-full py-3 rounded-xl text-sm"
         style={{ background: "linear-gradient(135deg,#10b981,#059669)" }}
       >
@@ -71,7 +73,9 @@ function ReviewCard() {
   );
 }
 
-function GoalCard() {
+function GoalCard({ learnedToday = 0, learnTarget = 10, onLearn }) {
+  const progressPct = learnTarget > 0 ? Math.min(100, Math.round((learnedToday / learnTarget) * 100)) : 0;
+
   return (
     <div className="glass-card animate-fade-in-up delay-200 p-6 flex flex-col gap-4">
       {/* Label */}
@@ -104,7 +108,7 @@ function GoalCard() {
             WebkitTextFillColor: "transparent",
           }}
         >
-          4
+          {learnedToday}
         </span>
         <span
           style={{
@@ -115,7 +119,7 @@ function GoalCard() {
             fontWeight: 600,
           }}
         >
-          /10
+          /{learnTarget}
         </span>
         <span
           style={{
@@ -136,24 +140,24 @@ function GoalCard() {
 
       {/* Progress */}
       <div className="progress-bar-track" style={{ marginTop: "auto" }}>
-        <div className="progress-bar-fill" style={{ "--progress-width": "40%" }} />
+        <div className="progress-bar-fill" style={{ "--progress-width": `${progressPct}%` }} />
       </div>
 
-      <button className="btn-ghost w-full py-3 rounded-xl" style={{ fontSize: 14 }}>
+      <button type="button" onClick={onLearn} className="btn-ghost w-full py-3 rounded-xl" style={{ fontSize: 14 }}>
         Học từ mới →
       </button>
     </div>
   );
 }
 
-export default function StatCards() {
+export default function StatCards({ dueCount = 0, learnedToday = 0, learnTarget = 10, onReview, onLearn }) {
   return (
     <div
       className="grid gap-5 mb-7"
       style={{ gridTemplateColumns: "1fr 1fr" }}
     >
-      <ReviewCard />
-      <GoalCard />
+      <ReviewCard dueCount={dueCount} onReview={onReview} />
+      <GoalCard learnedToday={learnedToday} learnTarget={learnTarget} onLearn={onLearn} />
     </div>
   );
 }
