@@ -634,5 +634,5 @@ export default function StatisticsPage() {
 
       </div>
     </div>
-  );
+  );s
 }

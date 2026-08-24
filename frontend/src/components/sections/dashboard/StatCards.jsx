@@ -150,14 +150,50 @@ function GoalCard({ learnedToday = 0, learnTarget = 10, onLearn }) {
   );
 }
 
-export default function StatCards({ dueCount = 0, learnedToday = 0, learnTarget = 10, onReview, onLearn }) {
+// src/components/sections/dashboard/StatCards.jsx
+export default function StatCards({ dueCount, learnedToday, learnTarget, onReview, onLearn }) {
   return (
-    <div
-      className="grid gap-5 mb-7"
-      style={{ gridTemplateColumns: "1fr 1fr" }}
-    >
-      <ReviewCard dueCount={dueCount} onReview={onReview} />
-      <GoalCard learnedToday={learnedToday} learnTarget={learnTarget} onLearn={onLearn} />
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+      {/* Card Ôn tập */}
+      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🔔</span>
+          <div>
+            <p className="text-sm text-gray-400">Ôn tập hằng ngày</p>
+            <p className="text-2xl font-bold text-yellow-400">{dueCount} từ</p>
+            <p className="text-xs text-gray-500">cần ôn hôm nay để không bị quên</p>
+          </div>
+        </div>
+        <button
+          onClick={onReview}
+          disabled={dueCount === 0}
+          className={`mt-3 w-full px-4 py-2 rounded-lg text-sm font-semibold transition ${
+            dueCount > 0
+              ? "bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30"
+              : "bg-gray-500/20 text-gray-500 cursor-not-allowed"
+          }`}
+        >
+          {dueCount > 0 ? "Ôn tập ngay →" : "Không có từ cần ôn"}
+        </button>
+      </div>
+
+      {/* Card Học mới */}
+      <div className="bg-white/5 rounded-xl p-5 border border-white/10">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">🎯</span>
+          <div>
+            <p className="text-sm text-gray-400">Mục tiêu hằng ngày</p>
+            <p className="text-2xl font-bold text-blue-400">{learnedToday} / {learnTarget} từ</p>
+            <p className="text-xs text-gray-500">mục tiêu học từ mới hàng ngày của bạn</p>
+          </div>
+        </div>
+        <button
+          onClick={onLearn}
+          className="mt-3 w-full px-4 py-2 bg-blue-500/20 text-blue-400 rounded-lg text-sm font-semibold hover:bg-blue-500/30 transition"
+        >
+          Học từ mới →
+        </button>
+      </div>
     </div>
   );
 }

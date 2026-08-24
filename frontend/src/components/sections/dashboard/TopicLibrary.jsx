@@ -199,6 +199,7 @@ function TopicCard({ topic, big = false }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
+      onClick={() => onSelectFolder?.(topic.id)}
       style={{
         position: "relative",
         borderRadius: "16px",

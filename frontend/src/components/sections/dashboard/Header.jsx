@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import {
   SearchIcon,
   ClockIcon,
@@ -8,9 +9,11 @@ import {
   SettingsIcon,
   UserIcon,
   LogOutIcon,
+  BookIcon,
+  RotateCcwIcon,
 } from "../../../icons/dashboard/index.jsx";
 
-export default function Header({ minutes, username = 'Bạn', onLogout }) {
+export default function Header({ minutes, streak = 0, username = 'Bạn', onLogout }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const initials = username
     .trim()
@@ -42,8 +45,12 @@ export default function Header({ minutes, username = 'Bạn', onLogout }) {
         borderBottom: "1px solid rgba(255,255,255,0.06)",
       }}
     >
-      {/* Logo */}
-      <div className="flex items-center gap-2" style={{ minWidth: 148 }}>
+      {/* Logo — bấm vào để quay về trang chủ */}
+      <Link
+        to="/app"
+        className="flex items-center gap-2 no-underline"
+        style={{ minWidth: 148 }}
+      >
         <div
           className="animate-glow"
           style={{
@@ -70,6 +77,18 @@ export default function Header({ minutes, username = 'Bạn', onLogout }) {
         >
           Learn <span style={{ color: "#a5b4fc" }}>Today</span>
         </span>
+      </Link>
+
+      {/* Ôn tập / Học từ mới — 2 luồng chính, đặt ngay cạnh logo để luôn thấy được */}
+      <div className="flex items-center gap-1">
+        <Link to="/app/review" className="nav-tab no-underline">
+          <RotateCcwIcon />
+          Ôn tập
+        </Link>
+        <Link to="/app/learn" className="nav-tab no-underline">
+          <BookIcon />
+          Từ mới
+        </Link>
       </div>
 
       {/* Search */}
@@ -125,7 +144,7 @@ export default function Header({ minutes, username = 'Bạn', onLogout }) {
             fontFamily: "'Outfit',sans-serif",
           }}
         >
-          5 ngày
+          {streak} ngày
         </span>
       </div>
 

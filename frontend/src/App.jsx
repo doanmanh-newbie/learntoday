@@ -5,6 +5,8 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ProtectedRoute from './components/ProtectedRoute';
 import Dashboard from './pages/app/Dashboard';
+import LearnRoute from './pages/LearnRoute';
+import ReviewRoute from './pages/ReviewRoute';
 
 function App() {
     return (
@@ -23,6 +25,11 @@ function App() {
                     </ProtectedRoute>
                 }
             />
+
+            {/* Học từ vựng mới (STT 6) và Ôn tập (STT 5) là 2 trải nghiệm
+                toàn màn hình riêng biệt, không nằm trong tab của Dashboard. */}
+            <Route path="/app/learn" element={<LearnRoute />} />
+            <Route path="/app/review" element={<ReviewRoute />} />
         </Routes>
     );
 }
