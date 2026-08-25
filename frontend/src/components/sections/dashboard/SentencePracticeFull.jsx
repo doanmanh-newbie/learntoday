@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 
+
 // ── Config ────────────────────────────────────────────────────────────────────
 
 const LEVEL_CFG = {
@@ -172,69 +173,67 @@ function TabBtn({ active, onClick, children, color }) {
   );
 }
 
-// ── Sentence Queue Sidebar ────────────────────────────────────────────────────
+// ── Sentence History Sidebar ──────────────────────────────────────────────────
 
-function SentenceQueue({ sentences, currentIdx, doneIds, onSelect, accentColor }) {
+function SentenceHistory({ history }) {
   return (
     <div style={{
       background: "rgba(255,255,255,0.03)", border: "0.8px solid rgba(255,255,255,0.07)",
-      borderRadius: "14px", overflow: "hidden",
+      borderRadius: "14px", overflow: "hidden", position: "sticky", top: "16px",
     }}>
       <div style={{ padding: "14px 16px", borderBottom: "0.8px solid rgba(255,255,255,0.06)" }}>
         <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "13px", color: "#e8eaf6" }}>
-          Phiên luyện
+          📋 Lịch sử câu
         </p>
         <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>
-          {doneIds.filter(id => sentences.find(s => s.id === id)).length}/{sentences.length} câu
+          {history.length} câu đã làm
         </p>
-        <div style={{ marginTop: "8px", height: "3px", borderRadius: "9999px",
-          background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-          <div style={{
-            width: `${(doneIds.filter(id => sentences.find(s => s.id === id)).length / sentences.length) * 100}%`,
-            height: "100%", background: accentColor, borderRadius: "9999px", transition: "width 0.5s ease",
-          }} />
-        </div>
       </div>
-      {sentences.map((s, idx) => {
-        const done   = doneIds.includes(s.id);
-        const active = idx === currentIdx;
-        return (
-          <div key={s.id} onClick={() => onSelect(idx)}
-            style={{
-              padding: "11px 14px", cursor: "pointer", transition: "background 0.2s ease",
-              borderBottom: idx < sentences.length - 1 ? "0.8px solid rgba(255,255,255,0.04)" : "none",
-              background: active ? "rgba(99,102,241,0.09)" : "transparent",
-              borderLeft: `2px solid ${active ? accentColor : "transparent"}`,
-            }}
-            onMouseEnter={e => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.03)"; }}
-            onMouseLeave={e => { if (!active) e.currentTarget.style.background = active ? "rgba(99,102,241,0.09)" : "transparent"; }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "7px", marginBottom: "4px" }}>
-              <span style={{ fontSize: "11px", fontWeight: 600,
-                color: done ? "#10b981" : active ? accentColor : "#5a6a8a" }}>
-                {done ? "✓" : active ? "▶" : `${idx + 1}`}
-              </span>
-              <span style={{ fontSize: "10px", fontWeight: 600, padding: "1px 6px", borderRadius: "4px",
-                background: "rgba(99,102,241,0.1)", color: "#a5b4fc" }}>
-                {s.word?.split(" ")[0] || "—"}
-              </span>
-            </div>
-            <p style={{ fontSize: "11px", color: active ? "#c7d2fe" : "#5a6a8a",
-              lineHeight: 1.5, fontFamily: "Inter, sans-serif",
-              overflow: "hidden", display: "-webkit-box",
-              WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
-              {s.en}
-            </p>
-          </div>
-        );
-      })}
+
+      {history.length === 0 ? (
+        <div style={{ padding: "24px 16px", textAlign: "center" }}>
+          <p style={{ fontSize: "13px", color: "#3d4a66" }}>Chưa có câu nào.</p>
+          <p style={{ fontSize: "11px", color: "#2d3748", marginTop: "4px" }}>Bắt đầu luyện tập!</p>
+        </div>
+      ) : (
+        <div style={{ maxHeight: "480px", overflowY: "auto" }}>
+          {history.map((h, i) => {
+            const total = h.scores.grammar + h.scores.vocab + h.scores.natural;
+            const pct   = Math.round((total / 30) * 100);
+            const color = total >= 24 ? "#10b981" : total >= 18 ? "#fbbf24" : "#f87171";
+            return (
+              <div key={i} style={{
+                padding: "11px 14px",
+                borderBottom: i < history.length - 1 ? "0.8px solid rgba(255,255,255,0.04)" : "none",
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "5px" }}>
+                  <span style={{
+                    fontSize: "10px", fontWeight: 700, padding: "2px 7px", borderRadius: "5px",
+                    background: `${color}18`, color, border: `0.8px solid ${color}44`,
+                  }}>{pct}%</span>
+                  <span style={{ fontSize: "10px", color: "#3d4a66" }}>
+                    {h.scores.grammar}/{h.scores.vocab}/{h.scores.natural}
+                  </span>
+                </div>
+                <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "12px",
+                  color: "#a5b4fc", marginBottom: "3px" }}>{h.word}</p>
+                <p style={{ fontSize: "10px", color: "#5a6a8a", lineHeight: 1.5,
+                  overflow: "hidden", display: "-webkit-box",
+                  WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>
+                  {h.source}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function SentencePracticePage() {
+export default function SentencePracticePageFull() {
   // Mode: "vocab" = từ đã học | "random" = câu ngẫu nhiên
   const [mode, setMode] = useState("vocab");
 
@@ -251,8 +250,10 @@ export default function SentencePracticePage() {
   const [currentIdx, setCurrentIdx] = useState(0);
   const [userAnswer, setUserAnswer] = useState("");
   const [submitted,  setSubmitted]  = useState(false);
-  const [doneIds,    setDoneIds]    = useState([]);
   const [showTip,    setShowTip]    = useState(false);
+  const [history,    setHistory]    = useState([]);
+  // freeze scores on submit so they don't recompute
+  const [frozenScores, setFrozenScores] = useState(null);
 
   // Resolve active sentence list
   const sentences = useMemo(() => {
@@ -271,29 +272,48 @@ export default function SentencePracticePage() {
 
   const accentGlow = mode === "random" ? LEVEL_CFG[randomLevel].glow : "rgba(99,102,241,0.2)";
 
-  // simulated AI scores
-  const scores = submitted ? {
-    grammar: userAnswer.length > 8 ? Math.floor(7 + Math.random() * 3) : 5,
-    vocab:   userAnswer.length > 8 ? Math.floor(7 + Math.random() * 3) : 4,
-    natural: userAnswer.length > 8 ? Math.floor(6 + Math.random() * 4) : 4,
-  } : null;
+  const scores    = frozenScores;
   const isCorrect = submitted && scores && (scores.grammar + scores.vocab + scores.natural) >= 24;
 
   const sourceText  = direction === "en-vi" ? current.en : current.vi;
   const modelAnswer = direction === "en-vi" ? current.vi : current.en;
 
-  function resetWorkspace() { setUserAnswer(""); setSubmitted(false); setShowTip(false); }
+  function resetWorkspace() { setUserAnswer(""); setSubmitted(false); setShowTip(false); setFrozenScores(null); }
 
-  function handleSubmit() { if (userAnswer.trim()) setSubmitted(true); }
+  function handleSubmit() {
+    if (!userAnswer.trim()) return;
+    const s = {
+      grammar: userAnswer.length > 8 ? Math.floor(7 + Math.random() * 3) : 5,
+      vocab:   userAnswer.length > 8 ? Math.floor(7 + Math.random() * 3) : 4,
+      natural: userAnswer.length > 8 ? Math.floor(6 + Math.random() * 4) : 4,
+    };
+    setFrozenScores(s);
+    setSubmitted(true);
+  }
 
   function handleNext() {
-    setDoneIds(p => [...p, current.id]);
+    if (scores) {
+      setHistory(prev => [{
+        word: current.word,
+        source: sourceText.length > 50 ? sourceText.slice(0, 50) + "…" : sourceText,
+        scores,
+        userAnswer,
+      }, ...prev].slice(0, 20));
+    }
     setCurrentIdx((safeIdx + 1) % sentences.length);
     resetWorkspace();
   }
 
   function handleSkip() {
     setCurrentIdx((safeIdx + 1) % sentences.length);
+    resetWorkspace();
+  }
+
+  function generateNew() {
+    const pool = sentences.filter((_, i) => i !== safeIdx);
+    if (pool.length === 0) return;
+    const pick = pool[Math.floor(Math.random() * pool.length)];
+    setCurrentIdx(sentences.indexOf(pick));
     resetWorkspace();
   }
 
@@ -478,191 +498,255 @@ export default function SentencePracticePage() {
         )}
 
         {/* ── Main layout ── */}
-        <div style={{ display: "grid", gridTemplateColumns: "210px 1fr", gap: "16px", alignItems: "start" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "16px", alignItems: "start" }}>
 
           {/* Sidebar */}
-          <SentenceQueue
-            sentences={sentences}
-            currentIdx={safeIdx}
-            doneIds={doneIds}
-            onSelect={i => { setCurrentIdx(i); resetWorkspace(); }}
-            accentColor={accentColor}
-          />
+          <SentenceHistory history={history} />
 
           {/* Workspace */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 
-            {/* Label row */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            {/* Level / direction badge row */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
               <span style={{ fontSize: "11px", fontWeight: 600, color: "#5a6a8a",
                 textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                {direction === "en-vi" ? "Tiếng Anh → Tiếng Việt" : "Tiếng Việt → Tiếng Anh"}
+                {direction === "en-vi" ? "EN → VI" : "VI → EN"}
               </span>
               <div style={{ flex: 1, height: "0.8px", background: "rgba(255,255,255,0.06)" }} />
-              {/* badge: lv or level */}
+              <button onClick={generateNew} style={{
+                display: "flex", alignItems: "center", gap: "5px",
+                padding: "6px 14px", borderRadius: "9px", fontSize: "12px", fontWeight: 600,
+                fontFamily: "Inter, sans-serif", cursor: "pointer",
+                background: "rgba(99,102,241,0.1)", color: "#a5b4fc",
+                border: "0.8px solid rgba(99,102,241,0.25)",
+              }}>🎲 Tạo câu mới</button>
               {mode === "vocab" && current.lv && (() => {
                 const cfg = LV_CFG[current.lv];
-                return (
-                  <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "9999px",
-                    background: cfg.bg, color: cfg.color, border: `0.8px solid ${cfg.border}` }}>
-                    {current.lv}
-                  </span>
-                );
+                return <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "9999px",
+                  background: cfg.bg, color: cfg.color, border: `0.8px solid ${cfg.border}` }}>{current.lv}</span>;
               })()}
               {mode === "random" && (() => {
                 const cfg = LEVEL_CFG[randomLevel];
-                return (
-                  <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "9999px",
-                    background: cfg.bg, color: cfg.color, border: `0.8px solid ${cfg.border}` }}>
-                    {randomLevel}
-                  </span>
-                );
+                return <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 10px", borderRadius: "9999px",
+                  background: cfg.bg, color: cfg.color, border: `0.8px solid ${cfg.border}` }}>{randomLevel} · {cfg.desc}</span>;
               })()}
             </div>
 
-            {/* Source sentence card */}
+            {/* ── Source sentence card — hero style ── */}
             <div style={{
-              background: "rgba(255,255,255,0.04)", border: "0.8px solid rgba(255,255,255,0.09)",
-              borderRadius: "16px", padding: "24px",
-              boxShadow: `0 0 40px ${accentGlow}`,
+              position: "relative", borderRadius: "20px", overflow: "hidden",
+              background: "rgba(255,255,255,0.03)",
+              border: `1px solid ${accentColor}33`,
+              boxShadow: `0 0 48px ${accentGlow}, inset 0 1px 0 rgba(255,255,255,0.05)`,
             }}>
-              <p style={{ fontSize: "11px", fontWeight: 600, color: "#5a6a8a",
-                textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "14px" }}>
-                {direction === "en-vi" ? "🇬🇧 Câu tiếng Anh" : "🇻🇳 Câu tiếng Việt"}
-              </p>
-              <p style={{
-                fontFamily: direction === "en-vi" ? "Outfit, sans-serif" : "Inter, sans-serif",
-                fontSize: "20px", fontWeight: 700, color: "#e8eaf6", lineHeight: 1.65, marginBottom: "16px",
-              }}>
-                <HighlightWord text={sourceText} word={direction === "en-vi" ? current.word : ""} />
-              </p>
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "11px", color: "#5a6a8a" }}>Từ khóa:</span>
-                <span style={{
-                  fontSize: "12px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px",
-                  background: "rgba(165,180,252,0.12)", color: "#a5b4fc",
-                  border: "0.8px solid rgba(165,180,252,0.25)", fontFamily: "Outfit, sans-serif",
-                }}>{current.word}</span>
-                {mode === "vocab" && (
+              {/* coloured top strip */}
+              <div style={{
+                height: "3px",
+                background: `linear-gradient(90deg, ${accentColor}, ${accentColor}44, transparent)`,
+              }} />
+              {/* big decorative letter */}
+              <div style={{
+                position: "absolute", right: "20px", top: "10px", fontSize: "100px", fontWeight: 900,
+                fontFamily: "Outfit, sans-serif", lineHeight: 1,
+                color: `${accentColor}0d`, pointerEvents: "none", userSelect: "none",
+              }}>"</div>
+
+              <div style={{ padding: "22px 26px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                  <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px",
+                    letterSpacing: "0.07em", background: `${accentColor}1a`, color: accentColor,
+                    border: `0.8px solid ${accentColor}44` }}>
+                    {direction === "en-vi" ? "🇬🇧 TIẾNG ANH" : "🇻🇳 TIẾNG VIỆT"}
+                  </span>
+                  {mode === "vocab" && current.folder && (
+                    <span style={{ fontSize: "11px", color: "#5a6a8a", padding: "3px 8px", borderRadius: "6px",
+                      background: "rgba(255,255,255,0.04)", border: "0.8px solid rgba(255,255,255,0.08)" }}>
+                      {current.folder}
+                    </span>
+                  )}
+                </div>
+
+                <p style={{
+                  fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 700,
+                  color: "#f1f5f9", lineHeight: 1.65, marginBottom: "18px", letterSpacing: "-0.01em",
+                }}>
+                  <HighlightWord text={sourceText} word={direction === "en-vi" ? current.word : ""} />
+                </p>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span style={{ fontSize: "11px", color: "#5a6a8a" }}>Từ khóa</span>
                   <span style={{
-                    fontSize: "11px", fontWeight: 500, padding: "3px 8px", borderRadius: "6px",
-                    background: "rgba(99,102,241,0.1)", color: "#8892b0",
-                    border: "0.8px solid rgba(99,102,241,0.15)",
-                  }}>{current.folder}</span>
-                )}
+                    fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "13px",
+                    padding: "4px 12px", borderRadius: "8px",
+                    background: `${accentColor}18`, color: accentColor,
+                    border: `1px solid ${accentColor}44`,
+                    letterSpacing: "0.02em",
+                  }}>{current.word}</span>
+                </div>
               </div>
             </div>
 
-            {/* Answer textarea */}
+            {/* ── Answer area ── */}
             <div style={{
-              background: "rgba(255,255,255,0.03)",
+              borderRadius: "16px", overflow: "hidden",
+              background: "rgba(255,255,255,0.025)",
               border: submitted
-                ? isCorrect ? "0.8px solid rgba(16,185,129,0.35)" : "0.8px solid rgba(248,113,113,0.3)"
-                : "0.8px solid rgba(255,255,255,0.08)",
-              borderRadius: "14px", overflow: "hidden", transition: "border-color 0.3s ease",
+                ? isCorrect ? "1px solid rgba(16,185,129,0.4)" : "1px solid rgba(248,113,113,0.35)"
+                : "1px solid rgba(255,255,255,0.09)",
+              transition: "border-color 0.3s ease",
+              boxShadow: submitted
+                ? isCorrect ? "0 0 24px rgba(16,185,129,0.12)" : "0 0 24px rgba(248,113,113,0.1)"
+                : "none",
             }}>
-              <div style={{ padding: "12px 16px 0", display: "flex", justifyContent: "space-between" }}>
-                <span style={{ fontSize: "11px", fontWeight: 600, color: "#5a6a8a",
-                  textTransform: "uppercase", letterSpacing: "0.06em" }}>
+              <div style={{ padding: "12px 18px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "10px", fontWeight: 700, color: "#5a6a8a",
+                  textTransform: "uppercase", letterSpacing: "0.07em" }}>
                   {direction === "en-vi" ? "🇻🇳 Bản dịch của bạn" : "🇬🇧 Bản dịch của bạn"}
                 </span>
-                <span style={{ fontSize: "11px", color: "#5a6a8a" }}>{userAnswer.length} ký tự</span>
+                <span style={{
+                  fontSize: "11px", fontWeight: 600,
+                  color: userAnswer.length > 5 ? "#6366f1" : "#3d4a66",
+                }}>{userAnswer.length} ký tự</span>
               </div>
               <textarea
                 value={userAnswer}
                 onChange={e => setUserAnswer(e.target.value)}
+                onKeyDown={e => { if (e.ctrlKey && e.key === "Enter") handleSubmit(); }}
                 disabled={submitted}
                 placeholder={`Nhập bản dịch ${direction === "en-vi" ? "tiếng Việt" : "tiếng Anh"} của bạn…`}
                 rows={3}
                 style={{
-                  width: "100%", padding: "12px 16px", background: "transparent",
+                  width: "100%", padding: "12px 18px", background: "transparent",
                   border: "none", outline: "none", resize: "none",
-                  fontSize: "15px", color: "#e8eaf6", fontFamily: "Inter, sans-serif",
-                  lineHeight: 1.65, boxSizing: "border-box",
-                  opacity: submitted ? 0.75 : 1,
+                  fontSize: "16px", color: "#e8eaf6", fontFamily: "Inter, sans-serif",
+                  lineHeight: 1.7, boxSizing: "border-box",
+                  opacity: submitted ? 0.7 : 1,
                 }}
               />
               {!submitted && (
-                <div style={{ padding: "10px 16px", borderTop: "0.8px solid rgba(255,255,255,0.05)",
+                <div style={{ padding: "10px 18px", borderTop: "0.8px solid rgba(255,255,255,0.05)",
                   display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <button onClick={handleSkip} style={{
-                    fontSize: "12px", color: "#5a6a8a", background: "none",
-                    border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif",
-                  }}>Bỏ qua →</button>
-                  <button onClick={handleSubmit} disabled={!userAnswer.trim()}
-                    style={{
-                      padding: "8px 20px", borderRadius: "9px", fontSize: "13px", fontWeight: 600,
-                      fontFamily: "Inter, sans-serif", border: "none", transition: "all 0.2s ease",
+                  <span style={{ fontSize: "11px", color: "#3d4a66" }}>Ctrl+Enter để gửi</span>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button onClick={handleSkip} style={{
+                      padding: "8px 14px", borderRadius: "9px", fontSize: "12px", fontWeight: 500,
+                      background: "transparent", color: "#5a6a8a",
+                      border: "0.8px solid rgba(255,255,255,0.08)", cursor: "pointer",
+                    }}>Bỏ qua</button>
+                    <button onClick={handleSubmit} disabled={!userAnswer.trim()} style={{
+                      padding: "9px 22px", borderRadius: "10px", fontSize: "13px", fontWeight: 700,
+                      fontFamily: "Outfit, sans-serif", border: "none", transition: "all 0.2s ease",
                       cursor: userAnswer.trim() ? "pointer" : "not-allowed",
                       background: userAnswer.trim()
-                        ? "linear-gradient(135deg,#6366f1,#8b5cf6)"
-                        : "rgba(255,255,255,0.07)",
+                        ? `linear-gradient(135deg,${accentColor},${accentColor}bb)`
+                        : "rgba(255,255,255,0.06)",
                       color: userAnswer.trim() ? "#fff" : "#5a6a8a",
-                      boxShadow: userAnswer.trim() ? "0 0 16px rgba(99,102,241,0.4)" : "none",
-                    }}
-                  >Gửi AI chấm ✦</button>
+                      boxShadow: userAnswer.trim() ? `0 0 20px ${accentGlow}` : "none",
+                    }}>✦ Gửi AI chấm</button>
+                  </div>
                 </div>
               )}
             </div>
 
-            {/* AI Feedback */}
+            {/* ── AI Feedback ── */}
             {submitted && (
               <div style={{
-                background: isCorrect ? "rgba(16,185,129,0.04)" : "rgba(248,113,113,0.03)",
-                border: isCorrect ? "0.8px solid rgba(16,185,129,0.2)" : "0.8px solid rgba(248,113,113,0.18)",
-                borderRadius: "14px", overflow: "hidden",
+                borderRadius: "18px", overflow: "hidden",
+                border: isCorrect ? "1px solid rgba(16,185,129,0.25)" : "1px solid rgba(248,113,113,0.22)",
+                background: "#07091a",
                 animation: "fadeSlideIn 0.35s ease",
               }}>
-                {/* Header + scores */}
+                {/* Gradient header band */}
                 <div style={{
-                  padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                  padding: "18px 22px",
+                  background: isCorrect
+                    ? "linear-gradient(135deg,rgba(16,185,129,0.12),rgba(6,182,212,0.06))"
+                    : "linear-gradient(135deg,rgba(248,113,113,0.1),rgba(139,92,246,0.06))",
                   borderBottom: "0.8px solid rgba(255,255,255,0.06)",
-                  background: isCorrect ? "rgba(16,185,129,0.06)" : "rgba(248,113,113,0.04)",
+                  display: "flex", alignItems: "center", justifyContent: "space-between",
                 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <span style={{ fontSize: "20px" }}>{isCorrect ? "✅" : "⚠️"}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                    <div style={{
+                      width: "40px", height: "40px", borderRadius: "12px", fontSize: "20px",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: isCorrect ? "rgba(16,185,129,0.2)" : "rgba(248,113,113,0.15)",
+                      border: isCorrect ? "1px solid rgba(16,185,129,0.4)" : "1px solid rgba(248,113,113,0.35)",
+                    }}>{isCorrect ? "✅" : "⚠️"}</div>
                     <div>
-                      <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "14px",
+                      <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "15px",
                         color: isCorrect ? "#10b981" : "#f87171" }}>
-                        {isCorrect ? "Tốt lắm! Bản dịch chính xác." : "Gần đúng rồi — xem gợi ý bên dưới."}
+                        {isCorrect ? "Tốt lắm! Bản dịch chính xác." : "Gần đúng — xem gợi ý bên dưới."}
                       </p>
-                      <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>Phản hồi AI · Learn Today</p>
+                      <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>
+                        Phản hồi AI · Learn Today
+                      </p>
                     </div>
                   </div>
-                  <div style={{ display: "flex", gap: "16px" }}>
-                    <ScoreDot label="Ngữ pháp" score={scores.grammar} />
-                    <ScoreDot label="Từ vựng"  score={scores.vocab} />
-                    <ScoreDot label="Tự nhiên" score={scores.natural} />
+                  {/* Scores inline */}
+                  <div style={{ display: "flex", gap: "12px" }}>
+                    {[["Ngữ pháp", scores.grammar], ["Từ vựng", scores.vocab], ["Tự nhiên", scores.natural]].map(([label, score]) => {
+                      const color = score >= 8 ? "#10b981" : score >= 6 ? "#a5b4fc" : "#f87171";
+                      const r = 18, circ = 2 * Math.PI * r;
+                      return (
+                        <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
+                          <div style={{ position: "relative", width: "48px", height: "48px" }}>
+                            <svg width="48" height="48" style={{ transform: "rotate(-90deg)" }}>
+                              <circle cx="24" cy="24" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="3" />
+                              <circle cx="24" cy="24" r={r} fill="none" stroke={color} strokeWidth="3"
+                                strokeDasharray={circ} strokeDashoffset={circ * (1 - score / 10)}
+                                strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.8s ease" }} />
+                            </svg>
+                            <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center",
+                              justifyContent: "center", fontFamily: "Outfit, sans-serif", fontWeight: 800,
+                              fontSize: "13px", color }}>{score}</span>
+                          </div>
+                          <span style={{ fontSize: "9px", color: "#5a6a8a", fontWeight: 600, letterSpacing: "0.04em",
+                            textTransform: "uppercase" }}>{label}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
                 {/* Model answer */}
-                <div style={{ padding: "16px 20px", borderBottom: "0.8px solid rgba(255,255,255,0.05)" }}>
-                  <p style={{ fontSize: "11px", fontWeight: 600, color: "#5a6a8a",
-                    textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
+                <div style={{ padding: "16px 22px", borderBottom: "0.8px solid rgba(255,255,255,0.05)" }}>
+                  <p style={{ fontSize: "10px", fontWeight: 700, color: "#5a6a8a",
+                    textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "10px" }}>
                     💡 Đáp án tham khảo
                   </p>
-                  <p style={{ fontSize: "15px", fontStyle: "italic", lineHeight: 1.7,
-                    color: isCorrect ? "#6ee7b7" : "#c7d2fe", fontFamily: "Inter, sans-serif" }}>
-                    "{modelAnswer}"
-                  </p>
+                  <div style={{
+                    padding: "14px 18px", borderRadius: "12px",
+                    background: isCorrect ? "rgba(16,185,129,0.06)" : "rgba(165,180,252,0.06)",
+                    border: isCorrect ? "0.8px solid rgba(16,185,129,0.2)" : "0.8px solid rgba(165,180,252,0.18)",
+                  }}>
+                    <p style={{ fontSize: "15px", fontStyle: "italic", lineHeight: 1.75,
+                      color: isCorrect ? "#6ee7b7" : "#c7d2fe", fontFamily: "Inter, sans-serif" }}>
+                      "{modelAnswer}"
+                    </p>
+                  </div>
                 </div>
 
-                {/* Grammar tip toggle */}
-                <div style={{ padding: "12px 20px" }}>
+                {/* Grammar tip */}
+                <div style={{ padding: "14px 22px", borderBottom: "0.8px solid rgba(255,255,255,0.04)" }}>
                   <button onClick={() => setShowTip(!showTip)} style={{
-                    display: "flex", alignItems: "center", gap: "6px",
-                    fontSize: "12px", fontWeight: 600, color: "#a5b4fc",
-                    background: "none", border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif",
+                    display: "flex", alignItems: "center", gap: "8px", width: "100%",
+                    fontSize: "12px", fontWeight: 700, color: "#a5b4fc",
+                    background: "none", border: "none", cursor: "pointer", padding: 0,
                   }}>
-                    <span style={{ display: "inline-block", transition: "transform 0.25s",
-                      transform: showTip ? "rotate(90deg)" : "rotate(0deg)" }}>▶</span>
-                    Mẹo ngữ pháp · "{current.word}"
+                    <span style={{
+                      display: "inline-flex", alignItems: "center", justifyContent: "center",
+                      width: "20px", height: "20px", borderRadius: "6px",
+                      background: "rgba(165,180,252,0.12)", fontSize: "9px",
+                      transition: "transform 0.22s",
+                      transform: showTip ? "rotate(90deg)" : "rotate(0deg)",
+                    }}>▶</span>
+                    Mẹo ngữ pháp · <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800 }}>"{current.word}"</span>
                   </button>
                   {showTip && (
-                    <div style={{ marginTop: "10px", padding: "12px 14px", borderRadius: "10px",
-                      background: "rgba(165,180,252,0.07)", border: "0.8px solid rgba(165,180,252,0.18)" }}>
-                      <p style={{ fontSize: "13px", color: "#c7d2fe", lineHeight: 1.7, fontFamily: "Inter, sans-serif" }}>
+                    <div style={{ marginTop: "10px", padding: "14px 16px", borderRadius: "11px",
+                      background: "rgba(165,180,252,0.06)", border: "0.8px solid rgba(165,180,252,0.15)",
+                      animation: "fadeSlideIn 0.2s ease" }}>
+                      <p style={{ fontSize: "13px", color: "#c7d2fe", lineHeight: 1.75 }}>
                         {current.tip}
                       </p>
                     </div>
@@ -670,18 +754,32 @@ export default function SentencePracticePage() {
                 </div>
 
                 {/* Actions */}
-                <div style={{ padding: "0 20px 16px", display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-                  <button onClick={handleSkip} style={{
-                    padding: "8px 16px", borderRadius: "9px", fontSize: "12px", fontWeight: 500,
-                    background: "rgba(255,255,255,0.06)", color: "#8892b0",
-                    border: "0.8px solid rgba(255,255,255,0.09)", cursor: "pointer", fontFamily: "Inter, sans-serif",
-                  }}>Bỏ qua</button>
-                  <button onClick={handleNext} style={{
-                    padding: "8px 20px", borderRadius: "9px", fontSize: "13px", fontWeight: 600,
-                    background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff",
-                    border: "none", cursor: "pointer", fontFamily: "Inter, sans-serif",
-                    boxShadow: "0 0 16px rgba(99,102,241,0.4)",
-                  }}>Câu tiếp theo →</button>
+                <div style={{ padding: "14px 22px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "6px" }}>
+                    {[scores.grammar, scores.vocab, scores.natural].map((s, i) => (
+                      <div key={i} style={{
+                        width: "6px", height: "6px", borderRadius: "50%",
+                        background: s >= 8 ? "#10b981" : s >= 6 ? "#a5b4fc" : "#f87171",
+                      }} />
+                    ))}
+                    <span style={{ fontSize: "12px", color: "#5a6a8a", marginLeft: "6px" }}>
+                      Tổng: {scores.grammar + scores.vocab + scores.natural}/30
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    <button onClick={handleSkip} style={{
+                      padding: "9px 16px", borderRadius: "10px", fontSize: "12px", fontWeight: 500,
+                      background: "rgba(255,255,255,0.05)", color: "#8892b0",
+                      border: "0.8px solid rgba(255,255,255,0.08)", cursor: "pointer",
+                    }}>Bỏ qua</button>
+                    <button onClick={handleNext} style={{
+                      padding: "9px 24px", borderRadius: "10px", fontSize: "13px", fontWeight: 700,
+                      fontFamily: "Outfit, sans-serif",
+                      background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff",
+                      border: "none", cursor: "pointer",
+                      boxShadow: "0 0 20px rgba(99,102,241,0.4)",
+                    }}>Câu tiếp theo →</button>
+                  </div>
                 </div>
               </div>
             )}

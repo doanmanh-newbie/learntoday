@@ -1,9 +1,10 @@
 // src/pages/learn/LearnPage.jsx
 // STT 6 - Học từ vựng mới. Phần chọn Folder + xem danh sách từ trước khi
 // học; phần "học 1 từ" thật sự nằm ở features/learning/LearningSession.jsx.
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { FOLDER_DATA, POS_MAP } from "../../data/vocabulary";
 import { LearningSession } from "../../features/learning/LearningSession";
+import { LV_CFG } from "../../constants/srs"; // 🛠️ Bug 2: Đã import LV_CFG
 
 function FolderCard({ folder, onSelect, mode = "learn" }) {
   const [hovered, setHovered] = useState(false);
@@ -332,11 +333,36 @@ function CompletionScreen({ wordsLearned, dailyGoal, onHome }) {
 
 // ── Main Page ────────────────────────────────────────────────────────────────
 
-export default function LearnPage({ onNavigateHome, mode = "learn" }) {
-  const [screen,       setScreen]       = useState("folders");
-  const [folder,       setFolder]       = useState(null);
+export default function LearnPage({ onNavigateHome, mode = "learn", folderId = null }) {
+  // 🛠️ Fix Logic: Khởi tạo trực tiếp dựa trên folderId nếu có (không qua màn hình chọn folder)
+  const [screen, setScreen] = useState(folderId ? "wordlist" : "folders");
+  const [folder, setFolder] = useState(() => {
+    if (folderId) {
+      return FOLDER_DATA.find(f => f.id === folderId) || null;
+    }
+    return null;
+  });
+  
   const [wordsLearned, setWordsLearned] = useState(0);
   const DAILY_GOAL = 10;
+  const completeRef = useRef(false);
+
+  // 🛠️ Xử lý khi folderId thay đổi (ví dụ: người dùng bấm vào folder khác từ Dashboard)
+  useEffect(() => {
+    if (folderId) {
+      const foundFolder = FOLDER_DATA.find(f => f.id === folderId);
+      if (foundFolder) {
+        setFolder(foundFolder);
+        setScreen("wordlist"); // Nhảy thẳng vào danh sách từ
+      }
+    } else {
+      // Nếu không có folderId (bấm nút "Học từ mới" tổng quát), quay về chọn folder
+      setFolder(null);
+      setScreen("folders");
+    }
+  }, [folderId]);
+
+  // ... (Giữ nguyên các hàm selectFolder, startSession, onWordComplete, handleBack bên dưới)
 
   function selectFolder(f) { setFolder(f); setScreen("wordlist"); }
   function startSession()  { setScreen("session"); }
@@ -344,8 +370,34 @@ export default function LearnPage({ onNavigateHome, mode = "learn" }) {
   function onWordComplete() {
     const next = wordsLearned + 1;
     setWordsLearned(next);
-    if (next >= DAILY_GOAL) setScreen("complete");
+    if (next >= DAILY_GOAL) {
+      completeRef.current = true; // Đánh dấu đã hoàn thành
+      setScreen("complete");
+    }
   }
+
+  // 🛠️ Bug 4: Hàm back được kiểm soát
+  const handleBack = () => {
+    if (!completeRef.current) {
+      if (folderId) {
+        // Nếu vào từ ngoài (Dashboard), quay về Dashboard
+        onNavigateHome?.();
+      } else {
+        // Nếu vào từ luồng chuẩn, quay lại danh sách folder
+        setScreen("folders");
+      }
+    }
+  };
+
+   const handleWordListBack = () => {
+    if (folderId) {
+      // Nếu được truyền folderId từ ngoài, quay về Dashboard
+      onNavigateHome?.();
+    } else {
+      // Nếu không, quay về danh sách folder
+      setScreen("folders");
+    }
+  };
 
   const glowColor = mode === "review" ? "rgba(245,158,11,0.08)" : "rgba(99,102,241,0.08)";
 
@@ -359,7 +411,7 @@ export default function LearnPage({ onNavigateHome, mode = "learn" }) {
 
       {screen === "wordlist" && folder && (
         <WordListScreen folder={folder} mode={mode}
-          onBack={() => setScreen("folders")}
+          onBack={handleWordListBack} // Đã đổi từ "() => setScreen('folders')" sang hàm thông minh
           onStartLearning={startSession} />
       )}
 
@@ -369,13 +421,13 @@ export default function LearnPage({ onNavigateHome, mode = "learn" }) {
           dailyGoal={DAILY_GOAL}
           wordsLearned={wordsLearned}
           onWordComplete={onWordComplete}
-          onBack={() => setScreen("wordlist")}
+          onBack={handleBack} // 🛠️ Bug 4: Đã sửa ở đây
         />
       )}
 
       {screen === "complete" && (
         <CompletionScreen wordsLearned={wordsLearned} dailyGoal={DAILY_GOAL}
-          onHome={() => { onNavigateHome?.(); setScreen("folders"); setWordsLearned(0); }} />
+          onHome={() => { onNavigateHome?.(); setScreen("folders"); setWordsLearned(0); completeRef.current = false; }} />
       )}
 
       <style>{`

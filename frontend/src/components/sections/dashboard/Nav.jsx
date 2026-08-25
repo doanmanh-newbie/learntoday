@@ -1,6 +1,8 @@
-import { BarChartIcon, BookIcon, PenIcon } from "../../../icons/dashboard/index.jsx";
+import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon } from "../../../icons/dashboard/index.jsx";
 
 const TABS = [
+  { id: "dashboard", icon: <HomeIcon />, label: "Trang chủ" },
+  { id: "review", icon: <RotateCcwIcon />, label: "Ôn tập" },
   { id: "thongke", icon: <BarChartIcon />, label: "Thống kê" },
   { id: "thuvien", icon: <BookIcon />, label: "Thư viện chủ đề" },
   { id: "datcau", icon: <PenIcon />, label: "Đặt câu · Sửa lỗi" },

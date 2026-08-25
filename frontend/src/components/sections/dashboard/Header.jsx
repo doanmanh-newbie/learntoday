@@ -9,8 +9,6 @@ import {
   SettingsIcon,
   UserIcon,
   LogOutIcon,
-  BookIcon,
-  RotateCcwIcon,
 } from "../../../icons/dashboard/index.jsx";
 
 export default function Header({ minutes, streak = 0, username = 'Bạn', onLogout }) {
@@ -78,18 +76,6 @@ export default function Header({ minutes, streak = 0, username = 'Bạn', onLogo
           Learn <span style={{ color: "#a5b4fc" }}>Today</span>
         </span>
       </Link>
-
-      {/* Ôn tập / Học từ mới — 2 luồng chính, đặt ngay cạnh logo để luôn thấy được */}
-      <div className="flex items-center gap-1">
-        <Link to="/app/review" className="nav-tab no-underline">
-          <RotateCcwIcon />
-          Ôn tập
-        </Link>
-        <Link to="/app/learn" className="nav-tab no-underline">
-          <BookIcon />
-          Từ mới
-        </Link>
-      </div>
 
       {/* Search */}
       <div className="relative flex-1 max-w-xs">

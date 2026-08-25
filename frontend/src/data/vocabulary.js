@@ -3,7 +3,7 @@
 // Sau này khi nối API /api/folders + /api/words, thay nội dung file này
 // bằng dữ liệu lấy về từ server thay vì mảng cứng bên dưới.
 
-const FOLDER_DATA = [
+export const FOLDER_DATA = [
   {
     id: 1, name: "Gia đình", tag: "Family",
     image: "https://images.unsplash.com/photo-1511895426328-dc8714191011?w=700&h=420&fit=crop&auto=format",
@@ -167,4 +167,4 @@ const FOLDER_DATA = [
   },
 ];
 
-const POS_MAP = { n: "n", v: "v", adj: "adj", adv: "adv" };
+export const POS_MAP = { n: "n", v: "v", adj: "adj", adv: "adv" };

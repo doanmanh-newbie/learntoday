@@ -2,12 +2,12 @@
 
 export const SRS_SECONDS = {
   0: 0,
-  1: 20 * 60,
-  2: 10 * 3600,
-  3: 24 * 3600,
-  4: 24 * 3600,
-  5: 3 * 86400,
-  6: 5 * 86400
+  1: 20 * 60,        // 20 phút
+  2: 10 * 3600,      // 10 giờ
+  3: 24 * 3600,      // 1 ngày
+  4: 24 * 3600,      // 1 ngày
+  5: 3 * 86400,      // 3 ngày
+  6: 5 * 86400       // 5 ngày
 };
 
 export const SRS_LABELS = {
@@ -68,10 +68,7 @@ export const LV_CFG = {
   6: { label: 'Lv6', bg: LV_BG[6], color: LV_COLORS[6] }
 };
 
-// ============================================
-// ✅ THÊM 2 HÀM NÀY
-// ============================================
-
+// ✅ Các hàm helper
 export function getNextReview(level, fromDate = new Date()) {
   const seconds = SRS_SECONDS[level] || 0;
   return new Date(fromDate.getTime() + seconds * 1000);
@@ -97,7 +94,14 @@ export function formatNextReview(ms) {
   const diffDays = Math.floor(diffMs / 86400000);
   const timeStr = d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
   const dateStr = d.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit' });
+  
   if (diffDays === 0) return `${timeStr} hôm nay`;
   if (diffDays === 1) return `${timeStr} ngày mai`;
+  if (diffDays < 0) return `${timeStr} hôm nay (quá hạn)`;
   return `${timeStr}, ${dateStr}`;
+}
+
+// ✅ THÊM HÀM NÀY CHO TIỆN
+export function getSRSLevelLabel(level) {
+  return SRS_LABELS[level] || `LV${level}`;
 }

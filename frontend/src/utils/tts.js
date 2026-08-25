@@ -2,7 +2,7 @@
 // STT 6.6 - Phát âm tự động. Tách riêng vì sẽ còn dùng ở Tìm kiếm (STT 9),
 // Dịch từ (STT 11), và cần sửa lại khi làm chọn giọng đọc ở Cài đặt (STT 15).
 
-function speak(word) {
+export function speak(word) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(word);

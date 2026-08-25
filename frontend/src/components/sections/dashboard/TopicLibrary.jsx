@@ -178,6 +178,13 @@ const PHRASE_FOLDERS = [
   },
 ];
 
+// ── Folder cá nhân (do user tự tạo) ─────────────────────────────────────────
+// Mock trước, sau này nối GET /api/folders (type=personal) + POST tạo mới.
+const PERSONAL_FOLDERS = [
+  { id: "p1", name: "Từ yêu thích", icon: "⭐", totalWords: 18, learnedWords: 18 },
+  { id: "p2", name: "Từ khó", icon: "🧩", totalWords: 9, learnedWords: 3 },
+];
+
 const LEVEL_OPTS = ["Tất cả", "Lv1", "Lv2", "Lv3", "Lv4", "Lv5"];
 const LEVEL_CFG = {
   Lv1: { color: "#10b981", bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.3)" },
@@ -189,7 +196,7 @@ const LEVEL_CFG = {
 
 // ── Topic Card ────────────────────────────────────────────────────────────────
 
-function TopicCard({ topic, big = false }) {
+function TopicCard({ topic, big = false, onSelectFolder }) {
   const [hovered, setHovered] = useState(false);
   const lv = LEVEL_CFG[topic.level] || LEVEL_CFG.Lv3;
   const done = topic.progress === 100;
@@ -411,9 +418,68 @@ function PhraseFolderCard({ folder }) {
   );
 }
 
+// ── Personal Folder Card ─────────────────────────────────────────────────────
+
+function PersonalFolderCard({ folder, onSelectFolder }) {
+  const [hovered, setHovered] = useState(false);
+  const percent = folder.totalWords > 0 ? Math.round((folder.learnedWords / folder.totalWords) * 100) : 0;
+
+  return (
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => onSelectFolder?.(folder.id)}
+      style={{
+        borderRadius: "14px", padding: "18px",
+        background: hovered ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)",
+        border: hovered ? "0.8px solid rgba(99,102,241,0.3)" : "0.8px solid rgba(255,255,255,0.08)",
+        cursor: "pointer", transition: "all 0.25s ease",
+        transform: hovered ? "translateY(-2px)" : "translateY(0)",
+      }}
+    >
+      <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
+        <span style={{ fontSize: "20px" }}>{folder.icon}</span>
+        <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "14px", color: "#e8eaf6" }}>
+          {folder.name}
+        </span>
+      </div>
+      <div style={{ fontSize: "11px", color: "#8892b0", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>
+        {folder.learnedWords}/{folder.totalWords} từ đã học
+      </div>
+      <div style={{ height: "4px", borderRadius: "9999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
+        <div style={{
+          width: `${percent}%`, height: "100%", borderRadius: "9999px",
+          background: percent === 100 ? "linear-gradient(90deg,#10b981,#059669)" : "linear-gradient(90deg,#6366f1,#8b5cf6)",
+        }} />
+      </div>
+    </div>
+  );
+}
+
+function CreateFolderCard({ onCreate }) {
+  return (
+    <button
+      type="button"
+      onClick={onCreate}
+      style={{
+        borderRadius: "14px", padding: "18px",
+        background: "transparent",
+        border: "1.5px dashed rgba(255,255,255,0.15)",
+        cursor: "pointer", color: "#8892b0",
+        display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+        gap: "6px", minHeight: "88px", width: "100%",
+        fontFamily: "Inter, sans-serif", fontSize: "13px", fontWeight: 600,
+      }}
+    >
+      <span style={{ fontSize: "20px" }}>＋</span>
+      Tạo folder mới
+    </button>
+  );
+}
+
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function TopicLibraryPage() {
+export default function TopicLibraryPage({ onSelectFolder }) {
   const [search, setSearch]         = useState("");
   const [levelFilter, setLevelFilter] = useState("Tất cả");
   const [progressFilter, setProgressFilter] = useState("all"); // all | inprogress | notstarted | done
@@ -511,6 +577,22 @@ export default function TopicLibraryPage() {
           </div>
         </div>
 
+        {/* ── Folder của bạn (cá nhân) ── */}
+        <div style={{ marginBottom: "36px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
+            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e8eaf6" }}>
+              📁 Folder của bạn
+            </span>
+            <div style={{ flex: 1, height: "0.8px", background: "rgba(255,255,255,0.06)" }} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "14px" }}>
+            {PERSONAL_FOLDERS.map(f => (
+              <PersonalFolderCard key={f.id} folder={f} onSelectFolder={onSelectFolder} />
+            ))}
+            <CreateFolderCard onCreate={() => alert("Sẽ nối API tạo folder cá nhân sau (POST /api/folders)")} />
+          </div>
+        </div>
+
         {/* ── Featured strip ── */}
         {search === "" && levelFilter === "Tất cả" && progressFilter === "all" && (
           <div style={{ marginBottom: "36px" }}>
@@ -521,7 +603,7 @@ export default function TopicLibraryPage() {
               <div style={{ flex: 1, height: "0.8px", background: "rgba(255,255,255,0.06)" }} />
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "14px" }}>
-              {featured.map(t => <TopicCard key={t.id} topic={t} big />)}
+              {featured.map(t => <TopicCard key={t.id} topic={t} big onSelectFolder={onSelectFolder} />)}
             </div>
           </div>
         )}
@@ -548,7 +630,7 @@ export default function TopicLibraryPage() {
             </div>
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: "14px" }}>
-              {filtered.map(t => <TopicCard key={t.id} topic={t} />)}
+              {filtered.map(t => <TopicCard key={t.id} topic={t} onSelectFolder={onSelectFolder} />)}
             </div>
           )}
         </div>
