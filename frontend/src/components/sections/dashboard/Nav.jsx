@@ -1,4 +1,5 @@
 import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon, BookOpenIcon } from "../../../icons/dashboard/index.jsx";
+import { useNavigate } from "react-router-dom";
 
 const TABS = [
   { id: "dashboard", icon: <HomeIcon />, label: "Trang chủ" },
@@ -9,8 +10,19 @@ const TABS = [
   { id: "dictionary", icon: <BookOpenIcon />, label: "Từ điển" }, // Thêm cái này
 ];
 
-
 export default function Nav({ activeTab, setActiveTab }) {
+  const navigate = useNavigate();
+
+  const handleTabClick = (id) => {
+    // Cập nhật tab active (giữ nguyên logic cũ)
+    setActiveTab(id);
+    
+    // Nếu bấm vào tab "Từ điển", điều hướng về trang danh sách từ điển
+    if (id === "dictionary") {
+      navigate("/app/dictionary");
+    }
+  };
+
   return (
     <nav
       className="animate-fade-in delay-100 sticky z-40 flex items-center gap-1 px-6 py-2"
@@ -26,7 +38,7 @@ export default function Nav({ activeTab, setActiveTab }) {
         <button
           key={id}
           className={`nav-tab${activeTab === id ? " active" : ""}`}
-          onClick={() => setActiveTab(id)}
+          onClick={() => handleTabClick(id)}
         >
           {icon}
           {label}

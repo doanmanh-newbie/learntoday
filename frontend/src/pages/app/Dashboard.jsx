@@ -1,21 +1,27 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/sections/dashboard/Header.jsx";
 import Nav from "../../components/sections/dashboard/Nav.jsx";
-import DashboardHome from "../../components/sections/dashboard/DashboardHome.jsx"; // Trang chủ mới
-import ReviewLanding from "../../components/sections/dashboard/ReviewLanding.jsx"; // Trang Ôn tập (bản gốc)
+import DashboardHome from "../../components/sections/dashboard/DashboardHome.jsx";
+import ReviewLanding from "../../components/sections/dashboard/ReviewLanding.jsx";
 import SentencePracticeFull from "../../components/sections/dashboard/SentencePracticeFull.jsx";
 import TopicLibrary from "../../components/sections/dashboard/TopicLibrary.jsx";
 import StatisticsPage from "../../components/sections/dashboard/StatisticsPage.jsx";
 import LearnPage from "../learn/LearnPage.jsx";
 import DictionaryPage from "../../components/sections/dashboard/DictionaryPage";
 import ReviewPage from "../review/ReviewPage.jsx";
+import WordDetailPage from "../WordDetailPage"; // Import trang chi tiết từ
 import { useAuth } from "../../hooks/useAuth";
 import { reviewApi, learningApi, historyApi, studyApi } from "../../api/client";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  
+  // ✅ Chỉ khai báo MỘT LẦN DUY NHẤT
+  const isWordDetail = location.pathname.startsWith("/app/dictionary/");
+  const word = isWordDetail ? decodeURIComponent(location.pathname.split("/").pop()) : null;
 
   const [activeTab, setActiveTab] = useState("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,7 +54,6 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = async () => { await logout(); navigate("/login"); };
-
   const openLearn = (folderId) => { setSelectedFolderId(folderId); setShowLearn(true); setShowReview(false); };
   const openReview = () => { setShowReview(true); setShowLearn(false); };
   const closeLearn = () => { setShowLearn(false); setShowReview(false); setSelectedFolderId(null); };
@@ -61,73 +66,76 @@ export default function Dashboard() {
 
   return (
     <div className="app-shell relative min-h-screen w-full overflow-x-hidden">
-      <div className="orb" style={{ width: 600, height: 600, top: -200, left: -150, background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)" }} />
-      <div className="orb" style={{ width: 500, height: 500, bottom: -100, right: -100, background: "radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)" }} />
-      <div className="orb animate-float" style={{ width: 300, height: 300, top: "30%", right: "20%", background: "radial-gradient(circle, rgba(16,185,129,0.06) 0%, transparent 70%)", animationDuration: "5s" }} />
-
+      {/* Header + Nav - Ẩn khi học */}
       {!showLearn && !showReview && (
         <>
-         <Header 
-            minutes={minutes} 
-            streak={stats.streak} 
-            username={user?.username || 'Bạn'} 
-            onLogout={handleLogout}
-            onSearch={(value) => {
-              setSearchQuery(value);
-              if (value.trim()) {
-                setActiveTab("dictionary"); // Chuyển sang tab Từ điển
-              }
-            }}
-            searchValue={searchQuery} 
-          />
+          <Header minutes={minutes} streak={stats.streak} username={user?.username || 'Bạn'} onLogout={handleLogout} />
+          {/* CHỈ RENDER NAV 1 LẦN DUY NHẤT */}
           <Nav activeTab={activeTab} setActiveTab={setActiveTab} />
         </>
       )}
 
       <main className="relative z-10 px-6 py-8" style={{ maxWidth: 960, margin: "0 auto" }}>
-        {/* TRANG CHỦ - Dùng DashboardHome mới */}
-        {activeTab === "dashboard" && !showLearn && !showReview && (
-          <DashboardHome 
-            username={user?.username || "Bạn"}
-            dueCount={dueCount} 
-            onReview={openReview} 
-            onGoLearn={() => setActiveTab("thuvien")}
-            wordsLearnedToday={learnedToday}
-            learnTarget={learnTarget}
-            stats={stats}
-            onNavigate={handleNavigate}
-          />
-        )}
-
-        {/* ÔN TẬP - Dùng ReviewLanding gốc */}
-        {activeTab === "review" && !showLearn && !showReview && (
-          <ReviewLanding dueCount={dueCount} onReview={openReview} onGoLearn={() => setActiveTab("thuvien")} />
-        )}
-
-        {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}
-        {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={openLearn} />}
-        {activeTab === "datcau" && !showLearn && !showReview && <SentencePracticeFull />}
         
+        {/* NẾU ĐANG Ở TRANG CHI TIẾT TỪ VỰNG (giữ Header + Nav) */}
+        {isWordDetail && word ? (
+          <WordDetailPage word={word} />
+        ) : (
+          <>
+            {/* TRANG CHỦ */}
+            {activeTab === "dashboard" && !showLearn && !showReview && (
+              <DashboardHome 
+                username={user?.username || "Bạn"}
+                dueCount={dueCount} 
+                onReview={openReview} 
+                onGoLearn={() => setActiveTab("thuvien")}
+                wordsLearnedToday={learnedToday}
+                learnTarget={learnTarget}
+                stats={stats}
+                onNavigate={handleNavigate}
+              />
+            )}
+
+            {/* ÔN TẬP */}
+            {activeTab === "review" && !showLearn && !showReview && (
+              <ReviewLanding dueCount={dueCount} onReview={openReview} onGoLearn={() => setActiveTab("thuvien")} />
+            )}
+
+            {/* THỐNG KÊ */}
+            {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}
+
+            {/* THƯ VIỆN */}
+            {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={openLearn} />}
+
+            {/* ĐẶT CÂU */}
+            {activeTab === "datcau" && !showLearn && !showReview && <SentencePracticeFull />}
+
+            {/* TỪ ĐIỂN */}
+            {activeTab === "dictionary" && !showLearn && !showReview && (
+              <DictionaryPage 
+                initialQuery={searchQuery} 
+                onQueryUsed={() => setSearchQuery("")} 
+              />
+            )}
+          </>
+        )}
+
+        {/* Overlay Học từ mới */}
         {showLearn && (
           <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
             <LearnPage mode="learn" folderId={selectedFolderId} onNavigateHome={closeLearn} />
           </div>
         )}
+
+        {/* Overlay Ôn tập */}
         {showReview && (
           <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
             <ReviewPage onNavigateHome={closeLearn} onGoLearn={() => openLearn(null)} />
           </div>
         )}
-        {activeTab === "dictionary" && !showLearn && !showReview && (
-        <DictionaryPage 
-          initialQuery={searchQuery} 
-          onQueryUsed={() => setSearchQuery("")} 
-          />
-        )}  
+
         <div style={{ height: 40 }} />
       </main>
-
-      {!showLearn && !showReview && <Nav activeTab={activeTab} setActiveTab={setActiveTab} />}
     </div>
   );
 }

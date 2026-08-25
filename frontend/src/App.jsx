@@ -14,6 +14,7 @@ function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
+            
 
             {/* Dashboard.jsx tự chứa Header + Nav riêng (theme tối), nên
                 không bọc thêm AppLayout ở đây để tránh 2 lớp header chồng nhau. */}
@@ -30,6 +31,8 @@ function App() {
                 toàn màn hình riêng biệt, không nằm trong tab của Dashboard. */}
             <Route path="/app/learn" element={<LearnRoute />} />
             <Route path="/app/review" element={<ReviewRoute />} />
+            <Route path="/app/*" element={<Dashboard />} />
+   
         </Routes>
     );
 }
