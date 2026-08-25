@@ -11,7 +11,7 @@ import {
   formatNextReview 
 } from '../../constants/srs';
 
-function NoReviewScreen({ onNavigateHome }) {
+function NoReviewScreen({ onNavigateHome, onGoLearn }) {
   return (
     <div style={{
       display: 'flex',
@@ -48,7 +48,7 @@ function NoReviewScreen({ onNavigateHome }) {
       </p>
       <div style={{ display: 'flex', gap: '12px' }}>
         <button
-          onClick={() => window.location.href = '/app/learn'}
+          onClick={onGoLearn}
           style={{
             padding: '12px 28px',
             borderRadius: '12px',
@@ -85,7 +85,7 @@ function NoReviewScreen({ onNavigateHome }) {
   );
 }
 
-export default function ReviewPage({ onNavigateHome }) {
+export default function ReviewPage({ onNavigateHome, onGoLearn }) {
   const [screen, setScreen] = useState("overview");
   const [reviewed, setReviewed] = useState(0);
 
@@ -95,7 +95,7 @@ export default function ReviewPage({ onNavigateHome }) {
   
   // Nếu không có từ cần ôn
   if (allDueWords.length === 0) {
-    return <NoReviewScreen onNavigateHome={onNavigateHome} />;
+    return <NoReviewScreen onNavigateHome={onNavigateHome} onGoLearn={onGoLearn} />;
   }
 
   const virtualFolder = { 

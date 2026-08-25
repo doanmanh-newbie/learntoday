@@ -1,4 +1,4 @@
-import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon } from "../../../icons/dashboard/index.jsx";
+import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon, BookOpenIcon } from "../../../icons/dashboard/index.jsx";
 
 const TABS = [
   { id: "dashboard", icon: <HomeIcon />, label: "Trang chủ" },
@@ -6,7 +6,9 @@ const TABS = [
   { id: "thongke", icon: <BarChartIcon />, label: "Thống kê" },
   { id: "thuvien", icon: <BookIcon />, label: "Thư viện chủ đề" },
   { id: "datcau", icon: <PenIcon />, label: "Đặt câu · Sửa lỗi" },
+  { id: "dictionary", icon: <BookOpenIcon />, label: "Từ điển" }, // Thêm cái này
 ];
+
 
 export default function Nav({ activeTab, setActiveTab }) {
   return (

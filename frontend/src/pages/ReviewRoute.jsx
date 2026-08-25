@@ -26,7 +26,7 @@ export default function ReviewRoute() {
         >
           ← Trang chủ
         </button>
-        <ReviewPage onNavigateHome={() => navigate("/app")} />
+        <ReviewPage onNavigateHome={() => navigate("/app")} onGoLearn={() => navigate("/app/learn")} />
       </div>
     </ProtectedRoute>
   );

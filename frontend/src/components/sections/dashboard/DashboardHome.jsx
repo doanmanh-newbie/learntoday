@@ -34,13 +34,15 @@ function MiniPractice({ onNavigate }) {
   const isGood = submitted && answer.length > 8;
 
   return (
-    <div style={{ borderRadius: "18px", overflow: "hidden", marginBottom: "16px", border: "0.8px solid rgba(139,92,246,0.22)", background: "rgba(139,92,246,0.04)", boxShadow: "0 0 28px rgba(139,92,246,0.08)" }}>
+    <div className="animate-fade-in-up delay-200" style={{ borderRadius: "18px", overflow: "hidden", marginBottom: "16px", border: "0.8px solid rgba(139,92,246,0.22)", background: "rgba(139,92,246,0.04)", boxShadow: "0 0 28px rgba(139,92,246,0.08)", transition: "all 0.4s ease" }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 32px rgba(139,92,246,0.25)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 0 28px rgba(139,92,246,0.08)"; e.currentTarget.style.transform = "translateY(0)"; }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 22px", borderBottom: "0.8px solid rgba(255,255,255,0.06)", background: "rgba(139,92,246,0.07)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <span style={{ fontSize: "15px" }}>✍️</span>
           <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "14px", color: "#e8eaf6" }}>Luyện đặt câu nhanh</p>
         </div>
-        <button onClick={() => onNavigate("practice")} style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", background: "rgba(139,92,246,0.18)", color: "#c4b5fd", border: "0.8px solid rgba(139,92,246,0.3)", cursor: "pointer" }}>Xem tất cả →</button>
+        <button onClick={() => onNavigate("practice")} style={{ padding: "6px 14px", borderRadius: "8px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", background: "rgba(139,92,246,0.18)", color: "#c4b5fd", border: "0.8px solid rgba(139,92,246,0.3)", cursor: "pointer", transition: "all 0.3s ease" }}>Xem tất cả →</button>
       </div>
 
       <div style={{ padding: "16px 22px", display: "flex", flexDirection: "column", gap: "12px" }}>
@@ -68,7 +70,7 @@ function MiniPractice({ onNavigate }) {
           {!submitted && (
             <div style={{ padding: "8px 14px", borderTop: "0.8px solid rgba(255,255,255,0.05)", display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "8px" }}>
               <span style={{ fontSize: "11px", color: "#3d4a66", flex: 1 }}>Ctrl+Enter để gửi</span>
-              <button onClick={handleSubmit} disabled={!answer.trim()} style={{ padding: "7px 18px", borderRadius: "9px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", border: "none", cursor: answer.trim() ? "pointer" : "not-allowed", background: answer.trim() ? "linear-gradient(135deg,#8b5cf6,#6366f1)" : "rgba(255,255,255,0.06)", color: answer.trim() ? "#fff" : "#5a6a8a", boxShadow: answer.trim() ? "0 0 14px rgba(139,92,246,0.4)" : "none" }}>✦ Nộp</button>
+              <button onClick={handleSubmit} disabled={!answer.trim()} style={{ padding: "7px 18px", borderRadius: "9px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", border: "none", cursor: answer.trim() ? "pointer" : "not-allowed", background: answer.trim() ? "linear-gradient(135deg,#8b5cf6,#6366f1)" : "rgba(255,255,255,0.06)", color: answer.trim() ? "#fff" : "#5a6a8a", boxShadow: answer.trim() ? "0 0 14px rgba(139,92,246,0.4)" : "none", transition: "all 0.3s ease" }}>✦ Nộp</button>
             </div>
           )}
         </div>
@@ -83,7 +85,7 @@ function MiniPractice({ onNavigate }) {
               <p style={{ fontSize: "10px", color: "#5a6a8a", fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: "5px" }}>💡 Đáp án tham khảo</p>
               <p style={{ fontSize: "13px", color: isGood ? "#6ee7b7" : "#c7d2fe", fontStyle: "italic", lineHeight: 1.65 }}>"{sentence.vi}"</p>
             </div>
-            <button onClick={handleNext} style={{ alignSelf: "flex-start", padding: "7px 18px", borderRadius: "9px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", background: "rgba(255,255,255,0.07)", color: "#e8eaf6", border: "0.8px solid rgba(255,255,255,0.12)", cursor: "pointer" }}>Câu tiếp →</button>
+            <button onClick={handleNext} style={{ alignSelf: "flex-start", padding: "7px 18px", borderRadius: "9px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", background: "rgba(255,255,255,0.07)", color: "#e8eaf6", border: "0.8px solid rgba(255,255,255,0.12)", cursor: "pointer", transition: "all 0.2s" }}>Câu tiếp →</button>
           </div>
         )}
       </div>
@@ -110,27 +112,33 @@ export default function DashboardHome({
 
   return (
     <div style={{ maxWidth: "860px", margin: "0 auto", padding: "36px 28px 40px", fontFamily: "Inter, sans-serif" }}>
-      {/* Greeting */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
+      
+      {/* 1. Greeting row - Animation: Fade-in-up */}
+      <div className="animate-fade-in-up" style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
         <div>
           <h1 style={{ fontFamily: "Outfit, sans-serif", fontSize: "28px", fontWeight: 800, color: "#e8eaf6", marginBottom: "5px" }}>Chào {username}! 👋</h1>
           <p style={{ fontSize: "14px", color: "#5a6a8a" }}>Hãy duy trì ngọn lửa học tập ngày hôm nay nhé.</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.04)", border: "0.8px solid rgba(255,255,255,0.08)", fontSize: "13px", color: "#8892b0" }}>
+        <div className="animate-fade-in-up delay-100" style={{ display: "flex", alignItems: "center", gap: "7px", padding: "7px 14px", borderRadius: "10px", background: "rgba(255,255,255,0.04)", border: "0.8px solid rgba(255,255,255,0.08)", fontSize: "13px", color: "#8892b0" }}>
           <span>📅</span>
           <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, color: "#c7d2fe" }}>{todayDate}</span>
         </div>
       </div>
 
-      {/* Progress */}
-      <div style={{ background: "rgba(255,255,255,0.03)", border: "0.8px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "20px 24px", marginBottom: "18px" }}>
+      {/* 2. Progress block - Animation: Fade-in-up + Glowing bar */}
+      <div className="animate-fade-in-up delay-100" style={{ background: "rgba(255,255,255,0.03)", border: "0.8px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "20px 24px", marginBottom: "18px", transition: "border-color 0.3s ease, box-shadow 0.3s ease" }}
+        onMouseEnter={e => { e.currentTarget.style.borderColor = "rgba(99,102,241,0.4)"; e.currentTarget.style.boxShadow = "0 4px 24px rgba(99,102,241,0.15)"; }}
+        onMouseLeave={e => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.07)"; e.currentTarget.style.boxShadow = "none"; }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
           <span style={{ fontSize: "13px", color: "#8892b0" }}>Tiến độ hôm nay</span>
           <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "14px", color: "#a5b4fc" }}>{wordsLearnedToday} / {learnTarget} từ</span>
         </div>
-        <div style={{ height: "6px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", marginBottom: "14px" }}>
-          <div style={{ width: `${pct}%`, height: "100%", borderRadius: "9999px", background: "linear-gradient(90deg,#6366f1,#10b981)", boxShadow: "0 0 10px rgba(99,102,241,0.4)", transition: "width 0.6s ease" }} />
+        
+        {/* Thanh tiến độ có hiệu ứng anim + glow */}
+        <div style={{ height: "6px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", marginBottom: "14px", overflow: "hidden" }}>
+          <div className="shimmer-bar" style={{ width: `${pct}%`, height: "100%", borderRadius: "9999px", background: "linear-gradient(90deg,#6366f1,#10b981)", boxShadow: "0 0 15px rgba(99,102,241,0.5)", transition: "width 1s cubic-bezier(0.4, 0, 0.2, 1)" }} />
         </div>
+
         <div style={{ display: "flex", gap: "28px" }}>
           {[
             { icon: "📗", label: "Từ đã học", value: wordsLearnedToday, color: "#10b981" },
@@ -148,29 +156,46 @@ export default function DashboardHome({
         </div>
       </div>
 
-      {/* 2 Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px" }}>
-        <div style={{ background: "rgba(255,255,255,0.03)", border: "0.8px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "24px" }}>
+      {/* 3. Two Cards - Animation: Fade-in-up + Hover lift */}
+      <div className="animate-fade-in-up delay-150" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "20px" }}>
+        {/* Card 1 */}
+        <div className="hover-card" style={{ background: "rgba(255,255,255,0.03)", border: "0.8px solid rgba(255,255,255,0.07)", borderRadius: "16px", padding: "24px", transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(16,185,129,0.15)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "none"; }}>
           <p style={{ fontSize: "10px", fontWeight: 700, color: "#f97316", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>🔁 Ôn tập hàng ngày</p>
           <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "52px", color: "#e8eaf6", lineHeight: 1, marginBottom: "4px" }}>{dueCount}</p>
           <p style={{ fontSize: "13px", color: "#5a6a8a", marginBottom: "20px" }}>từ cần ôn hôm nay để không bị quên</p>
-          <button onClick={() => handleNavigate("review")} style={{ width: "100%", padding: "12px", borderRadius: "11px", fontSize: "14px", fontWeight: 700, fontFamily: "Outfit, sans-serif", border: "none", cursor: "pointer", background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", boxShadow: "0 0 18px rgba(16,185,129,0.35)" }}>Ôn tập ngay →</button>
+          <button onClick={() => handleNavigate("review")} style={{ width: "100%", padding: "12px", borderRadius: "11px", fontSize: "14px", fontWeight: 700, fontFamily: "Outfit, sans-serif", border: "none", cursor: "pointer", background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff", boxShadow: "0 0 18px rgba(16,185,129,0.35)", transition: "all 0.3s ease" }}
+            onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.02)"; e.currentTarget.style.boxShadow = "0 0 24px rgba(16,185,129,0.5)"; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 0 18px rgba(16,185,129,0.35)"; }}>
+            Ôn tập ngay →
+          </button>
         </div>
 
-        <div style={{ background: "rgba(99,102,241,0.06)", border: "0.8px solid rgba(99,102,241,0.15)", borderRadius: "16px", padding: "24px", boxShadow: "0 0 30px rgba(99,102,241,0.1)" }}>
+        {/* Card 2 */}
+        <div className="hover-card" style={{ background: "rgba(99,102,241,0.06)", border: "0.8px solid rgba(99,102,241,0.15)", borderRadius: "16px", padding: "24px", boxShadow: "0 0 30px rgba(99,102,241,0.1)", transition: "transform 0.3s ease, box-shadow 0.3s ease" }}
+          onMouseEnter={e => { e.currentTarget.style.transform = "translateY(-5px)"; e.currentTarget.style.boxShadow = "0 10px 30px rgba(99,102,241,0.2)"; }}
+          onMouseLeave={e => { e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 0 30px rgba(99,102,241,0.1)"; }}>
           <p style={{ fontSize: "10px", fontWeight: 700, color: "#a5b4fc", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" }}>🌟 Mục tiêu hôm nay</p>
           <div style={{ display: "flex", alignItems: "baseline", gap: "4px", marginBottom: "4px" }}>
             <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "52px", color: "#e8eaf6", lineHeight: 1 }}>{wordsLearnedToday}</p>
             <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: "22px", color: "#5a6a8a" }}>/{learnTarget} từ</p>
           </div>
           <p style={{ fontSize: "13px", color: "#5a6a8a", marginBottom: "20px" }}>mục tiêu học từ mới hàng ngày của bạn</p>
-          <button onClick={() => handleNavigate("learn")} style={{ width: "100%", padding: "12px", borderRadius: "11px", fontSize: "14px", fontWeight: 700, fontFamily: "Outfit, sans-serif", cursor: "pointer", background: "rgba(255,255,255,0.07)", color: "#e8eaf6", border: "0.8px solid rgba(255,255,255,0.12)" }}>Học từ mới →</button>
+          <button onClick={() => handleNavigate("learn")} style={{ width: "100%", padding: "12px", borderRadius: "11px", fontSize: "14px", fontWeight: 700, fontFamily: "Outfit, sans-serif", cursor: "pointer", background: "rgba(255,255,255,0.07)", color: "#e8eaf6", border: "0.8px solid rgba(255,255,255,0.12)", transition: "all 0.3s ease" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "linear-gradient(135deg,#6366f1,#8b5cf6)"; e.currentTarget.style.color = "#fff"; e.currentTarget.style.border = "0.8px solid transparent"; e.currentTarget.style.boxShadow = "0 0 18px rgba(99,102,241,0.4)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(255,255,255,0.07)"; e.currentTarget.style.color = "#e8eaf6"; e.currentTarget.style.border = "0.8px solid rgba(255,255,255,0.12)"; e.currentTarget.style.boxShadow = "none"; }}>
+            Học từ mới →
+          </button>
         </div>
       </div>
 
-      {/* Quote + Phrases */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
-        <div style={{ position: "relative", borderRadius: "18px", overflow: "hidden", background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.06) 100%)", border: "0.8px solid rgba(99,102,241,0.18)" }}>
+      {/* 4. Quote + Phrases - Animation: Fade-in-up */}
+      <div className="animate-fade-in-up delay-200" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px", marginBottom: "16px" }}>
+        {/* Quote */}
+        <div className="glow-border" style={{ position: "relative", borderRadius: "18px", overflow: "hidden", background: "linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(139,92,246,0.06) 100%)", border: "0.8px solid rgba(99,102,241,0.18)", transition: "box-shadow 0.4s ease" }}
+          onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 0 24px rgba(99,102,241,0.2)"; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = "none"; }}>
           <div style={{ position: "absolute", top: "-10px", left: "14px", fontFamily: "Outfit, sans-serif", fontSize: "100px", fontWeight: 900, lineHeight: 1, color: "rgba(99,102,241,0.08)", pointerEvents: "none", userSelect: "none" }}>"</div>
           <div style={{ padding: "20px 22px", position: "relative" }}>
             <span style={{ fontSize: "10px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", letterSpacing: "0.07em", display: "inline-block", marginBottom: "12px", background: "rgba(99,102,241,0.18)", color: "#a5b4fc", border: "0.8px solid rgba(99,102,241,0.3)" }}>✦ QUOTE HÔM NAY</span>
@@ -180,13 +205,18 @@ export default function DashboardHome({
           </div>
         </div>
 
+        {/* Phrases */}
         <div style={{ background: "rgba(255,255,255,0.03)", border: "0.8px solid rgba(255,255,255,0.07)", borderRadius: "18px", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 18px", borderBottom: "0.8px solid rgba(255,255,255,0.06)" }}>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "14px", color: "#e8eaf6" }}>💬 Cụm từ hay hôm nay</p>
               <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>Bấm để xem ví dụ</p>
             </div>
-            <button onClick={() => handleNavigate("practice")} style={{ padding: "6px 12px", borderRadius: "8px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", background: "linear-gradient(135deg,#8b5cf6,#6366f1)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 0 12px rgba(139,92,246,0.3)" }}>✨ Luyện →</button>
+            <button onClick={() => handleNavigate("practice")} style={{ padding: "6px 12px", borderRadius: "8px", fontSize: "12px", fontWeight: 700, fontFamily: "Outfit, sans-serif", background: "linear-gradient(135deg,#8b5cf6,#6366f1)", color: "#fff", border: "none", cursor: "pointer", boxShadow: "0 0 12px rgba(139,92,246,0.3)", transition: "all 0.3s ease" }}
+              onMouseEnter={e => { e.currentTarget.style.transform = "scale(1.05)"; e.currentTarget.style.boxShadow = "0 0 18px rgba(139,92,246,0.5)"; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = "scale(1)"; e.currentTarget.style.boxShadow = "0 0 12px rgba(139,92,246,0.3)"; }}>
+              ✨ Luyện →
+            </button>
           </div>
           <div style={{ padding: "12px 16px", display: "flex", flexDirection: "column", gap: "8px" }}>
             {phrases.map((p, i) => {
@@ -195,15 +225,17 @@ export default function DashboardHome({
               const bgs = ["rgba(99,102,241,0.1)", "rgba(52,211,153,0.08)", "rgba(245,158,11,0.08)"];
               const borders = ["rgba(99,102,241,0.25)", "rgba(52,211,153,0.2)", "rgba(245,158,11,0.2)"];
               return (
-                <div key={i} onClick={() => setExpandedPhrase(isOpen ? null : i)} style={{ padding: "11px 14px", borderRadius: "11px", cursor: "pointer", background: isOpen ? bgs[i] : "rgba(255,255,255,0.03)", border: `0.8px solid ${isOpen ? borders[i] : "rgba(255,255,255,0.07)"}`, transition: "all 0.2s ease" }}>
+                <div key={i} onClick={() => setExpandedPhrase(isOpen ? null : i)} style={{ padding: "11px 14px", borderRadius: "11px", cursor: "pointer", background: isOpen ? bgs[i] : "rgba(255,255,255,0.03)", border: `0.8px solid ${isOpen ? borders[i] : "rgba(255,255,255,0.07)"}`, transition: "all 0.3s ease" }}
+                  onMouseEnter={e => { e.currentTarget.style.transform = "translateX(4px)"; e.currentTarget.style.background = isOpen ? bgs[i] : "rgba(255,255,255,0.06)"; }}
+                  onMouseLeave={e => { e.currentTarget.style.transform = "translateX(0)"; e.currentTarget.style.background = isOpen ? bgs[i] : "rgba(255,255,255,0.03)"; }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div>
                       <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "14px", color: isOpen ? colors[i] : "#e8eaf6" }}>{p.phrase}</span>
                       <span style={{ fontSize: "12px", color: "#8892b0", marginLeft: "8px" }}>— {p.meaning}</span>
                     </div>
-                    <span style={{ fontSize: "11px", color: isOpen ? colors[i] : "#5a6a8a", display: "inline-block", transition: "transform 0.2s", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
+                    <span style={{ fontSize: "11px", color: isOpen ? colors[i] : "#5a6a8a", display: "inline-block", transition: "transform 0.3s ease", transform: isOpen ? "rotate(180deg)" : "rotate(0deg)" }}>▾</span>
                   </div>
-                  {isOpen && <p style={{ marginTop: "8px", paddingTop: "8px", borderTop: `0.8px solid ${borders[i]}`, fontSize: "12px", color: "#c7d2fe", fontStyle: "italic", lineHeight: 1.6 }}>"{p.example}"</p>}
+                  {isOpen && <p style={{ marginTop: "8px", paddingTop: "8px", borderTop: `0.8px solid ${borders[i]}`, fontSize: "12px", color: "#c7d2fe", fontStyle: "italic", lineHeight: 1.6, animation: "fadeSlideIn 0.3s ease" }}>"{p.example}"</p>}
                 </div>
               );
             })}
@@ -211,7 +243,43 @@ export default function DashboardHome({
         </div>
       </div>
 
+      {/* 5. Mini Practice - Animation: Fade-in-up */}
       <MiniPractice onNavigate={handleNavigate} />
+
+      {/* Global CSS Animations */}
+      <style>{`
+        @keyframes fadeSlideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fadeInUp { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        @keyframes shimmer { 
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        
+        .animate-fade-in-up { animation: fadeInUp 0.6s ease-out both; }
+        .delay-100 { animation-delay: 0.1s; }
+        .delay-150 { animation-delay: 0.15s; }
+        .delay-200 { animation-delay: 0.2s; }
+        
+        .shimmer-bar {
+          position: relative;
+          overflow: hidden;
+        }
+        .shimmer-bar::after {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+        
+        .glow-border {
+          position: relative;
+        }
+        
+        textarea::placeholder { color: #3d4a66; }
+        textarea:disabled { cursor: default; }
+      `}</style>
     </div>
   );
 }

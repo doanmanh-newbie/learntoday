@@ -8,6 +8,7 @@ import SentencePracticeFull from "../../components/sections/dashboard/SentencePr
 import TopicLibrary from "../../components/sections/dashboard/TopicLibrary.jsx";
 import StatisticsPage from "../../components/sections/dashboard/StatisticsPage.jsx";
 import LearnPage from "../learn/LearnPage.jsx";
+import DictionaryPage from "../../components/sections/dashboard/DictionaryPage";
 import ReviewPage from "../review/ReviewPage.jsx";
 import { useAuth } from "../../hooks/useAuth";
 import { reviewApi, learningApi, historyApi, studyApi } from "../../api/client";
@@ -17,12 +18,12 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   const [activeTab, setActiveTab] = useState("dashboard");
+  const [searchQuery, setSearchQuery] = useState("");
   const [minutes, setMinutes] = useState(0);
   const [dueCount, setDueCount] = useState(0);
   const [learnedToday, setLearnedToday] = useState(0);
   const [learnTarget, setLearnTarget] = useState(10);
   const [stats, setStats] = useState({ totalLearned: 0, streak: 0, accuracy: 0 });
-
   const [showLearn, setShowLearn] = useState(false);
   const [showReview, setShowReview] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
@@ -66,7 +67,19 @@ export default function Dashboard() {
 
       {!showLearn && !showReview && (
         <>
-          <Header minutes={minutes} streak={stats.streak} username={user?.username || 'Bạn'} onLogout={handleLogout} />
+         <Header 
+            minutes={minutes} 
+            streak={stats.streak} 
+            username={user?.username || 'Bạn'} 
+            onLogout={handleLogout}
+            onSearch={(value) => {
+              setSearchQuery(value);
+              if (value.trim()) {
+                setActiveTab("dictionary"); // Chuyển sang tab Từ điển
+              }
+            }}
+            searchValue={searchQuery} 
+          />
           <Nav activeTab={activeTab} setActiveTab={setActiveTab} />
         </>
       )}
@@ -94,7 +107,7 @@ export default function Dashboard() {
         {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}
         {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={openLearn} />}
         {activeTab === "datcau" && !showLearn && !showReview && <SentencePracticeFull />}
-
+        
         {showLearn && (
           <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
             <LearnPage mode="learn" folderId={selectedFolderId} onNavigateHome={closeLearn} />
@@ -102,10 +115,15 @@ export default function Dashboard() {
         )}
         {showReview && (
           <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
-            <ReviewPage onNavigateHome={closeLearn} />
+            <ReviewPage onNavigateHome={closeLearn} onGoLearn={() => openLearn(null)} />
           </div>
         )}
-
+        {activeTab === "dictionary" && !showLearn && !showReview && (
+        <DictionaryPage 
+          initialQuery={searchQuery} 
+          onQueryUsed={() => setSearchQuery("")} 
+          />
+        )}  
         <div style={{ height: 40 }} />
       </main>
 

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   SearchIcon,
@@ -10,8 +10,18 @@ import {
   UserIcon,
   LogOutIcon,
 } from "../../../icons/dashboard/index.jsx";
+import { DICTIONARY } from "../../../data/dictionary";
 
-export default function Header({ minutes, streak = 0, username = 'Bạn', onLogout }) {
+// Hàm phát âm từ (dùng chung)
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(text);
+  utt.lang = "en-US";
+  window.speechSynthesis.speak(utt);
+}
+
+export default function Header({ minutes, streak = 0, username = 'Bạn', onLogout, onSearch, searchValue }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const initials = username
     .trim()
@@ -32,6 +42,47 @@ export default function Header({ minutes, streak = 0, username = 'Bạn', onLogo
     { icon: <SettingsIcon />, label: "Cài đặt" },
     { icon: <UserIcon />, label: "Trang cá nhân" },
   ];
+
+  // 🆕 State cho Autocomplete
+  const [searchInput, setSearchInput] = useState("");
+  const [suggestions, setSuggestions] = useState([]);
+  const [showPreview, setShowPreview] = useState(null);
+  const searchRef = useRef(null);
+
+  // Đóng dropdown khi click ra ngoài
+  useEffect(() => {
+    const handler = (e) => {
+      if (searchRef.current && !searchRef.current.contains(e.target)) {
+        setSuggestions([]);
+        setShowPreview(null);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  // Hàm xử lý khi người dùng gõ
+  const handleInputChange = (value) => {
+    setSearchInput(value);
+    if (value.trim()) {
+      const keys = Object.keys(DICTIONARY);
+      const matches = keys.filter((w) => w.startsWith(value.trim().toLowerCase()));
+      setSuggestions(matches.slice(0, 6)); // Hiện tối đa 6 gợi ý
+    } else {
+      setSuggestions([]);
+    }
+    // Vẫn gửi lên Dashboard nếu bạn muốn (tùy chọn)
+    onSearch?.(value);
+  };
+
+  // Hàm khi người dùng chọn từ gợi ý
+  const handleSelectWord = (word) => {
+    const entry = DICTIONARY[word];
+    setSearchInput(word);
+    setSuggestions([]);
+    setShowPreview({ word, entry });
+    speak(word); // Phát âm từ được chọn
+  };
 
   return (
     <header
@@ -77,15 +128,96 @@ export default function Header({ minutes, streak = 0, username = 'Bạn', onLogo
         </span>
       </Link>
 
-      {/* Search */}
-      <div className="relative flex-1 max-w-xs">
-        <span
-          className="absolute left-3 top-1/2 -translate-y-1/2"
-          style={{ color: "#5a6a8a", pointerEvents: "none" }}
-        >
-          <SearchIcon />
-        </span>
-        <input className="search-input w-full" placeholder="Tìm kiếm từ vựng..." />
+      {/* 🆕 Search + Autocomplete Dropdown */}
+      <div
+        ref={searchRef}
+        style={{ position: "relative", flex: 1, maxWidth: "320px" }}
+      >
+        <div style={{ position: "relative" }}>
+          <span
+            className="absolute left-3 top-1/2 -translate-y-1/2"
+            style={{ color: "#5a6a8a", pointerEvents: "none" }}
+          >
+            <SearchIcon />
+          </span>
+          <input
+            className="search-input w-full"
+            placeholder="Tìm kiếm từ vựng..."
+            value={searchInput}
+            onChange={(e) => handleInputChange(e.target.value)}
+            onFocus={(e) => {
+              // Khi focus vào, nếu có chữ thì mở gợi ý
+              if (searchInput.trim()) {
+                handleInputChange(searchInput);
+              }
+            }}
+          />
+        </div>
+
+        {/* Dropdown gợi ý */}
+        {suggestions.length > 0 && (
+          <div
+            style={{
+              position: "absolute",
+              top: "110%",
+              left: 0,
+              right: 0,
+              background: "#0e1130",
+              border: "0.8px solid rgba(255,255,255,0.15)",
+              borderRadius: "12px",
+              boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
+              zIndex: 100,
+              overflow: "hidden",
+            }}
+          >
+            {suggestions.map((word) => (
+              <div key={word}>
+                <button
+                  style={{
+                    display: "block",
+                    width: "100%",
+                    padding: "10px 14px",
+                    background: "transparent",
+                    border: "none",
+                    textAlign: "left",
+                    color: "#c7d2fe",
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    borderBottom: "0.8px solid rgba(255,255,255,0.05)",
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = "rgba(99,102,241,0.15)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = "transparent";
+                  }}
+                  onClick={() => handleSelectWord(word)}
+                >
+                  <span style={{ fontSize: "15px" }}>📖</span> {word}
+                </button>
+
+                {/* Hiện nghĩa nhanh ngay dưới từ gợi ý */}
+                {showPreview && showPreview.word === word && (
+                  <div
+                    style={{
+                      padding: "10px 14px",
+                      background: "rgba(255,255,255,0.03)",
+                      animation: "fadeSlideIn 0.2s ease",
+                    }}
+                  >
+                    <p style={{ margin: 0, fontSize: "14px", color: "#a5b4fc" }}>
+                      /{showPreview.entry.phonetic.replace(/\//g, "")}/
+                    </p>
+                    <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#e8eaf6" }}>
+                      {showPreview.entry.pos[0]?.defs[0]?.vi}
+                    </p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="flex-1" />
