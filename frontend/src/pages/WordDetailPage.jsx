@@ -1,7 +1,8 @@
-// src/pages/dictionary/WordDetailPage.jsx
+// src/pages/WordDetailPage.jsx
 import { useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { DICTIONARY } from "../data/dictionary";
+import SaveModal from "../components/sections/dashboard/SaveModal";
 
 function speak(text, lang = "en-US") {
   if (!window.speechSynthesis) return;
@@ -11,11 +12,36 @@ function speak(text, lang = "en-US") {
   window.speechSynthesis.speak(utt);
 }
 
-export default function WordDetailPage() {
-  const { word } = useParams(); // Lấy từ khóa từ URL
-  const entry = DICTIONARY[word]; // Tìm dữ liệu từ
+const INITIAL_FOLDERS = [
+  { id: 1, name: "Công việc", color: "#6366f1", words: [] },
+  { id: 2, name: "Học thuật", color: "#10b981", words: [] },
+  { id: 3, name: "Phẩm chất", color: "#f59e0b", words: [] },
+  { id: 4, name: "Công nghệ", color: "#8b5cf6", words: [] },
+  { id: 5, name: "Giao tiếp", color: "#06b6d4", words: [] },
+];
+
+export default function WordDetailPage({ word }) {
+  const entry = DICTIONARY[word];
 
   const [activeTab, setActiveTab] = useState("anh-viet");
+  const [folders, setFolders] = useState(INITIAL_FOLDERS);
+  const [showSave, setShowSave] = useState(false);
+  const [savedToast, setSavedToast] = useState(false);
+
+  const handleSave = (folderId, w) => {
+    setFolders(prev => prev.map(f =>
+      f.id === folderId && !f.words.includes(w)
+        ? { ...f, words: [...f.words, w] } : f
+    ));
+    setSavedToast(true);
+    setTimeout(() => setSavedToast(false), 2000);
+  };
+
+  const handleCreate = (name, color) => {
+    const id = Date.now();
+    setFolders(prev => [...prev, { id, name, color, words: [] }]);
+    return id;
+  };
 
   if (!entry) {
     return (
@@ -35,6 +61,7 @@ export default function WordDetailPage() {
 
   return (
     <div style={{ maxWidth: "680px", margin: "0 auto", fontFamily: "'Inter', sans-serif" }}>
+
       {/* Nút quay lại */}
       <div style={{ marginBottom: "16px" }}>
         <Link to="/app/dictionary" style={{ color: "#a5b4fc", textDecoration: "none", fontSize: "14px" }}>
@@ -57,6 +84,7 @@ export default function WordDetailPage() {
               fontSize: "14px",
               fontWeight: 700,
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
             {t.label}
@@ -78,8 +106,28 @@ export default function WordDetailPage() {
         <div style={{ display: "flex", alignItems: "baseline", gap: "12px", flexWrap: "wrap" }}>
           <h2 style={{ color: "#fff", fontSize: "36px", fontWeight: 900, margin: 0 }}>{entry.word}</h2>
           <span style={{ color: "#94a3b8", fontSize: "18px" }}>{entry.phonetic}</span>
-          <button onClick={() => speak(entry.word, "en-GB")} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%", width: "36px", height: "36px", cursor: "pointer", color: "#94a3b8" }}>🔊 UK</button>
-          <button onClick={() => speak(entry.word, "en-US")} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%", width: "36px", height: "36px", cursor: "pointer", color: "#94a3b8" }}>🔊 US</button>
+
+          <button onClick={() => speak(entry.word, "en-GB")} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%", width: "36px", height: "36px", cursor: "pointer", color: "#94a3b8" }}>🔊</button>
+          <button onClick={() => speak(entry.word, "en-US")} style={{ background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.2)", borderRadius: "50%", width: "36px", height: "36px", cursor: "pointer", color: "#94a3b8" }}>🔊</button>
+
+          {/* ✅ NÚT LƯU VÀO THƯ MỤC */}
+          <button
+            onClick={() => setShowSave(true)}
+            style={{
+              display: "inline-flex", alignItems: "center", gap: "6px",
+              padding: "8px 16px", borderRadius: "10px",
+              background: "rgba(99,102,241,0.12)",
+              border: "1px solid rgba(99,102,241,0.35)",
+              color: "#a5b4fc", fontSize: "14px", fontWeight: 600,
+              fontFamily: "'Inter',sans-serif", cursor: "pointer",
+              marginLeft: "auto",
+              transition: "all 0.2s ease",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.22)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(99,102,241,0.12)"; }}
+          >
+            💾 Lưu vào thư mục
+          </button>
         </div>
       </div>
 
@@ -130,6 +178,40 @@ export default function WordDetailPage() {
           </>
         )}
       </div>
+
+      {/* ✅ SaveModal */}
+      {showSave && (
+        <SaveModal
+          wordOrText={entry.word}
+          folders={folders}
+          onSave={handleSave}
+          onClose={() => setShowSave(false)}
+          onCreate={handleCreate}
+        />
+      )}
+
+      {/* ✅ Toast thành công */}
+      {savedToast && (
+        <div style={{
+          position: "fixed", bottom: "24px", left: "50%", transform: "translateX(-50%)",
+          padding: "12px 24px", borderRadius: "12px",
+          background: "rgba(16,185,129,0.15)",
+          border: "1px solid rgba(16,185,129,0.4)",
+          color: "#10b981", fontSize: "14px", fontWeight: 600,
+          fontFamily: "'Outfit',sans-serif",
+          boxShadow: "0 8px 24px rgba(16,185,129,0.25)",
+          animation: "fadeSlideIn 0.3s ease",
+          zIndex: 2000,
+        }}>
+          ✅ Đã lưu "{entry.word}" vào thư mục
+        </div>
+      )}
+
+      <style>{`
+        @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
+        @keyframes modalIn { from { opacity:0; transform: scale(0.93) translateY(20px); } to { opacity:1; transform: scale(1) translateY(0); } }
+        @keyframes fadeSlideIn { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
+      `}</style>
     </div>
   );
 }

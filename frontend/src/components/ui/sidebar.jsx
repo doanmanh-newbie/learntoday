@@ -5,6 +5,7 @@ import { cva } from "class-variance-authority";
 import { PanelLeftIcon } from "lucide-react";
 import { useIsMobile } from "./use-mobile";
 import { cn } from "./utils";
+import { SidebarContext, useSidebar } from "./sidebar-context";
 import { Button } from "./button";
 import { Input } from "./input";
 import { Separator } from "./separator";
@@ -28,14 +29,6 @@ const SIDEBAR_WIDTH = "16rem";
 const SIDEBAR_WIDTH_MOBILE = "18rem";
 const SIDEBAR_WIDTH_ICON = "3rem";
 const SIDEBAR_KEYBOARD_SHORTCUT = "b";
-const SidebarContext = React.createContext(null);
-function useSidebar() {
-  const context = React.useContext(SidebarContext);
-  if (!context) {
-    throw new Error("useSidebar must be used within a SidebarProvider.");
-  }
-  return context;
-}
 function SidebarProvider({
   defaultOpen = true,
   open: openProp,
@@ -468,9 +461,7 @@ function SidebarMenuSkeleton({
   showIcon = false,
   ...props
 }) {
-  const width = React.useMemo(() => {
-    return `${Math.floor(Math.random() * 40) + 50}%`;
-  }, []);
+  const [width] = React.useState(() => `${Math.floor(Math.random() * 40) + 50}%`);
   return <div
     data-slot="sidebar-menu-skeleton"
     data-sidebar="menu-skeleton"
@@ -560,6 +551,5 @@ export {
   SidebarProvider,
   SidebarRail,
   SidebarSeparator,
-  SidebarTrigger,
-  useSidebar
+  SidebarTrigger
 };

@@ -2,10 +2,10 @@
 // STT 6.5 - Module Quy trình học từ vựng (CỐT LÕI)
 // Được gọi bởi LearnPage (STT 6, loại="learn") và ReviewPage (STT 5, loại="review")
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { speak } from '../../utils/tts';
 import { shuffle, pickRandom } from '../../utils/helpers';
-import { LV_CFG, getNextReview, getNextLevel, SRS_SECONDS } from '../../constants/srs';
+import { SRS_SECONDS } from '../../constants/srs';
 import SuggestionDialog from '../../components/learning/SuggestionDialog';
 import { POS_MAP } from '../../data/vocabulary';
 
@@ -81,8 +81,10 @@ function SessionTopBar({ phase, exType, queueLen, qIdx, roundNum, wordsLearned, 
 function Phase1Spelling({ word, onPass, onFail }) {
   const [input, setInput] = useState("");
   const [result, setResult] = useState(null);
-  const exRef = useRef(word.examples[Math.floor(Math.random() * word.examples.length)]);
-  const ex = exRef.current;
+  // useState với lazy initializer thay vì useRef(...): tránh gọi Math.random()
+  // ngay trong thân render (useRef(initialValue) vẫn tính lại arg mỗi lần
+  // render dù chỉ dùng lần đầu, gây lỗi "impure function during render").
+  const [ex] = useState(() => word.examples[Math.floor(Math.random() * word.examples.length)]);
   const parts = ex.en.split("___");
 
   const check = () => {
@@ -334,7 +336,7 @@ function P2ResultFooter({ word, result, onPass, onFail }) {
 // ── Phase 2: Multiple Choice ───────────────────────────────────────────────────
 function P2MultipleChoice({ word, batch, onPass, onFail }) {
   const others = batch.filter(w => w.id !== word.id);
-  const options = useRef(shuffle([word, ...pickRandom(others, Math.min(3, others.length))]));
+  const [options] = useState(() => shuffle([word, ...pickRandom(others, Math.min(3, others.length))]));
   const [selected, setSelected] = useState(null);
   const [result, setResult] = useState(null);
 
@@ -357,7 +359,7 @@ function P2MultipleChoice({ word, batch, onPass, onFail }) {
           color: "#ffffff", textAlign: "center" }}>"{word.meaning}"</p>
       </div>
       <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {options.current.map(opt => {
+        {options.map(opt => {
           const isSel = selected === opt.id;
           const isOk = opt.id === word.id;
           return (
@@ -383,11 +385,10 @@ function P2MultipleChoice({ word, batch, onPass, onFail }) {
 // ── Phase 2: Fill Blank ────────────────────────────────────────────────────────
 function P2FillBlank({ word, batch, onPass, onFail }) {
   const others = batch.filter(w => w.id !== word.id);
-  const exRef = useRef(word.examples[Math.floor(Math.random() * word.examples.length)]);
-  const options = useRef(shuffle([word, ...pickRandom(others, Math.min(3, others.length))]));
+  const [ex] = useState(() => word.examples[Math.floor(Math.random() * word.examples.length)]);
+  const [options] = useState(() => shuffle([word, ...pickRandom(others, Math.min(3, others.length))]));
   const [selected, setSelected] = useState(null);
   const [result, setResult] = useState(null);
-  const ex = exRef.current;
   const parts = ex.en.split("___");
 
   const pick = (opt) => {
@@ -420,7 +421,7 @@ function P2FillBlank({ word, batch, onPass, onFail }) {
         <p style={{ fontSize: "13px", color: "#8892b0", marginTop: "8px", fontStyle: "italic" }}>{ex.vi}</p>
       </div>
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        {options.current.map(opt => {
+        {options.map(opt => {
           const isSel = selected === opt.id;
           const isOk = opt.id === word.id;
           return (
@@ -444,8 +445,8 @@ function P2FillBlank({ word, batch, onPass, onFail }) {
 
 // ── Phase 2: Matching All ──────────────────────────────────────────────────────
 function P2MatchingAll({ batch, onComplete }) {
-  const left = useRef(shuffle(batch));
-  const right = useRef(shuffle(batch));
+  const [left] = useState(() => shuffle(batch));
+  const [right] = useState(() => shuffle(batch));
   const [selLeft, setSelLeft] = useState(null);
   const [matched, setMatched] = useState({});
   const [wrongPair, setWrongPair] = useState(null);
@@ -485,7 +486,7 @@ function P2MatchingAll({ batch, onComplete }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
             textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>Từ tiếng Anh</p>
-          {left.current.map(w => {
+          {left.map(w => {
             const done = matched[w.id];
             const isSel = selLeft === w.id;
             const isWrong = wrongPair?.l === w.id;
@@ -506,7 +507,7 @@ function P2MatchingAll({ batch, onComplete }) {
         <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
             textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>Nghĩa tiếng Việt</p>
-          {right.current.map(w => {
+          {right.map(w => {
             const done = matched[w.id];
             const isWrong = wrongPair?.r === w.id;
             return (
@@ -547,16 +548,41 @@ function P2MatchingAll({ batch, onComplete }) {
 }
 
 // ── Main LearningSession ───────────────────────────────────────────────────────
+// Áp dụng lựa chọn của người dùng trong hộp thoại đề xuất (STT 6.5 bước 4B)
+// lên 1 từ. Đặt ở module scope (ngoài component) - đây chỉ là 1 hàm xử lý
+// dữ liệu thuần, được gọi từ trong 1 event handler khi người dùng bấm chọn,
+// không phải lúc render.
+function applySuggestionAction(word, action) {
+  switch (action) {
+    case 'reset':
+      word.lv = 1;
+      word.next_review = Date.now() + 20 * 60 * 1000;
+      break;
+    case 'demote': {
+      word.lv = Math.max(word.lv - 1, 1);
+      // ✅ FIX: Sử dụng SRS_SECONDS để lấy đúng số giây
+      const seconds = SRS_SECONDS[word.lv] || 0;
+      word.next_review = Date.now() + seconds * 1000;
+      break;
+    }
+    case 'skip':
+      // Giữ nguyên
+      break;
+    default:
+      break;
+  }
+}
+
 function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBack, mode = "learn" }) {
   const isReview = mode === "review";
   const srcWords = isReview
     ? folder.words.filter(w => w.lv > 0)
     : folder.words.filter(w => w.lv === 0);
-  const batch = useRef(shuffle(srcWords).slice(0, Math.min(5, srcWords.length)));
+  const [batch] = useState(() => shuffle(srcWords).slice(0, Math.min(5, srcWords.length)));
 
   const [phase, setPhase] = useState(1);
   const [exType, setExType] = useState(1);
-  const [queue, setQueue] = useState(() => [...batch.current]);
+  const [queue, setQueue] = useState(() => [...batch]);
   const [qIdx, setQIdx] = useState(0);
   const [failedIds, setFailedIds] = useState([]);
   const [roundNum, setRoundNum] = useState(1);
@@ -577,7 +603,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
       setErrorCounts(prev => ({ ...prev, [wId]: newCount }));
 
       if (newCount >= 4) {
-        const word = batch.current.find(w => w.id === wId);
+        const word = batch.find(w => w.id === wId);
         if (word) {
           setShowSuggestion({ word, wordId: wId });
           return;
@@ -597,7 +623,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
       setFailedIds(newFailed);
     } else {
       if (newFailed.length > 0) {
-        const retryQueue = batch.current.filter(w => newFailed.includes(w.id));
+        const retryQueue = batch.filter(w => newFailed.includes(w.id));
         setQueue(retryQueue);
         setQIdx(0);
         setFailedIds([]);
@@ -610,29 +636,13 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
 
   // ── Xử lý Suggestion ──
   const handleSuggestion = (wordId, action) => {
-    const word = batch.current.find(w => w.id === wordId);
+    const word = batch.find(w => w.id === wordId);
     if (!word) {
       setShowSuggestion(null);
       return;
     }
 
-    switch (action) {
-      case 'reset':
-        word.lv = 1;
-        word.next_review = Date.now() + 20 * 60 * 1000;
-        break;
-      case 'demote':
-        word.lv = Math.max(word.lv - 1, 1);
-        // ✅ FIX: Sử dụng SRS_SECONDS để lấy đúng số giây
-        const seconds = SRS_SECONDS[word.lv] || 0;
-        word.next_review = Date.now() + seconds * 1000;
-        break;
-      case 'skip':
-        // Giữ nguyên
-        break;
-      default:
-        break;
-    }
+    applySuggestionAction(word, action);
 
     // ✅ FIX: Gọi onWordComplete để cập nhật tiến độ
     if (onWordComplete) {
@@ -650,7 +660,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
       setFailedIds(newFailed);
     } else {
       if (newFailed.length > 0) {
-        const retryQueue = batch.current.filter(w => newFailed.includes(w.id));
+        const retryQueue = batch.filter(w => newFailed.includes(w.id));
         setQueue(retryQueue);
         setQIdx(0);
         setFailedIds([]);
@@ -674,7 +684,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
   };
 
   const resetQueue = () => {
-    setQueue([...batch.current]);
+    setQueue([...batch]);
     setQIdx(0);
     setFailedIds([]);
     setRoundNum(1);
@@ -689,7 +699,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
 
   const onMatchingComplete = () => {
     // ✅ FIX: Gọi onWordComplete cho mỗi từ trong batch
-    batch.current.forEach(() => {
+    batch.forEach(() => {
       if (onWordComplete) onWordComplete();
     });
     onBack();
@@ -720,7 +730,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
 
       {phase === "transition" && (
         <PhaseTransition
-          batch={batch.current}
+          batch={batch}
           p1FirstRound={p1FirstRound}
           onStartPhase2={startPhase2}
         />
@@ -731,7 +741,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
           {phase === 2 && exType === 3 && (
             <p style={{ fontSize: "14px", fontWeight: 700, color: "#34d399",
               fontFamily: "Outfit, sans-serif", marginBottom: "16px" }}>
-              Dạng 3 — Ghép tất cả {batch.current.length} từ với nghĩa
+              Dạng 3 — Ghép tất cả {batch.length} từ với nghĩa
             </p>
           )}
 
@@ -754,7 +764,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
               <P2MultipleChoice
                 key={`mc-${currentWord.id}-r${roundNum}`}
                 word={currentWord}
-                batch={batch.current}
+                batch={batch}
                 onPass={() => completeWord(currentWord.id, true)}
                 onFail={() => completeWord(currentWord.id, false)}
               />
@@ -763,7 +773,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
               <P2FillBlank
                 key={`fb-${currentWord.id}-r${roundNum}`}
                 word={currentWord}
-                batch={batch.current}
+                batch={batch}
                 onPass={() => completeWord(currentWord.id, true)}
                 onFail={() => completeWord(currentWord.id, false)}
               />
@@ -771,7 +781,7 @@ function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBa
             {phase === 2 && exType === 3 && (
               <P2MatchingAll
                 key="matching-all"
-                batch={batch.current}
+                batch={batch}
                 onComplete={onMatchingComplete}
               />
             )}

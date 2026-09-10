@@ -31,7 +31,14 @@ function App() {
                 toàn màn hình riêng biệt, không nằm trong tab của Dashboard. */}
             <Route path="/app/learn" element={<LearnRoute />} />
             <Route path="/app/review" element={<ReviewRoute />} />
-            <Route path="/app/*" element={<Dashboard />} />
+            <Route
+                path="/app/*"
+                element={
+                    <ProtectedRoute>
+                        <Dashboard />
+                    </ProtectedRoute>
+                }
+            />
    
         </Routes>
     );

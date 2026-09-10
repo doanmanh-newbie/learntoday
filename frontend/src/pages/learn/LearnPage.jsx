@@ -1,7 +1,7 @@
 // src/pages/learn/LearnPage.jsx
 // STT 6 - Học từ vựng mới. Phần chọn Folder + xem danh sách từ trước khi
 // học; phần "học 1 từ" thật sự nằm ở features/learning/LearningSession.jsx.
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import { FOLDER_DATA, POS_MAP } from "../../data/vocabulary";
 import { LearningSession } from "../../features/learning/LearningSession";
 import { LV_CFG } from "../../constants/srs"; // 🛠️ Bug 2: Đã import LV_CFG
@@ -102,6 +102,20 @@ function FolderListScreen({ onSelectFolder, mode = "learn" }) {
   const isReview = mode === "review";
   return (
     <div style={{ maxWidth: "860px", margin: "0 auto", padding: "32px 24px 80px" }}>
+      {onBack && (
+        <button
+          onClick={onBack}
+          style={{
+            display: "flex", alignItems: "center", gap: "6px", marginBottom: "20px",
+            padding: "8px 14px", borderRadius: "9px", fontSize: "13px", fontWeight: 600,
+            background: "rgba(255,255,255,0.06)", color: "#e8eaf6",
+            border: "0.8px solid rgba(255,255,255,0.12)",
+            cursor: "pointer", fontFamily: "Inter, sans-serif",
+          }}
+        >
+          ← Về trang chính
+        </button>
+      )}
       <div style={{ marginBottom: "28px" }}>
         <h1 style={{
           fontFamily: "Outfit, sans-serif", fontSize: "26px", fontWeight: 800, marginBottom: "4px",
@@ -290,7 +304,7 @@ function WordRow({ word, dimmed }) {
 
 // ── Session header bar ────────────────────────────────────────────────────────
 
-function CompletionScreen({ wordsLearned, dailyGoal, onHome }) {
+function CompletionScreen({ wordsLearned, onHome }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "70vh", padding: "24px" }}>
       <div style={{
@@ -347,20 +361,10 @@ export default function LearnPage({ onNavigateHome, mode = "learn", folderId = n
   const DAILY_GOAL = 10;
   const completeRef = useRef(false);
 
-  // 🛠️ Xử lý khi folderId thay đổi (ví dụ: người dùng bấm vào folder khác từ Dashboard)
-  useEffect(() => {
-    if (folderId) {
-      const foundFolder = FOLDER_DATA.find(f => f.id === folderId);
-      if (foundFolder) {
-        setFolder(foundFolder);
-        setScreen("wordlist"); // Nhảy thẳng vào danh sách từ
-      }
-    } else {
-      // Nếu không có folderId (bấm nút "Học từ mới" tổng quát), quay về chọn folder
-      setFolder(null);
-      setScreen("folders");
-    }
-  }, [folderId]);
+  // Lưu ý: KHÔNG cần useEffect theo dõi folderId ở đây. Dashboard chỉ mount
+  // LearnPage khi showLearn=true, và trong lúc đó TopicLibrary (nơi duy nhất
+  // gọi lại openLearn với folderId khác) đã bị ẩn đi - nên folderId không bao
+  // giờ đổi trong vòng đời của 1 lần mount. useState lazy-init ở trên là đủ.
 
   // ... (Giữ nguyên các hàm selectFolder, startSession, onWordComplete, handleBack bên dưới)
 
@@ -407,7 +411,13 @@ export default function LearnPage({ onNavigateHome, mode = "learn", folderId = n
         borderRadius: "50%", background: `radial-gradient(circle,${glowColor} 0%,transparent 70%)`,
         filter: "blur(80px)", pointerEvents: "none" }} />
 
-      {screen === "folders" && <FolderListScreen onSelectFolder={selectFolder} mode={mode} />}
+      {screen === "folders" && (
+        <FolderListScreen
+          onSelectFolder={selectFolder}
+          onBack={onNavigateHome}   // ✅ FIX
+          mode={mode}
+        />
+      )}
 
       {screen === "wordlist" && folder && (
         <WordListScreen folder={folder} mode={mode}
@@ -426,7 +436,7 @@ export default function LearnPage({ onNavigateHome, mode = "learn", folderId = n
       )}
 
       {screen === "complete" && (
-        <CompletionScreen wordsLearned={wordsLearned} dailyGoal={DAILY_GOAL}
+        <CompletionScreen wordsLearned={wordsLearned}
           onHome={() => { onNavigateHome?.(); setScreen("folders"); setWordsLearned(0); completeRef.current = false; }} />
       )}
 

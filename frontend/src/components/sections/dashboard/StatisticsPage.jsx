@@ -620,7 +620,6 @@ export default function StatisticsPage() {
               display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
               fontSize: "13px", fontWeight: 500, fontFamily: "Inter, sans-serif",
               color: "#8892b0", background: "transparent",
-              borderTop: "0.8px solid rgba(255,255,255,0.06)",
               cursor: "pointer", transition: "all 0.2s ease",
               border: "none", borderTop: "0.8px solid rgba(255,255,255,0.06)",
             }}

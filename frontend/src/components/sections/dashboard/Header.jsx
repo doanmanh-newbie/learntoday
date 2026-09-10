@@ -23,7 +23,7 @@ function speak(text, lang = "en-US") {
 }
 
 // ─── Header chính ─────────────────────────────────────────────────────────────
-export default function Header({ minutes, streak = 0, username = 'Bạn', onLogout, onSearch, searchValue }) {
+export default function Header({ minutes, streak = 0, username = 'Bạn', onLogout, onSearch }) {
   const navigate = useNavigate();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [searchInput, setSearchInput] = useState("");

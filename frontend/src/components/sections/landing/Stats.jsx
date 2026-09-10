@@ -1,5 +1,4 @@
 // Stats.jsx - Đã sửa: bỏ cú pháp TypeScript, đổi sang export default
-import React from "react";
 
 const vocabularyCategories = [
   {

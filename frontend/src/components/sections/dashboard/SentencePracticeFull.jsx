@@ -473,7 +473,7 @@ export default function SentencePracticePageFull() {
         ) : (
           /* Random level tabs */
           <div style={{ marginBottom: "20px" }}>
-            <div style={{ display: "flex", background: "rgba(255,255,255,0.05)",
+            <div style={{ background: "rgba(255,255,255,0.05)",
               border: "0.8px solid rgba(255,255,255,0.08)", borderRadius: "12px",
               padding: "4px", gap: "3px", display: "inline-flex" }}>
               {Object.keys(RANDOM_SENTENCES).map(lv => {
@@ -684,27 +684,9 @@ export default function SentencePracticePageFull() {
                   </div>
                   {/* Scores inline */}
                   <div style={{ display: "flex", gap: "12px" }}>
-                    {[["Ngữ pháp", scores.grammar], ["Từ vựng", scores.vocab], ["Tự nhiên", scores.natural]].map(([label, score]) => {
-                      const color = score >= 8 ? "#10b981" : score >= 6 ? "#a5b4fc" : "#f87171";
-                      const r = 18, circ = 2 * Math.PI * r;
-                      return (
-                        <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "4px" }}>
-                          <div style={{ position: "relative", width: "48px", height: "48px" }}>
-                            <svg width="48" height="48" style={{ transform: "rotate(-90deg)" }}>
-                              <circle cx="24" cy="24" r={r} fill="none" stroke="rgba(255,255,255,0.07)" strokeWidth="3" />
-                              <circle cx="24" cy="24" r={r} fill="none" stroke={color} strokeWidth="3"
-                                strokeDasharray={circ} strokeDashoffset={circ * (1 - score / 10)}
-                                strokeLinecap="round" style={{ transition: "stroke-dashoffset 0.8s ease" }} />
-                            </svg>
-                            <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center",
-                              justifyContent: "center", fontFamily: "Outfit, sans-serif", fontWeight: 800,
-                              fontSize: "13px", color }}>{score}</span>
-                          </div>
-                          <span style={{ fontSize: "9px", color: "#5a6a8a", fontWeight: 600, letterSpacing: "0.04em",
-                            textTransform: "uppercase" }}>{label}</span>
-                        </div>
-                      );
-                    })}
+                    {[["Ngữ pháp", scores.grammar], ["Từ vựng", scores.vocab], ["Tự nhiên", scores.natural]].map(([label, score]) => (
+                      <ScoreDot key={label} label={label} score={score} />
+                    ))}
                   </div>
                 </div>
 

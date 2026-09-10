@@ -88,11 +88,15 @@ function NoReviewScreen({ onNavigateHome, onGoLearn }) {
 export default function ReviewPage({ onNavigateHome, onGoLearn }) {
   const [screen, setScreen] = useState("overview");
   const [reviewed, setReviewed] = useState(0);
+  // Chốt thời điểm "bây giờ" 1 lần duy nhất lúc mount, tránh gọi Date.now()
+  // trực tiếp trong thân render (không thuần khiết - giá trị đổi mỗi lần gọi)
+  // và giữ danh sách từ cần ôn ổn định trong suốt phiên ôn tập.
+  const [now] = useState(() => Date.now());
 
-  const allDueWords = FOLDER_DATA.flatMap(f => 
-    f.words.filter(w => w.lv > 0 && w.next_review <= Date.now())
+  const allDueWords = FOLDER_DATA.flatMap(f =>
+    f.words.filter(w => w.lv > 0 && w.next_review <= now)
   );
-  
+
   // Nếu không có từ cần ôn
   if (allDueWords.length === 0) {
     return <NoReviewScreen onNavigateHome={onNavigateHome} onGoLearn={onGoLearn} />;
@@ -113,13 +117,28 @@ export default function ReviewPage({ onNavigateHome, onGoLearn }) {
     byLevel[w.lv].push(w);
   });
 
-  const now = Date.now();
   const schedule = Object.entries(byLevel)
     .map(([lv, words]) => {
       const lvNum = Number(lv);
       return { lv: lvNum, count: words.length, nextMs: now + SRS_SECONDS[lvNum] * 1000 };
     })
     .sort((a, b) => a.nextMs - b.nextMs);
+
+   const BackButton = () => (
+    <button
+      onClick={onNavigateHome}
+      style={{
+        display: "flex", alignItems: "center", gap: "6px",
+        padding: "8px 14px", borderRadius: "9px", fontSize: "13px", fontWeight: 600,
+        background: "rgba(255,255,255,0.06)", color: "#e8eaf6",
+        border: "0.8px solid rgba(255,255,255,0.12)",
+        cursor: "pointer", fontFamily: "Inter, sans-serif",
+        marginBottom: "16px",
+      }}
+    >
+      ← Về trang chính
+    </button>
+  );
 
   if (screen === "session") {
     return (
@@ -147,7 +166,7 @@ export default function ReviewPage({ onNavigateHome, onGoLearn }) {
         filter: "blur(80px)", pointerEvents: "none" }} />
 
       <div style={{ maxWidth: "860px", margin: "0 auto", padding: "32px 24px 80px" }}>
-
+        <BackButton />
         {/* ── Header ── */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
           <div>

@@ -1,3 +1,4 @@
+// src/pages/app/Dashboard.jsx
 import { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/sections/dashboard/Header.jsx";
@@ -10,7 +11,7 @@ import StatisticsPage from "../../components/sections/dashboard/StatisticsPage.j
 import LearnPage from "../learn/LearnPage.jsx";
 import DictionaryPage from "../../components/sections/dashboard/DictionaryPage";
 import ReviewPage from "../review/ReviewPage.jsx";
-import WordDetailPage from "../WordDetailPage"; // Import trang chi tiết từ
+import WordDetailPage from "../WordDetailPage";
 import { useAuth } from "../../hooks/useAuth";
 import { reviewApi, learningApi, historyApi, studyApi } from "../../api/client";
 
@@ -18,8 +19,7 @@ export default function Dashboard() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  
-  // ✅ Chỉ khai báo MỘT LẦN DUY NHẤT
+
   const isWordDetail = location.pathname.startsWith("/app/dictionary/");
   const word = isWordDetail ? decodeURIComponent(location.pathname.split("/").pop()) : null;
 
@@ -64,30 +64,39 @@ export default function Dashboard() {
     else if (target === "practice") setActiveTab("datcau");
   };
 
+  // ✅ Khi search từ Header: chuyển sang tab Từ điển + truyền query
+  const handleHeaderSearch = (value) => {
+    if (value && value.trim()) {
+      setSearchQuery(value);
+      setActiveTab("dictionary");
+    }
+  };
+
   return (
     <div className="app-shell relative min-h-screen w-full overflow-x-hidden">
-      {/* Header + Nav - Ẩn khi học */}
       {!showLearn && !showReview && (
         <>
-          <Header minutes={minutes} streak={stats.streak} username={user?.username || 'Bạn'} onLogout={handleLogout} />
-          {/* CHỈ RENDER NAV 1 LẦN DUY NHẤT */}
+          <Header
+            minutes={minutes}
+            streak={stats.streak}
+            username={user?.username || 'Bạn'}
+            onLogout={handleLogout}
+            onSearch={handleHeaderSearch}
+          />
           <Nav activeTab={activeTab} setActiveTab={setActiveTab} />
         </>
       )}
 
       <main className="relative z-10 px-6 py-8" style={{ maxWidth: 960, margin: "0 auto" }}>
-        
-        {/* NẾU ĐANG Ở TRANG CHI TIẾT TỪ VỰNG (giữ Header + Nav) */}
         {isWordDetail && word ? (
           <WordDetailPage word={word} />
         ) : (
           <>
-            {/* TRANG CHỦ */}
             {activeTab === "dashboard" && !showLearn && !showReview && (
-              <DashboardHome 
+              <DashboardHome
                 username={user?.username || "Bạn"}
-                dueCount={dueCount} 
-                onReview={openReview} 
+                dueCount={dueCount}
+                onReview={openReview}
                 onGoLearn={() => setActiveTab("thuvien")}
                 wordsLearnedToday={learnedToday}
                 learnTarget={learnTarget}
@@ -96,38 +105,31 @@ export default function Dashboard() {
               />
             )}
 
-            {/* ÔN TẬP */}
             {activeTab === "review" && !showLearn && !showReview && (
               <ReviewLanding dueCount={dueCount} onReview={openReview} onGoLearn={() => setActiveTab("thuvien")} />
             )}
 
-            {/* THỐNG KÊ */}
             {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}
 
-            {/* THƯ VIỆN */}
             {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={openLearn} />}
 
-            {/* ĐẶT CÂU */}
             {activeTab === "datcau" && !showLearn && !showReview && <SentencePracticeFull />}
 
-            {/* TỪ ĐIỂN */}
             {activeTab === "dictionary" && !showLearn && !showReview && (
-              <DictionaryPage 
-                initialQuery={searchQuery} 
-                onQueryUsed={() => setSearchQuery("")} 
+              <DictionaryPage
+                initialQuery={searchQuery}
+                onQueryUsed={() => setSearchQuery("")}
               />
             )}
           </>
         )}
 
-        {/* Overlay Học từ mới */}
         {showLearn && (
           <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
             <LearnPage mode="learn" folderId={selectedFolderId} onNavigateHome={closeLearn} />
           </div>
         )}
 
-        {/* Overlay Ôn tập */}
         {showReview && (
           <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
             <ReviewPage onNavigateHome={closeLearn} onGoLearn={() => openLearn(null)} />

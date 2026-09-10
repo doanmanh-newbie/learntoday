@@ -1,6 +1,6 @@
 // src/components/learning/SuggestionDialog.jsx
 
-import { SRS_LABELS, getNextReview } from '../../constants/srs';
+import { SRS_LABELS } from '../../constants/srs';
 
 export default function SuggestionDialog({ word, onChoose }) {
   const currentLevel = word.lv || 1;

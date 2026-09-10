@@ -1,18 +1,149 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 
 // ─── Dữ liệu mẫu (Giữ nguyên từ file gốc) ───
 
 const DICTIONARY = {
-  accomplish: { /* ... giữ nguyên ... */ },
-  significant: { /* ... giữ nguyên ... */ },
-  perseverance: { /* ... giữ nguyên ... */ },
-  resilient: { /* ... giữ nguyên ... */ },
-  innovative: { /* ... giữ nguyên ... */ },
-  collaborate: { /* ... giữ nguyên ... */ },
-  eloquent: { /* ... giữ nguyên ... */ },
-  milestone: { /* ... giữ nguyên ... */ },
-  dedicate: { /* ... giữ nguyên ... */ },
-  analyze: { /* ... giữ nguyên ... */ },
+  accomplish: {
+    word: "accomplish", phonetic: "/əˈkʌmplɪʃ/", level: "B1",
+    family: ["accomplishment (n)", "accomplished (adj)"],
+    collocations: ["accomplish a goal", "accomplish a task", "accomplish a mission"],
+    pos: [{
+      type: "verb", synonyms: ["achieve", "complete"], antonyms: ["fail", "abandon"],
+      defs: [{
+        def: "To succeed in doing or finishing something, especially after making an effort.",
+        vi: "Hoàn thành hoặc đạt được điều gì đó, đặc biệt là sau khi nỗ lực.",
+        example: "She managed to accomplish all her goals despite the obstacles.",
+        example_vi: "Cô ấy đã hoàn thành tất cả mục tiêu dù gặp nhiều trở ngại.",
+      }],
+    }],
+  },
+  significant: {
+    word: "significant", phonetic: "/sɪɡˈnɪfɪkənt/", level: "B2",
+    family: ["significance (n)", "significantly (adv)"],
+    collocations: ["significant improvement", "significant impact", "statistically significant"],
+    pos: [{
+      type: "adjective", synonyms: ["notable", "considerable"], antonyms: ["minor", "negligible"],
+      defs: [{
+        def: "Important or large enough to be noticed or to have an effect.",
+        vi: "Quan trọng hoặc đủ lớn để được chú ý hay có tác động.",
+        example: "The research showed a significant improvement in test scores.",
+        example_vi: "Nghiên cứu cho thấy sự cải thiện đáng kể trong điểm kiểm tra.",
+      }],
+    }],
+  },
+  perseverance: {
+    word: "perseverance", phonetic: "/ˌpɜːsəˈvɪərəns/", level: "C1",
+    family: ["persevere (v)", "persevering (adj)"],
+    collocations: ["show perseverance", "the key to perseverance"],
+    pos: [{
+      type: "noun", synonyms: ["persistence", "determination"], antonyms: ["giving up"],
+      defs: [{
+        def: "Continued effort to do or achieve something despite difficulties.",
+        vi: "Sự kiên trì tiếp tục cố gắng để làm hoặc đạt được điều gì đó dù gặp khó khăn.",
+        example: "Perseverance is the key to success.",
+        example_vi: "Sự kiên trì là chìa khóa dẫn đến thành công.",
+      }],
+    }],
+  },
+  resilient: {
+    word: "resilient", phonetic: "/rɪˈzɪliənt/", level: "B2",
+    family: ["resilience (n)", "resiliently (adv)"],
+    collocations: ["remain resilient", "a resilient economy"],
+    pos: [{
+      type: "adjective", synonyms: ["tough", "adaptable"], antonyms: ["fragile", "vulnerable"],
+      defs: [{
+        def: "Able to recover quickly from difficulties or setbacks.",
+        vi: "Có khả năng phục hồi nhanh chóng sau khó khăn hoặc thất bại.",
+        example: "Children are often more resilient than we expect.",
+        example_vi: "Trẻ em thường có khả năng phục hồi tốt hơn chúng ta nghĩ.",
+      }],
+    }],
+  },
+  innovative: {
+    word: "innovative", phonetic: "/ˈɪnəveɪtɪv/", level: "B2",
+    family: ["innovation (n)", "innovate (v)", "innovator (n)"],
+    collocations: ["an innovative solution", "innovative technology"],
+    pos: [{
+      type: "adjective", synonyms: ["inventive", "original"], antonyms: ["conventional"],
+      defs: [{
+        def: "Introducing new ideas or methods; original and creative in thinking.",
+        vi: "Đưa ra những ý tưởng hoặc phương pháp mới; sáng tạo và độc đáo.",
+        example: "The company is known for its innovative approach to design.",
+        example_vi: "Công ty này nổi tiếng với cách tiếp cận thiết kế sáng tạo.",
+      }],
+    }],
+  },
+  collaborate: {
+    word: "collaborate", phonetic: "/kəˈlæbəreɪt/", level: "B1",
+    family: ["collaboration (n)", "collaborative (adj)", "collaborator (n)"],
+    collocations: ["collaborate with someone", "collaborate on a project"],
+    pos: [{
+      type: "verb", synonyms: ["cooperate", "team up"], antonyms: ["compete"],
+      defs: [{
+        def: "To work jointly with others on an activity or project.",
+        vi: "Cùng làm việc với người khác trong một hoạt động hoặc dự án.",
+        example: "Our team collaborated with designers from three countries.",
+        example_vi: "Nhóm của chúng tôi đã hợp tác với các nhà thiết kế từ ba quốc gia.",
+      }],
+    }],
+  },
+  eloquent: {
+    word: "eloquent", phonetic: "/ˈeləkwənt/", level: "C1",
+    family: ["eloquence (n)", "eloquently (adv)"],
+    collocations: ["an eloquent speaker", "eloquent argument"],
+    pos: [{
+      type: "adjective", synonyms: ["articulate", "persuasive"], antonyms: ["inarticulate"],
+      defs: [{
+        def: "Fluent and persuasive in speaking or writing.",
+        vi: "Nói hoặc viết trôi chảy và có sức thuyết phục.",
+        example: "She gave an eloquent speech at the graduation ceremony.",
+        example_vi: "Cô ấy đã có một bài phát biểu hùng hồn tại lễ tốt nghiệp.",
+      }],
+    }],
+  },
+  milestone: {
+    word: "milestone", phonetic: "/ˈmaɪlstəʊn/", level: "B1",
+    family: ["milestones (pl)"],
+    collocations: ["reach a milestone", "an important milestone"],
+    pos: [{
+      type: "noun", synonyms: ["landmark", "turning point"], antonyms: [],
+      defs: [{
+        def: "An important event or stage in the development of something.",
+        vi: "Một sự kiện hoặc cột mốc quan trọng trong quá trình phát triển của điều gì đó.",
+        example: "Graduating from university was a major milestone in her life.",
+        example_vi: "Tốt nghiệp đại học là một cột mốc quan trọng trong đời cô ấy.",
+      }],
+    }],
+  },
+  dedicate: {
+    word: "dedicate", phonetic: "/ˈdedɪkeɪt/", level: "B1",
+    family: ["dedication (n)", "dedicated (adj)"],
+    collocations: ["dedicate time to", "dedicate yourself to"],
+    pos: [{
+      type: "verb", synonyms: ["devote", "commit"], antonyms: ["neglect"],
+      defs: [{
+        def: "To give a large amount of time or effort to a particular activity or purpose.",
+        vi: "Dành nhiều thời gian hoặc công sức cho một hoạt động hay mục đích cụ thể.",
+        example: "He dedicated his life to helping others learn English.",
+        example_vi: "Anh ấy đã dành cả cuộc đời để giúp người khác học tiếng Anh.",
+      }],
+    }],
+  },
+  analyze: {
+    word: "analyze", phonetic: "/ˈænəlaɪz/", level: "B1",
+    family: ["analysis (n)", "analytical (adj)", "analyst (n)"],
+    collocations: ["analyze the data", "analyze the results"],
+    pos: [{
+      type: "verb", synonyms: ["examine", "study"], antonyms: ["ignore"],
+      defs: [{
+        def: "To examine something in detail in order to understand it better.",
+        vi: "Xem xét điều gì đó một cách chi tiết để hiểu rõ hơn.",
+        example: "Researchers analyzed the survey results carefully.",
+        example_vi: "Các nhà nghiên cứu đã phân tích kết quả khảo sát một cách cẩn thận.",
+      }],
+    }],
+  },
 };
 
 const MOCK_TRANS = {
@@ -40,10 +171,6 @@ const LEVEL_COLORS = {
   C2: "#f43f5e",
 };
 
-const FOLDER_COLORS = [
-  "#6366f1", "#10b981", "#f59e0b", "#8b5cf6",
-  "#06b6d4", "#f43f5e", "#fb923c", "#34d399",
-];
 
 const INITIAL_FOLDERS = [
   { id: 1, name: "Công việc", color: "#6366f1", words: [] },
@@ -101,335 +228,6 @@ function mockTranslate(text, srcLang) {
     : `[EN translation: "${text.trim()}"]`;
 }
 
-// ─── SaveModal (đã nâng cấp) ───
-
-function SaveModal({ wordOrText, folders, onSave, onClose, onCreate }) {
-  const [creating, setCreating] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [newColor, setNewColor] = useState(FOLDER_COLORS[0]);
-  const [saved, setSaved] = useState(null);
-  const inputRef = useRef(null);
-
-  useEffect(() => {
-    const handler = (e) => { if (e.key === "Escape") onClose(); };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [onClose]);
-
-  useEffect(() => {
-    if (creating && inputRef.current) inputRef.current.focus();
-  }, [creating]);
-
-  const handleSave = (folderId) => {
-    onSave(folderId, wordOrText);
-    setSaved(folderId);
-    setTimeout(onClose, 900);
-  };
-
-  const handleCreate = () => {
-    if (!newName.trim()) return;
-    const id = onCreate(newName.trim(), newColor);
-    onSave(id, wordOrText);
-    setSaved(id);
-    setTimeout(onClose, 900);
-  };
-
-  return (
-    <div
-      onClick={onClose}
-      style={{
-        position: "fixed", inset: 0, zIndex: 1000,
-        background: "rgba(7,9,26,0.75)",
-        backdropFilter: "blur(8px)",
-        display: "flex", alignItems: "center", justifyContent: "center",
-        animation: "overlayIn 0.18s ease",
-      }}
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        style={{
-          width: "min(420px, 92vw)",
-          background: "#0e1130",
-          border: "0.8px solid rgba(255,255,255,0.1)",
-          borderRadius: "20px",
-          padding: "28px",
-          animation: "modalIn 0.22s ease",
-          boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
-        }}
-      >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <p style={{ fontFamily: "Outfit,sans-serif", fontSize: "18px", fontWeight: 700, color: "#f8faff", margin: 0 }}>
-            💾 Lưu vào thư mục
-          </p>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: "20px", lineHeight: 1, padding: "2px 6px" }}>✕</button>
-        </div>
-
-        <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px", fontFamily: "Inter,sans-serif" }}>
-          Lưu: <span style={{ color: "#a5b4fc", fontStyle: "italic" }}>"{wordOrText}"</span>
-        </p>
-
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "240px", overflowY: "auto" }}>
-          {folders.map((f) => (
-            <button
-              key={f.id}
-              onClick={() => handleSave(f.id)}
-              disabled={saved !== null}
-              style={{
-                display: "flex", alignItems: "center", gap: "12px",
-                padding: "12px 16px",
-                background: saved === f.id ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.03)",
-                border: saved === f.id ? "0.8px solid #6366f1" : "0.8px solid rgba(255,255,255,0.07)",
-                borderRadius: "12px", cursor: saved !== null ? "default" : "pointer",
-                transition: "all 0.15s",
-              }}
-            >
-              <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: f.color, flexShrink: 0 }} />
-              <span style={{ flex: 1, fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#e2e8f0", textAlign: "left" }}>{f.name}</span>
-              <span style={{ fontSize: "12px", color: "#475569" }}>{f.words.length} từ</span>
-              {saved === f.id && <span style={{ fontSize: "16px" }}>✅</span>}
-            </button>
-          ))}
-        </div>
-
-        <button
-          onClick={() => setCreating((p) => !p)}
-          style={{
-            marginTop: "14px", width: "100%", padding: "10px 16px",
-            background: "rgba(99,102,241,0.08)",
-            border: "0.8px dashed rgba(99,102,241,0.4)",
-            borderRadius: "12px", cursor: "pointer",
-            fontFamily: "Inter,sans-serif", fontSize: "13px", color: "#a5b4fc",
-            transition: "all 0.15s",
-          }}
-        >
-          {creating ? "▾ Ẩn" : "＋ Tạo thư mục mới"}
-        </button>
-
-        {creating && (
-          <div style={{ marginTop: "12px", padding: "16px", background: "rgba(255,255,255,0.03)", borderRadius: "12px", border: "0.8px solid rgba(255,255,255,0.07)" }}>
-            <input
-              ref={inputRef}
-              value={newName}
-              onChange={(e) => setNewName(e.target.value)}
-              onKeyDown={(e) => { if (e.key === "Enter") handleCreate(); }}
-              placeholder="Tên thư mục..."
-              style={{
-                width: "100%", background: "rgba(255,255,255,0.06)",
-                border: "0.8px solid rgba(255,255,255,0.1)", borderRadius: "10px",
-                padding: "10px 14px", color: "#f8faff", fontSize: "14px",
-                fontFamily: "Inter,sans-serif", outline: "none", boxSizing: "border-box",
-                marginBottom: "12px",
-              }}
-            />
-            <div style={{ display: "flex", gap: "8px", marginBottom: "14px" }}>
-              {FOLDER_COLORS.map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setNewColor(c)}
-                  style={{
-                    width: "26px", height: "26px", borderRadius: "50%",
-                    background: c, border: newColor === c ? "2.5px solid #fff" : "2.5px solid transparent",
-                    cursor: "pointer", flexShrink: 0, padding: 0,
-                    transition: "transform 0.12s",
-                    transform: newColor === c ? "scale(1.15)" : "scale(1)",
-                  }}
-                />
-              ))}
-            </div>
-            <button
-              onClick={handleCreate}
-              style={{
-                width: "100%", padding: "10px",
-                background: "linear-gradient(135deg,#6366f1,#818cf8)",
-                border: "none", borderRadius: "10px",
-                color: "#fff", fontSize: "14px", fontWeight: 600,
-                fontFamily: "Outfit,sans-serif", cursor: "pointer",
-              }}
-            >
-              Tạo &amp; lưu
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// ─── DictCard (nâng cấp thêm nút nghe, family và collocations chi tiết hơn) ───
-
-function DictCard({ entry, onOpenSave }) {
-  const lvlColor = LEVEL_COLORS[entry.level] || "#a5b4fc";
-
-  return (
-    <div style={{ animation: "fadeSlideIn 0.35s ease" }}>
-      {/* Header */}
-      <div style={{
-        position: "relative", overflow: "hidden",
-        background: "rgba(255,255,255,0.028)",
-        border: "0.8px solid rgba(255,255,255,0.08)",
-        borderRadius: "20px", padding: "28px 28px 22px",
-        marginBottom: "12px",
-      }}>
-        <span style={{
-          position: "absolute", right: "16px", top: "8px",
-          fontFamily: "Outfit,sans-serif", fontSize: "140px", fontWeight: 900,
-          color: "rgba(99,102,241,0.06)", lineHeight: 1, userSelect: "none",
-          pointerEvents: "none",
-        }}>
-          {entry.word[0].toUpperCase()}
-        </span>
-
-        <button
-          onClick={onOpenSave}
-          style={{
-            position: "absolute", top: "20px", right: "20px",
-            background: "rgba(99,102,241,0.12)",
-            border: "0.8px solid rgba(99,102,241,0.3)",
-            borderRadius: "10px", padding: "7px 14px",
-            color: "#a5b4fc", fontSize: "13px", fontWeight: 600,
-            fontFamily: "Inter,sans-serif", cursor: "pointer",
-          }}
-        >
-          💾 Lưu vào thư mục
-        </button>
-
-        <div style={{ display: "flex", alignItems: "flex-end", gap: "14px", flexWrap: "wrap", marginBottom: "10px" }}>
-          <span style={{ fontFamily: "Outfit,sans-serif", fontSize: "42px", fontWeight: 900, color: "#f8faff", lineHeight: 1.1 }}>
-            {entry.word}
-          </span>
-          <span style={{ fontFamily: "Inter,sans-serif", fontSize: "16px", color: "#94a3b8", marginBottom: "4px" }}>
-            {entry.phonetic}
-          </span>
-          <span style={{
-            background: `${lvlColor}22`, color: lvlColor,
-            borderRadius: "8px", padding: "3px 10px",
-            fontFamily: "Outfit,sans-serif", fontSize: "13px", fontWeight: 700,
-            border: `0.8px solid ${lvlColor}44`, marginBottom: "4px",
-          }}>
-            {entry.level}
-          </span>
-          <button
-            onClick={() => speak(entry.word)}
-            style={{
-              background: "rgba(165,180,252,0.1)", border: "0.8px solid rgba(165,180,252,0.2)",
-              borderRadius: "10px", padding: "6px 14px",
-              color: "#a5b4fc", fontSize: "13px", cursor: "pointer",
-              fontFamily: "Inter,sans-serif", marginBottom: "4px",
-            }}
-          >
-            🔊 Nghe
-          </button>
-        </div>
-
-        {/* Word family */}
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "6px" }}>
-          {entry.family.map((f, i) => (
-            <span key={i} style={{
-              background: "rgba(255,255,255,0.04)", border: "0.8px solid rgba(255,255,255,0.09)",
-              borderRadius: "8px", padding: "4px 12px",
-              fontFamily: "Inter,sans-serif", fontSize: "13px", color: "#cbd5e1",
-            }}>
-              {f.word} <span style={{ color: "#64748b", fontSize: "11px" }}>({f.pos})</span>
-            </span>
-          ))}
-        </div>
-      </div>
-
-      {/* POS blocks */}
-      {entry.pos.map((block, bi) => (
-        <div key={bi} style={{
-          background: "rgba(255,255,255,0.025)", border: "0.8px solid rgba(255,255,255,0.07)",
-          borderRadius: "18px", padding: "22px 24px", marginBottom: "12px",
-        }}>
-          <span style={{
-            display: "inline-block",
-            background: "rgba(165,180,252,0.12)", color: "#a5b4fc",
-            fontStyle: "italic", fontSize: "13px", fontWeight: 600,
-            fontFamily: "Inter,sans-serif",
-            borderRadius: "8px", padding: "3px 12px", marginBottom: "16px",
-          }}>
-            {block.type}
-          </span>
-
-          {block.defs.map((d, di) => (
-            <div key={di} style={{ marginBottom: "18px" }}>
-              <div style={{ display: "flex", gap: "10px", marginBottom: "6px" }}>
-                <span style={{ color: "#6366f1", fontFamily: "Outfit,sans-serif", fontWeight: 700, fontSize: "15px", marginTop: "1px", flexShrink: 0 }}>
-                  {di + 1}.
-                </span>
-                <div style={{ flex: 1 }}>
-                  <p style={{ fontFamily: "Inter,sans-serif", fontSize: "14.5px", color: "#e2e8f0", margin: "0 0 4px" }}>
-                    {d.def}
-                  </p>
-                  <p style={{ fontFamily: "Inter,sans-serif", fontSize: "13.5px", color: "#34d399", fontStyle: "italic", margin: "0 0 10px" }}>
-                    ▸ {d.vi}
-                  </p>
-                  <div style={{
-                    background: "rgba(99,102,241,0.07)", border: "0.8px solid rgba(99,102,241,0.15)",
-                    borderLeft: "3px solid #6366f1", borderRadius: "10px", padding: "10px 14px",
-                  }}>
-                    <p style={{ fontFamily: "Inter,sans-serif", fontSize: "13.5px", color: "#94a3b8", fontStyle: "italic", margin: 0 }}>
-                      "{d.example}"
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {(block.synonyms?.length > 0 || block.antonyms?.length > 0) && (
-            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "4px" }}>
-              {block.synonyms?.map((s, i) => (
-                <span key={i} style={{
-                  background: "rgba(16,185,129,0.1)", color: "#34d399",
-                  border: "0.8px solid rgba(52,211,153,0.2)",
-                  borderRadius: "8px", padding: "4px 11px", fontSize: "12.5px",
-                  fontFamily: "Inter,sans-serif",
-                }}>
-                  ↑ {s}
-                </span>
-              ))}
-              {block.antonyms?.map((a, i) => (
-                <span key={i} style={{
-                  background: "rgba(248,113,113,0.1)", color: "#f87171",
-                  border: "0.8px solid rgba(248,113,113,0.2)",
-                  borderRadius: "8px", padding: "4px 11px", fontSize: "12.5px",
-                  fontFamily: "Inter,sans-serif",
-                }}>
-                  ↓ {a}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      ))}
-
-      {/* Collocations */}
-      {entry.collocations?.length > 0 && (
-        <div style={{
-          background: "rgba(255,255,255,0.025)", border: "0.8px solid rgba(255,255,255,0.07)",
-          borderRadius: "18px", padding: "18px 22px",
-        }}>
-          <p style={{ fontFamily: "Outfit,sans-serif", fontSize: "13px", fontWeight: 700, color: "#fbbf24", margin: "0 0 12px", letterSpacing: "0.5px" }}>
-            COLLOCATIONS
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-            {entry.collocations.map((c, i) => (
-              <span key={i} style={{
-                background: "rgba(245,158,11,0.08)", color: "#fbbf24",
-                border: "0.8px solid rgba(251,191,36,0.2)",
-                borderRadius: "8px", padding: "5px 13px", fontSize: "13px",
-                fontFamily: "Inter,sans-serif",
-              }}>
-                {c}
-              </span>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ─── Loading Dots ───
 
@@ -450,64 +248,46 @@ function LoadingDots() {
 // ─── Tab 1: Tra từ ───
 
 function TraTuTab({ folders, onSaveFolders, initialQuery = "" }) {
+  const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery);
-  const [result, setResult] = useState(null);
-  const [notFound, setNotFound] = useState(false);
-  const [saveModal, setSaveModal] = useState(false);
-  const inputRef = useRef(null);
   const [suggestions, setSuggestions] = useState([]);
   const allKeys = Object.keys(DICTIONARY);
 
-  useEffect(() => {
-    if (initialQuery && initialQuery.trim()) {
-      setQuery(initialQuery);
-      doSearch(initialQuery);
-    }
-  }, [initialQuery]);
-
-const doSearch = (q) => {
+  // ✅ Search → navigate sang WordDetailPage
+  const doSearch = (q) => {
     const key = q.trim().toLowerCase();
     if (!key) return;
-    setSuggestions([]);
     const entry = DICTIONARY[key];
     if (entry) {
-      setResult(entry);
-      setNotFound(false);
+      navigate(`/app/dictionary/${entry.word}`);
     } else {
-      setResult(null);
-      setNotFound(true);
+      // Không tìm thấy → có thể show alert hoặc navigate tới not-found page
+      alert(`Không tìm thấy từ "${q}"`);
     }
   };
+
+  useEffect(() => {
+    if (initialQuery?.trim()) {
+      setQuery(initialQuery);
+      // Delay nhỏ để đảm bảo navigation sau khi mount
+      const t = setTimeout(() => doSearch(initialQuery), 0);
+      return () => clearTimeout(t);
+    }
+  }, [initialQuery]);
 
   const handleInputChange = (value) => {
     setQuery(value);
     if (value.trim()) {
       const matches = allKeys.filter((w) => w.startsWith(value.trim().toLowerCase()));
-      setSuggestions(matches.slice(0, 8)); // Hiện tối đa 8 gợi ý
+      setSuggestions(matches.slice(0, 8));
     } else {
       setSuggestions([]);
     }
   };
 
-  const handleSave = (folderId, word) => {
-    onSaveFolders((prev) =>
-      prev.map((f) =>
-        f.id === folderId && !f.words.includes(word)
-          ? { ...f, words: [...f.words, word] }
-          : f
-      )
-    );
-  };
-
-  const handleCreate = (name, color) => {
-    const id = Date.now();
-    onSaveFolders((prev) => [...prev, { id, name, color, words: [] }]);
-    return id;
-  };
-
   return (
     <div>
-            {/* Hero search box - To, giữa, Autocomplete */}
+      {/* Search box (giữ nguyên style) */}
       <div style={{ maxWidth: "700px", margin: "0 auto 24px", position: "relative" }}>
         <div style={{ display: "flex", gap: "10px", background: "rgba(255,255,255,0.04)", border: "0.8px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "8px 10px", alignItems: "center" }}>
           <span style={{ fontSize: "20px", marginLeft: "10px" }}>🔍</span>
@@ -551,8 +331,8 @@ const doSearch = (q) => {
                   color: "#a5b4fc", fontSize: "15px", cursor: "pointer", fontFamily: "Outfit, sans-serif",
                   borderBottom: "0.8px solid rgba(255,255,255,0.04)",
                 }}
-                onMouseEnter={(e) => { e.target.style.background = "rgba(99,102,241,0.1)"; }}
-                onMouseLeave={(e) => { e.target.style.background = "transparent"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.1)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
                 {s}
               </button>
@@ -561,12 +341,13 @@ const doSearch = (q) => {
         )}
       </div>
 
+      {/* Tra nhanh */}
       <div style={{ marginBottom: "22px" }}>
         <p style={{ fontFamily: "Inter,sans-serif", fontSize: "12px", color: "#475569", marginBottom: "10px" }}>
           Tra nhanh:
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {Object.keys(DICTIONARY).map((w) => (
+          {allKeys.map((w) => (
             <button
               key={w}
               onClick={() => { setQuery(w); doSearch(w); }}
@@ -576,8 +357,8 @@ const doSearch = (q) => {
                 color: "#a5b4fc", fontSize: "13px", fontFamily: "Inter,sans-serif",
                 cursor: "pointer", transition: "all 0.15s",
               }}
-              onMouseEnter={(e) => { e.target.style.background = "rgba(99,102,241,0.18)"; }}
-              onMouseLeave={(e) => { e.target.style.background = "rgba(99,102,241,0.08)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.18)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.08)"; }}
             >
               {w}
             </button>
@@ -585,53 +366,7 @@ const doSearch = (q) => {
         </div>
       </div>
 
-      {result && (
-        <DictCard
-          entry={result}
-          onOpenSave={() => setSaveModal(true)}
-        />
-      )}
-
-      {notFound && (
-        <div style={{
-          textAlign: "center", padding: "60px 20px",
-          animation: "fadeSlideIn 0.3s ease",
-        }}>
-          <p style={{ fontSize: "48px", marginBottom: "12px" }}>🔎</p>
-          <p style={{ fontFamily: "Outfit,sans-serif", fontSize: "20px", fontWeight: 700, color: "#e2e8f0", marginBottom: "8px" }}>
-            Không tìm thấy từ này
-          </p>
-          <p style={{ fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#64748b", marginBottom: "20px" }}>
-            Hãy thử tra một trong các từ gợi ý bên dưới
-          </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", justifyContent: "center" }}>
-            {Object.keys(DICTIONARY).slice(0, 5).map((w) => (
-              <button
-                key={w}
-                onClick={() => { setQuery(w); doSearch(w); }}
-                style={{
-                  background: "rgba(99,102,241,0.1)", border: "0.8px solid rgba(99,102,241,0.25)",
-                  borderRadius: "20px", padding: "7px 16px",
-                  color: "#a5b4fc", fontSize: "13.5px", fontFamily: "Inter,sans-serif",
-                  cursor: "pointer",
-                }}
-              >
-                {w}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {saveModal && result && (
-        <SaveModal
-          wordOrText={result.word}
-          folders={folders}
-          onSave={handleSave}
-          onClose={() => setSaveModal(false)}
-          onCreate={handleCreate}
-        />
-      )}
+      {/* ✅ KHÔNG render DictCard nữa. Chỉ navigate. */}
     </div>
   );
 }
@@ -867,8 +602,110 @@ function DichTab({ folders, onSaveFolders }) {
   );
 }
 
-// ─── Tab 3: Thư mục (thêm nút xóa từ) ───
+// ─── Tab 3: Thư mục (xem/xóa từ đã lưu) ───
 
+function ThuMucTab({ folders, onRemoveWord }) {
+  const navigate = useNavigate();
+  const [openFolderId, setOpenFolderId] = useState(folders[0]?.id ?? null);
+  const openFolder = folders.find((f) => f.id === openFolderId) || null;
+
+  if (folders.length === 0) {
+    return (
+      <div style={{ textAlign: "center", padding: "60px 20px", color: "#64748b" }}>
+        Chưa có thư mục nào. Hãy lưu 1 từ ở tab "Tra từ" để tạo thư mục mới.
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", gap: "20px", flexWrap: "wrap" }}>
+      {/* Danh sách thư mục */}
+      <div style={{ flex: "0 0 220px", display: "flex", flexDirection: "column", gap: "6px" }}>
+        {folders.map((f) => (
+          <button
+            key={f.id}
+            onClick={() => setOpenFolderId(f.id)}
+            style={{
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px",
+              padding: "11px 14px", borderRadius: "12px", textAlign: "left", cursor: "pointer",
+              background: openFolderId === f.id ? "rgba(99,102,241,0.14)" : "rgba(255,255,255,0.025)",
+              border: openFolderId === f.id ? "0.8px solid rgba(99,102,241,0.35)" : "0.8px solid rgba(255,255,255,0.07)",
+              fontFamily: "Outfit,sans-serif",
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#e2e8f0", fontSize: "13.5px", fontWeight: 600 }}>
+              <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: f.color, display: "inline-block", flexShrink: 0 }} />
+              {f.name}
+            </span>
+            <span style={{ fontSize: "12px", color: "#64748b" }}>{f.words.length}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Danh sách từ trong thư mục đang chọn */}
+      <div style={{ flex: "1 1 320px", minWidth: 0 }}>
+        {!openFolder || openFolder.words.length === 0 ? (
+          <div style={{
+            padding: "40px 20px", textAlign: "center", color: "#64748b",
+            background: "rgba(255,255,255,0.02)", border: "0.8px dashed rgba(255,255,255,0.1)",
+            borderRadius: "14px",
+          }}>
+            Thư mục này chưa có từ nào được lưu.
+          </div>
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            {openFolder.words.map((w) => {
+              const entry = DICTIONARY[w];
+              return (
+                <div key={w} style={{
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
+                  padding: "12px 16px", borderRadius: "12px",
+                  background: "rgba(255,255,255,0.025)", border: "0.8px solid rgba(255,255,255,0.07)",
+                }}>
+                  <button
+                    onClick={() => entry && navigate(`/app/dictionary/${w}`)}
+                    disabled={!entry}
+                    style={{
+                      background: "none", border: "none", textAlign: "left", padding: 0,
+                      cursor: entry ? "pointer" : "default", flex: 1, minWidth: 0,
+                    }}
+                  >
+                    <p style={{ margin: 0, color: "#f8faff", fontFamily: "Outfit,sans-serif", fontWeight: 700, fontSize: "15px" }}>
+                      {w}
+                    </p>
+                    {entry?.phonetic && (
+                      <p style={{ margin: "2px 0 0", color: "#64748b", fontSize: "12.5px", fontFamily: "Inter,sans-serif" }}>
+                        {entry.phonetic}
+                      </p>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => speak(w)}
+                    style={{
+                      background: "rgba(165,180,252,0.1)", border: "0.8px solid rgba(165,180,252,0.2)",
+                      borderRadius: "9px", padding: "6px 10px", color: "#a5b4fc", fontSize: "13px", cursor: "pointer",
+                    }}
+                  >
+                    🔊
+                  </button>
+                  <button
+                    onClick={() => onRemoveWord(openFolder.id, w)}
+                    style={{
+                      background: "rgba(248,113,113,0.08)", border: "0.8px solid rgba(248,113,113,0.2)",
+                      borderRadius: "9px", padding: "6px 10px", color: "#f87171", fontSize: "13px", cursor: "pointer",
+                    }}
+                  >
+                    ✕
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 // ─── Main DictionaryPage ───
 
@@ -881,11 +718,13 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
 
   useEffect(() => {
     if (initialQuery && initialQuery.trim()) {
-      setExternalQuery(initialQuery);
-      setActiveTab(0);
-      if (onQueryUsed) onQueryUsed();
+      Promise.resolve().then(() => {
+        setExternalQuery(initialQuery);
+        setActiveTab(0);
+        if (onQueryUsed) onQueryUsed();
+      });
     }
-  }, [initialQuery]);
+  }, [initialQuery, onQueryUsed]);
 
   const handleRemoveWord = (folderId, word) => {
     setFolders((prev) =>
@@ -900,6 +739,7 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
   const tabs = [
     { label: "🔍 Tra từ", component: <TraTuTab folders={folders} onSaveFolders={setFolders} initialQuery={externalQuery} /> },
     { label: "🌐 Dịch văn bản", component: <DichTab folders={folders} onSaveFolders={setFolders} /> },
+    { label: "📁 Thư mục", component: <ThuMucTab folders={folders} onRemoveWord={handleRemoveWord} /> },
   ];
     return (
     <div
