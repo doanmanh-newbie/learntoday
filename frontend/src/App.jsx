@@ -16,21 +16,17 @@ function App() {
             <Route path="/register" element={<Register />} />
             
 
-            {/* Dashboard.jsx tự chứa Header + Nav riêng (theme tối), nên
-                không bọc thêm AppLayout ở đây để tránh 2 lớp header chồng nhau. */}
-            <Route
-                path="/app"
-                element={
-                    <ProtectedRoute>
-                        <Dashboard />
-                    </ProtectedRoute>
-                }
-            />
-
             {/* Học từ vựng mới (STT 6) và Ôn tập (STT 5) là 2 trải nghiệm
-                toàn màn hình riêng biệt, không nằm trong tab của Dashboard. */}
+                toàn màn hình riêng biệt, không nằm trong tab của Dashboard.
+                Khai báo TRƯỚC "/app/*" để không bị wildcard nuốt mất. */}
             <Route path="/app/learn" element={<LearnRoute />} />
             <Route path="/app/review" element={<ReviewRoute />} />
+
+            {/* Dashboard.jsx tự chứa Header + Nav riêng (theme tối), nên
+                không bọc thêm AppLayout ở đây để tránh 2 lớp header chồng nhau.
+                "/app/*" bao gồm cả "/app" (trang chủ) lẫn mọi tab con
+                (/app/on-tap, /app/thongke, /app/thuvien, /app/datcau,
+                /app/dictionary...) - không cần khai riêng route "/app" nữa. */}
             <Route
                 path="/app/*"
                 element={

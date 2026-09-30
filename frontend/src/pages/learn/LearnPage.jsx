@@ -1,18 +1,100 @@
 // src/pages/learn/LearnPage.jsx
-// STT 6 - Học từ vựng mới. Phần chọn Folder + xem danh sách từ trước khi
-// học; phần "học 1 từ" thật sự nằm ở features/learning/LearningSession.jsx.
-import { useState, useRef } from "react";
-import { FOLDER_DATA, POS_MAP } from "../../data/vocabulary";
+// STT 6 - Học từ vựng mới. Dùng API thật từ backend.
+import { useState, useEffect, useRef } from "react";
+import { foldersApi } from "../../api/client";
 import { LearningSession } from "../../features/learning/LearningSession";
-import { LV_CFG } from "../../constants/srs"; // 🛠️ Bug 2: Đã import LV_CFG
+import { LV_CFG } from "../../constants/srs";
 
+// ── Helpers: Chuẩn hóa dữ liệu từ backend ────────────────────────────────────
+function normalizeFolder(f) {
+  return {
+    id: f.id,
+    name: f.name,
+    type: f.type,
+    user_id: f.user_id,
+    // Backend dùng 'icon', FE cũ dùng 'image' — map về cùng tên
+    image: f.image || f.icon || null,
+    icon: f.icon || null,
+    color: f.color || (f.type === 'system' ? '#6366f1' : '#10b981'),
+    tag: f.tag || (f.type === 'system' ? 'Hệ thống' : 'Cá nhân'),
+    description: f.description,
+    word_count: f.word_count || 0,
+    // Backend không trả lv0_count → FE tự tính sau khi load words
+    lv0_count: f.lv0_count || 0,
+    reviewable_count: f.reviewable_count || 0,
+  };
+}
+
+function normalizeWord(w) {
+  return {
+    id: w.id,
+    word: w.word,
+    // Backend dùng 'pronunciation', FE cũ dùng 'phonetic'
+    phonetic: w.pronunciation || w.phonetic || '',
+    pronunciation: w.pronunciation || w.phonetic || '',
+    // Backend dùng 'word_type', FE cũ dùng 'pos'
+    pos: w.word_type || w.pos || 'n',
+    word_type: w.word_type || w.pos || 'n',
+    meaning: w.meaning,
+    // Backend trả 2 field riêng, FE cần array 'examples'
+    example: w.example,
+    example_meaning: w.example_meaning,
+    examples: w.examples || (w.example ? [{
+      en: w.example,
+      vi: w.example_meaning || '',
+    }] : []),
+    // Backend dùng 'level', FE cũ dùng 'lv'
+    lv: w.level ?? w.lv ?? 0,
+    level: w.level ?? w.lv ?? 0,
+    next_review: w.next_review,
+    difficulty: w.difficulty,
+    category: w.category,
+    audio_url: w.audio_url,
+  };
+}
+
+// ── Loading & Error ────────────────────────────────────────────────────────
+function LoadingState() {
+  return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", flexDirection: "column", gap: "16px" }}>
+      <div style={{
+        width: "48px", height: "48px", borderRadius: "50%",
+        border: "3px solid rgba(99,102,241,0.2)",
+        borderTopColor: "#6366f1",
+        animation: "spin 1s linear infinite",
+      }} />
+      <p style={{ color: "#8892b0", fontSize: "14px" }}>Đang tải...</p>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
+}
+
+function ErrorState({ message, onRetry }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", textAlign: "center", padding: "24px" }}>
+      <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
+      <p style={{ color: "#f87171", fontSize: "16px", fontWeight: 700, marginBottom: "8px" }}>Có lỗi xảy ra</p>
+      <p style={{ color: "#8892b0", fontSize: "14px", marginBottom: "24px" }}>{message}</p>
+      <button onClick={onRetry} style={{
+        padding: "10px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 700,
+        background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "#fff",
+        border: "none", cursor: "pointer", fontFamily: "Outfit, sans-serif",
+      }}>Thử lại</button>
+    </div>
+  );
+}
+
+// ── Folder Card ────────────────────────────────────────────────────────────
 function FolderCard({ folder, onSelect, mode = "learn" }) {
   const [hovered, setHovered] = useState(false);
-  const lv0        = folder.words.filter(w => w.lv === 0).length;
-  const reviewable = folder.words.filter(w => w.lv > 0).length;
-  const done = lv0 === 0;
-  const pct  = Math.round(((folder.words.length - lv0) / folder.words.length) * 100);
+  const totalWords = folder.word_count || 0;
+  const lv0 = folder.lv0_count || 0;
+  const reviewable = folder.reviewable_count || (totalWords - lv0);
+  const done = lv0 === 0 && totalWords > 0;
+  const pct = totalWords > 0 ? Math.round(((totalWords - lv0) / totalWords) * 100) : 0;
   if (mode === "review" && reviewable === 0) return null;
+
+  const color = folder.color || "#6366f1";
 
   return (
     <div
@@ -22,36 +104,38 @@ function FolderCard({ folder, onSelect, mode = "learn" }) {
       style={{
         borderRadius: "16px", overflow: "hidden", cursor: "pointer",
         border: "0.8px solid rgba(255,255,255,0.09)",
-        boxShadow: hovered ? `0 8px 32px rgba(0,0,0,0.5), 0 0 20px ${folder.color}22` : "0 4px 16px rgba(0,0,0,0.3)",
+        boxShadow: hovered ? `0 8px 32px rgba(0,0,0,0.5), 0 0 20px ${color}22` : "0 4px 16px rgba(0,0,0,0.3)",
         transition: "all 0.3s ease",
         transform: hovered ? "translateY(-3px)" : "translateY(0)",
         position: "relative",
       }}
     >
-      {/* Image */}
-      <div style={{ height: "160px", overflow: "hidden", position: "relative" }}>
-        <img
-          src={folder.image}
-          alt={folder.name}
-          style={{
-            width: "100%", height: "100%", objectFit: "cover",
-            transform: hovered ? "scale(1.06)" : "scale(1)",
-            transition: "transform 0.4s ease",
-          }}
-        />
-        {/* gradient overlay */}
+      <div style={{ height: "160px", overflow: "hidden", position: "relative",
+        background: `linear-gradient(135deg, ${color}40, ${color}10)`,
+        display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {folder.image ? (
+          <img
+            src={folder.image}
+            alt={folder.name}
+            style={{
+              width: "100%", height: "100%", objectFit: "cover",
+              transform: hovered ? "scale(1.06)" : "scale(1)",
+              transition: "transform 0.4s ease",
+            }}
+          />
+        ) : (
+          <span style={{ fontSize: "64px" }}>{folder.icon || "📁"}</span>
+        )}
         <div style={{
           position: "absolute", inset: 0,
           background: "linear-gradient(to bottom, rgba(7,9,26,0.1) 0%, rgba(7,9,26,0.75) 100%)",
         }} />
-        {/* tag badge */}
         <span style={{
           position: "absolute", top: "12px", left: "12px",
           fontSize: "10px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px",
-          background: `${folder.color}33`, color: folder.color,
-          border: `0.8px solid ${folder.color}55`, letterSpacing: "0.05em",
+          background: `${color}33`, color: color,
+          border: `0.8px solid ${color}55`, letterSpacing: "0.05em",
         }}>{folder.tag}</span>
-        {/* done badge */}
         {done && (
           <span style={{
             position: "absolute", top: "12px", right: "12px",
@@ -60,7 +144,6 @@ function FolderCard({ folder, onSelect, mode = "learn" }) {
             border: "0.8px solid rgba(16,185,129,0.4)",
           }}>✓ Hoàn thành</span>
         )}
-        {/* folder name */}
         <div style={{ position: "absolute", bottom: "12px", left: "14px" }}>
           <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "18px", color: "#e8eaf6" }}>
             {folder.name}
@@ -68,28 +151,26 @@ function FolderCard({ folder, onSelect, mode = "learn" }) {
         </div>
       </div>
 
-      {/* Bottom info */}
       <div style={{ padding: "14px 16px", background: "rgba(7,9,26,0.92)" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "10px" }}>
-          <span style={{ fontSize: "12px", color: "#5a6a8a" }}>{folder.words.length} từ tổng</span>
+          <span style={{ fontSize: "12px", color: "#5a6a8a" }}>{totalWords} từ tổng</span>
           <span style={{ fontSize: "12px", fontWeight: 600, color: mode === "review" ? "#fbbf24" : lv0 > 0 ? "#a5b4fc" : "#10b981" }}>
             {mode === "review" ? `${reviewable} từ ôn` : lv0 > 0 ? `${lv0} từ mới` : "Đã học xong"}
           </span>
         </div>
-        {/* progress bar */}
         <div style={{ height: "4px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", marginBottom: "12px" }}>
           <div style={{
             width: `${pct}%`, height: "100%", borderRadius: "9999px",
-            background: `linear-gradient(90deg,${folder.color},${folder.color}bb)`,
+            background: `linear-gradient(90deg,${color},${color}bb)`,
             transition: "width 0.5s ease",
           }} />
         </div>
         <button style={{
           width: "100%", padding: "9px", borderRadius: "9px", fontSize: "13px", fontWeight: 700,
           fontFamily: "Outfit, sans-serif", cursor: "pointer",
-          background: mode === "review" ? "rgba(245,158,11,0.1)" : done ? "rgba(16,185,129,0.1)" : `${folder.color}22`,
-          color: mode === "review" ? "#fbbf24" : done ? "#10b981" : folder.color,
-          border: mode === "review" ? "0.8px solid rgba(245,158,11,0.3)" : done ? "0.8px solid rgba(16,185,129,0.25)" : `0.8px solid ${folder.color}44`,
+          background: mode === "review" ? "rgba(245,158,11,0.1)" : done ? "rgba(16,185,129,0.1)" : `${color}22`,
+          color: mode === "review" ? "#fbbf24" : done ? "#10b981" : color,
+          border: mode === "review" ? "0.8px solid rgba(245,158,11,0.3)" : done ? "0.8px solid rgba(16,185,129,0.25)" : `0.8px solid ${color}44`,
         }}>
           {mode === "review" ? "🔁 Ôn tập →" : done ? "📖 Ôn lại" : "Xem danh sách từ →"}
         </button>
@@ -98,8 +179,13 @@ function FolderCard({ folder, onSelect, mode = "learn" }) {
   );
 }
 
-function FolderListScreen({ onSelectFolder, mode = "learn" }) {
+// ── Folder List Screen ─────────────────────────────────────────────────────
+function FolderListScreen({ folders, loading, error, onRetry, onSelectFolder, onBack, mode = "learn" }) {
   const isReview = mode === "review";
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={onRetry} />;
+
   return (
     <div style={{ maxWidth: "860px", margin: "0 auto", padding: "32px 24px 80px" }}>
       {onBack && (
@@ -129,27 +215,37 @@ function FolderListScreen({ onSelectFolder, mode = "learn" }) {
         </p>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
-        {FOLDER_DATA.map(folder => (
-          <FolderCard key={folder.id} folder={folder} onSelect={onSelectFolder} mode={mode} />
-        ))}
-      </div>
+      {folders.length === 0 ? (
+        <div style={{ textAlign: "center", padding: "60px 24px", color: "#5a6a8a" }}>
+          <p style={{ fontSize: "48px", marginBottom: "12px" }}>📭</p>
+          <p style={{ fontSize: "15px" }}>Chưa có folder nào. Hãy tạo folder mới!</p>
+        </div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: "16px" }}>
+          {folders.map(folder => (
+            <FolderCard key={folder.id} folder={folder} onSelect={onSelectFolder} mode={mode} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-// ── Screen: Word List Preview ─────────────────────────────────────────────────
-
-function WordListScreen({ folder, onBack, onStartLearning, mode = "learn" }) {
-  const isReview  = mode === "review";
-  const lv0Words  = folder.words.filter(w => w.lv === 0);
-  const doneWords = folder.words.filter(w => w.lv > 0);
+// ── Word List Screen ───────────────────────────────────────────────────────
+function WordListScreen({ folder, words, loading, error, onRetry, onBack, onStartLearning, mode = "learn" }) {
+  const isReview = mode === "review";
+  const lv0Words = words.filter(w => (w.lv || 0) === 0);
+  const doneWords = words.filter(w => (w.lv || 0) > 0);
   const activeWords = isReview ? doneWords : lv0Words;
-  const pct = Math.round((doneWords.length / folder.words.length) * 100);
+  const pct = words.length > 0 ? Math.round((doneWords.length / words.length) * 100) : 0;
+
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState message={error} onRetry={onRetry} />;
+
+  const color = folder.color || "#6366f1";
 
   return (
     <div style={{ maxWidth: "720px", margin: "0 auto", padding: "24px 24px 80px" }}>
-      {/* Back */}
       <button onClick={onBack} style={{
         display: "flex", alignItems: "center", gap: "6px", marginBottom: "20px",
         padding: "7px 14px", borderRadius: "9px", fontSize: "13px", fontWeight: 500,
@@ -158,24 +254,31 @@ function WordListScreen({ folder, onBack, onStartLearning, mode = "learn" }) {
         fontFamily: "Inter, sans-serif",
       }}>← Quay lại</button>
 
-      {/* Folder hero */}
       <div style={{ borderRadius: "18px", overflow: "hidden", marginBottom: "24px",
-        border: "0.8px solid rgba(255,255,255,0.09)", position: "relative", height: "180px" }}>
-        <img src={folder.image} alt={folder.name}
-          style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        border: "0.8px solid rgba(255,255,255,0.09)", position: "relative", height: "180px",
+        background: `linear-gradient(135deg, ${color}40, ${color}10)`,
+        display: "flex", alignItems: "center", justifyContent: "center" }}>
+        {folder.image ? (
+          <img src={folder.image} alt={folder.name}
+            style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        ) : (
+          <span style={{ fontSize: "80px" }}>{folder.icon || "📁"}</span>
+        )}
         <div style={{
           position: "absolute", inset: 0,
           background: "linear-gradient(to right, rgba(7,9,26,0.85) 0%, rgba(7,9,26,0.3) 100%)",
           display: "flex", alignItems: "center", padding: "28px 32px",
         }}>
           <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: folder.color,
-              textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "6px" }}>{folder.tag}</p>
+            <p style={{ fontSize: "11px", fontWeight: 700, color: color,
+              textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "6px" }}>
+              {folder.tag}
+            </p>
             <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "28px",
               color: "#e8eaf6", marginBottom: "10px" }}>{folder.name}</h2>
             <div style={{ display: "flex", gap: "16px" }}>
               {[
-                { label: "Tổng từ", value: folder.words.length },
+                { label: "Tổng từ", value: words.length },
                 isReview
                   ? { label: "Cần ôn", value: doneWords.length, accent: true }
                   : { label: "Chưa học", value: lv0Words.length, accent: true },
@@ -193,15 +296,18 @@ function WordListScreen({ folder, onBack, onStartLearning, mode = "learn" }) {
         </div>
       </div>
 
-      {/* Word list */}
       <div style={{ display: "flex", flexDirection: "column", gap: "6px", marginBottom: "24px" }}>
         {isReview ? (
           <>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
-              textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 8px 2px" }}>
-              Từ cần ôn ({doneWords.length})
-            </p>
-            {doneWords.map(word => <WordRow key={word.id} word={word} />)}
+            {doneWords.length > 0 && (
+              <>
+                <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
+                  textTransform: "uppercase", letterSpacing: "0.07em", margin: "0 0 8px 2px" }}>
+                  Từ cần ôn ({doneWords.length})
+                </p>
+                {doneWords.map(word => <WordRow key={word.id} word={word} />)}
+              </>
+            )}
             {lv0Words.length > 0 && (
               <>
                 <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
@@ -236,7 +342,6 @@ function WordListScreen({ folder, onBack, onStartLearning, mode = "learn" }) {
         )}
       </div>
 
-      {/* CTA */}
       {activeWords.length > 0 ? (
         <button onClick={onStartLearning} style={{
           width: "100%", padding: "15px", borderRadius: "13px", fontSize: "16px", fontWeight: 800,
@@ -272,20 +377,18 @@ function WordRow({ word, dimmed }) {
       border: "0.8px solid rgba(255,255,255,0.07)",
       opacity: dimmed ? 0.65 : 1,
     }}>
-      <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-        <div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: "8px" }}>
-            <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "15px", color: "#e8eaf6" }}>
-              {word.word}
-            </p>
-            <span style={{ fontSize: "11px", color: "#5a6a8a" }}>{word.phonetic}</span>
-            <span style={{
-              fontSize: "10px", fontWeight: 600, padding: "1px 6px", borderRadius: "4px",
-              background: "rgba(255,255,255,0.07)", color: "#8892b0",
-            }}>{POS_MAP[word.pos] || word.pos}</span>
-          </div>
-          <p style={{ fontSize: "13px", color: "#8892b0", marginTop: "2px" }}>{word.meaning}</p>
+      <div>
+        <div style={{ display: "flex", alignItems: "baseline", gap: "8px", flexWrap: "wrap" }}>
+          <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "15px", color: "#e8eaf6" }}>
+            {word.word}
+          </p>
+          <span style={{ fontSize: "11px", color: "#5a6a8a" }}>{word.phonetic}</span>
+          <span style={{
+            fontSize: "10px", fontWeight: 600, padding: "1px 6px", borderRadius: "4px",
+            background: "rgba(255,255,255,0.07)", color: "#8892b0",
+          }}>{word.pos}</span>
         </div>
+        <p style={{ fontSize: "13px", color: "#8892b0", marginTop: "2px" }}>{word.meaning}</p>
       </div>
       <span style={{
         fontSize: "11px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px",
@@ -295,15 +398,7 @@ function WordRow({ word, dimmed }) {
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SESSION COMPONENTS (Phase 1 → Transition → Phase 2 Dạng 1→2→3)
-// Queue-loop: each round goes through all current words.
-// Wrong → recorded as failed, move on. After full round: retry failed words.
-// Only when round clears with 0 failures → advance to next phase / exercise type.
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── Session header bar ────────────────────────────────────────────────────────
-
+// ── Completion Screen ──────────────────────────────────────────────────────
 function CompletionScreen({ wordsLearned, onHome }) {
   return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "70vh", padding: "24px" }}>
@@ -311,7 +406,6 @@ function CompletionScreen({ wordsLearned, onHome }) {
         background: "rgba(255,255,255,0.04)", border: "0.8px solid rgba(99,102,241,0.25)",
         borderRadius: "20px", padding: "48px 40px", maxWidth: "440px", width: "100%",
         textAlign: "center", boxShadow: "0 0 60px rgba(99,102,241,0.2)",
-        animation: "fadeSlideIn 0.4s ease",
       }}>
         <div style={{ fontSize: "52px", marginBottom: "16px" }}>🎉</div>
         <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "22px",
@@ -345,61 +439,106 @@ function CompletionScreen({ wordsLearned, onHome }) {
   );
 }
 
-// ── Main Page ────────────────────────────────────────────────────────────────
-
+// ── Main Page ──────────────────────────────────────────────────────────────
 export default function LearnPage({ onNavigateHome, mode = "learn", folderId = null }) {
-  // 🛠️ Fix Logic: Khởi tạo trực tiếp dựa trên folderId nếu có (không qua màn hình chọn folder)
-  const [screen, setScreen] = useState(folderId ? "wordlist" : "folders");
-  const [folder, setFolder] = useState(() => {
-    if (folderId) {
-      return FOLDER_DATA.find(f => f.id === folderId) || null;
-    }
-    return null;
-  });
-  
+  const [screen, setScreen] = useState("folders");
+  const [folders, setFolders] = useState([]);
+  const [folder, setFolder] = useState(null);
+  const [words, setWords] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [wordsLearned, setWordsLearned] = useState(0);
   const DAILY_GOAL = 10;
   const completeRef = useRef(false);
 
-  // Lưu ý: KHÔNG cần useEffect theo dõi folderId ở đây. Dashboard chỉ mount
-  // LearnPage khi showLearn=true, và trong lúc đó TopicLibrary (nơi duy nhất
-  // gọi lại openLearn với folderId khác) đã bị ẩn đi - nên folderId không bao
-  // giờ đổi trong vòng đời của 1 lần mount. useState lazy-init ở trên là đủ.
+  // Load folders
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    foldersApi.list()
+      .then((data) => {
+        if (cancelled) return;
+        // Backend trả: { system_folders: [...], personal_folders: [...] }
+        const systemFolders = (data.system_folders || []).map(normalizeFolder);
+        const personalFolders = (data.personal_folders || []).map(normalizeFolder);
+        const all = [...systemFolders, ...personalFolders];
+        setFolders(all);
+        // Nếu có folderId, tự động vào folder đó
+        if (folderId) {
+          const found = all.find(f => String(f.id) === String(folderId));
+          if (found) {
+            setFolder(found);
+            setScreen("wordlist");
+          } else {
+            setError("Không tìm thấy folder");
+          }
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message || "Không tải được danh sách folder");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [folderId]);
 
-  // ... (Giữ nguyên các hàm selectFolder, startSession, onWordComplete, handleBack bên dưới)
+  // Load words khi folder thay đổi
+  useEffect(() => {
+    if (!folder) return;
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    foldersApi.words(folder.id)
+      .then((data) => {
+        if (cancelled) return;
+        // Backend trả: { folder, words, pagination }
+        const list = (data.words || []).map(normalizeWord);
+        setWords(list);
+      })
+      .catch((err) => {
+        if (!cancelled) setError(err.message || "Không tải được danh sách từ");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [folder]);
 
-  function selectFolder(f) { setFolder(f); setScreen("wordlist"); }
-  function startSession()  { setScreen("session"); }
+  const selectFolder = (f) => {
+    setFolder(f);
+    setScreen("wordlist");
+  };
 
-  function onWordComplete() {
+  const startSession = () => setScreen("session");
+
+  const onWordComplete = () => {
     const next = wordsLearned + 1;
     setWordsLearned(next);
     if (next >= DAILY_GOAL) {
-      completeRef.current = true; // Đánh dấu đã hoàn thành
+      completeRef.current = true;
       setScreen("complete");
     }
-  }
+  };
 
-  // 🛠️ Bug 4: Hàm back được kiểm soát
   const handleBack = () => {
     if (!completeRef.current) {
-      if (folderId) {
-        // Nếu vào từ ngoài (Dashboard), quay về Dashboard
+      if (folderId && screen === "wordlist") {
         onNavigateHome?.();
       } else {
-        // Nếu vào từ luồng chuẩn, quay lại danh sách folder
         setScreen("folders");
+        setFolder(null);
       }
     }
   };
 
-   const handleWordListBack = () => {
+  const handleWordListBack = () => {
     if (folderId) {
-      // Nếu được truyền folderId từ ngoài, quay về Dashboard
       onNavigateHome?.();
     } else {
-      // Nếu không, quay về danh sách folder
       setScreen("folders");
+      setFolder(null);
     }
   };
 
@@ -413,25 +552,53 @@ export default function LearnPage({ onNavigateHome, mode = "learn", folderId = n
 
       {screen === "folders" && (
         <FolderListScreen
+          folders={folders}
+          loading={loading}
+          error={error}
+          onRetry={() => {
+            setLoading(true); setError("");
+            foldersApi.list()
+              .then(d => {
+                const sys = (d.system_folders || []).map(normalizeFolder);
+                const per = (d.personal_folders || []).map(normalizeFolder);
+                setFolders([...sys, ...per]);
+                setLoading(false);
+              })
+              .catch(e => { setError(e.message); setLoading(false); });
+          }}
           onSelectFolder={selectFolder}
-          onBack={onNavigateHome}   // ✅ FIX
+          onBack={onNavigateHome}
           mode={mode}
         />
       )}
 
       {screen === "wordlist" && folder && (
-        <WordListScreen folder={folder} mode={mode}
-          onBack={handleWordListBack} // Đã đổi từ "() => setScreen('folders')" sang hàm thông minh
-          onStartLearning={startSession} />
+        <WordListScreen
+          folder={folder}
+          words={words}
+          loading={loading}
+          error={error}
+          onRetry={() => {
+            setLoading(true); setError("");
+            foldersApi.words(folder.id)
+              .then(d => { setWords((d.words || []).map(normalizeWord)); setLoading(false); })
+              .catch(e => { setError(e.message); setLoading(false); });
+          }}
+          onBack={handleWordListBack}
+          onStartLearning={startSession}
+          mode={mode}
+        />
       )}
 
       {screen === "session" && folder && (
         <LearningSession
-          folder={folder} mode={mode}
+          key={folder.id}
+          folder={{ ...folder, words }}
+          mode={mode}
           dailyGoal={DAILY_GOAL}
           wordsLearned={wordsLearned}
           onWordComplete={onWordComplete}
-          onBack={handleBack} // 🛠️ Bug 4: Đã sửa ở đây
+          onBack={handleBack}
         />
       )}
 
@@ -447,4 +614,3 @@ export default function LearnPage({ onNavigateHome, mode = "learn", folderId = n
     </div>
   );
 }
-

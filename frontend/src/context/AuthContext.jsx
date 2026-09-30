@@ -1,35 +1,49 @@
 // src/context/AuthContext.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { authApi, setTokens, clearTokens, getAccessToken, getRefreshToken } from '../api/client';
 import { AuthContext } from './auth-context';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  // loading = true trong lúc đang kiểm tra token cũ lúc mới mở app,
-  // tránh việc trang "nháy" sang trạng thái chưa đăng nhập rồi mới nhảy lại.
-  // Khởi tạo dựa thẳng vào việc có token sẵn hay không, để không phải gọi
-  // setState đồng bộ ngay trong effect khi không có token.
   const [loading, setLoading] = useState(() => !!getAccessToken());
+  const mountedRef = useRef(true);
 
-  // Khi app khởi động, nếu đã có sẵn accessToken (từ lần đăng nhập trước),
-  // thử gọi /api/auth/me để khôi phục lại thông tin user
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => { mountedRef.current = false; };
+  }, []);
+
   useEffect(() => {
     const token = getAccessToken();
-    if (!token) return;
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    // Timeout 10s để tránh treo loading mãi
+    const timeoutId = setTimeout(() => {
+      if (mountedRef.current && loading) {
+        clearTokens();
+        setUser(null);
+        setLoading(false);
+      }
+    }, 10000);
 
     authApi
       .me()
       .then((data) => {
-        setUser(data.user);
+        if (mountedRef.current) setUser(data.user);
       })
       .catch(() => {
-        // Token hết hạn hoặc không hợp lệ - xóa để tránh vòng lặp gọi lỗi
-        clearTokens();
+        if (mountedRef.current) clearTokens();
       })
       .finally(() => {
-        setLoading(false);
+        clearTimeout(timeoutId);
+        if (mountedRef.current) setLoading(false);
       });
-  }, []);
+
+    return () => clearTimeout(timeoutId);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function saveSession(data) {
     setTokens(data.access_token, data.refresh_token);
@@ -52,7 +66,7 @@ export function AuthProvider({ children }) {
     try {
       await authApi.logout(getRefreshToken());
     } catch {
-      // dù API logout lỗi (mất mạng, token đã hết hạn...) vẫn xóa phiên ở client
+      // Bỏ qua lỗi logout
     }
     clearTokens();
     setUser(null);

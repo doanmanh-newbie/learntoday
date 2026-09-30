@@ -13,14 +13,24 @@ const TABS = [
 export default function Nav({ activeTab, setActiveTab }) {
   const navigate = useNavigate();
 
+  // Map tab -> URL, để URL luôn phản ánh đúng tab đang xem (đồng bộ 2
+  // chiều với Dashboard.jsx: F5 tại bất kỳ URL nào cũng ra đúng tab đó).
+  // Lưu ý: "/app/review" và "/app/learn" đã là route ĐỘC LẬP (ReviewRoute,
+  // LearnRoute - toàn màn hình, không Header/Nav). Tab "Ôn tập" trong Nav
+  // này chỉ là màn hình landing NẰM TRONG Dashboard, nên phải dùng path
+  // khác để không bị điều hướng nhầm ra khỏi Dashboard.
+  const TAB_PATHS = {
+    dashboard: "/app",
+    review: "/app/on-tap",
+    thongke: "/app/thongke",
+    thuvien: "/app/thuvien",
+    datcau: "/app/datcau",
+    dictionary: "/app/dictionary",
+  };
+
   const handleTabClick = (id) => {
-    // Cập nhật tab active (giữ nguyên logic cũ)
     setActiveTab(id);
-    
-    // Nếu bấm vào tab "Từ điển", điều hướng về trang danh sách từ điển
-    if (id === "dictionary") {
-      navigate("/app/dictionary");
-    }
+    navigate(TAB_PATHS[id] ?? "/app");
   };
 
   return (

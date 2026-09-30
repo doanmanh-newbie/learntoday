@@ -28,16 +28,20 @@ async function refreshAccessToken() {
   const rt = refreshToken || localStorage.getItem('refresh_token');
   if (!rt) return false;
 
-  const res = await fetch(`${API_BASE}/api/auth/refresh-token`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ refresh_token: rt }),
-  });
+  try {
+    const res = await fetch(`${API_BASE}/api/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh_token: rt }),
+    });
 
-  if (!res.ok) return false;
-  const data = await res.json();
-  setTokens(data.access_token, rt);
-  return true;
+    if (!res.ok) return false;
+    const data = await res.json();
+    setTokens(data.access_token, rt);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export async function apiRequest(path, options = {}) {
@@ -49,7 +53,12 @@ export async function apiRequest(path, options = {}) {
   const token = getAccessToken();
   if (token) headers.Authorization = `Bearer ${token}`;
 
-  let res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  let res;
+  try {
+    res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  } catch {
+    throw new Error('Không thể kết nối đến server. Kiểm tra lại kết nối mạng.');
+  }
 
   if (res.status === 401 && !options._retry) {
     const refreshed = await refreshAccessToken();
@@ -85,7 +94,7 @@ export const foldersApi = {
   remove: (id) => apiRequest(`/api/folders/${id}`, { method: 'DELETE' }),
   words: (id, params = {}) => {
     const qs = new URLSearchParams(params).toString();
-    return apiRequest(`/api/folders/${id}/words?${qs}`);
+    return apiRequest(`/api/folders/${id}/words${qs ? `?${qs}` : ''}`);
   },
   addWord: (folderId, wordId) =>
     apiRequest(`/api/folders/${folderId}/words`, { method: 'POST', body: JSON.stringify({ word_id: wordId }) }),
@@ -99,7 +108,7 @@ export const learningApi = {
 
 export const reviewApi = {
   dueCount: () => apiRequest('/api/review/due-count'),
-  dueWords: (limit) => apiRequest(`/api/review/due-words?limit=${limit || ''}`),
+  dueWords: (limit) => apiRequest(`/api/review/due-words${limit ? `?limit=${limit}` : ''}`),
 };
 
 export const wordsApi = {

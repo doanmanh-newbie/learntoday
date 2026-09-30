@@ -23,10 +23,28 @@ export default function Dashboard() {
   const isWordDetail = location.pathname.startsWith("/app/dictionary/");
   const word = isWordDetail ? decodeURIComponent(location.pathname.split("/").pop()) : null;
 
-  const [activeTab, setActiveTab] = useState("dashboard");
+  // Suy ra tab ban đầu từ URL, để F5 tại /app/dictionary không bị lệch
+  // về "Trang chủ" trong khi thanh địa chỉ vẫn ghi /app/dictionary.
+  const getTabFromPath = (pathname) => {
+    if (pathname.startsWith("/app/dictionary")) return "dictionary";
+    if (pathname.startsWith("/app/on-tap")) return "review";
+    if (pathname.startsWith("/app/thongke")) return "thongke";
+    if (pathname.startsWith("/app/thuvien")) return "thuvien";
+    if (pathname.startsWith("/app/datcau")) return "datcau";
+    return "dashboard";
+  };
+
+  const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
+
+  // Đồng bộ lại khi URL đổi từ bên ngoài (back/forward trình duyệt, hoặc
+  // điều hướng trực tiếp), không chỉ lúc mount lần đầu.
+  useEffect(() => {
+    setActiveTab(getTabFromPath(location.pathname));
+  }, [location.pathname]);
   const [searchQuery, setSearchQuery] = useState("");
   const [minutes, setMinutes] = useState(0);
   const [dueCount, setDueCount] = useState(0);
+  const [dueWords, setDueWords] = useState([]); 
   const [learnedToday, setLearnedToday] = useState(0);
   const [learnTarget, setLearnTarget] = useState(10);
   const [stats, setStats] = useState({ totalLearned: 0, streak: 0, accuracy: 0 });
@@ -34,16 +52,49 @@ export default function Dashboard() {
   const [showReview, setShowReview] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
 
-  useEffect(() => {
-    reviewApi.dueCount().then((data) => setDueCount(data.due_count ?? 0)).catch(() => setDueCount(0));
-    learningApi.todayProgress().then((data) => {
-      setLearnedToday(data.learned ?? 0);
-      setLearnTarget(data.target ?? 10);
-    }).catch(() => {});
-    historyApi.stats().then((data) =>
-      setStats({ totalLearned: data.total_learned ?? 0, streak: data.streak ?? 0, accuracy: data.accuracy ?? 0 })
-    ).catch(() => {});
-  }, []);
+useEffect(() => {
+  // Backend trả { count: X }, không phải { due_count: X }
+  reviewApi.dueCount()
+    .then((data) => setDueCount(data.count ?? data.due_count ?? 0))
+    .catch(() => setDueCount(0));
+
+  reviewApi.dueWords()
+    .then((data) => {
+      const list = (data.words || []).map(w => ({
+        id: w.id,
+        word: w.word,
+        phonetic: w.pronunciation || w.phonetic || '',
+        pos: w.word_type || w.pos || 'n',
+        meaning: w.meaning,
+        example: w.example,
+        example_meaning: w.example_meaning,
+        lv: w.level ?? w.lv ?? 1,
+        level: w.level ?? w.lv ?? 1,
+        next_review: w.next_review,
+      }));
+      setDueWords(list);
+    })
+    .catch(() => setDueWords([]));
+
+  // Backend trả { learned_today, daily_target, ... }
+  learningApi.todayProgress()
+    .then((data) => {
+      setLearnedToday(data.learned_today ?? data.learned ?? 0);
+      setLearnTarget(data.daily_target ?? data.target ?? 10);
+    })
+    .catch(() => {});
+
+  // Backend trả { total_words_learned, streak, ... }
+  historyApi.stats()
+    .then((data) =>
+      setStats({
+        totalLearned: data.total_words_learned ?? data.total_learned ?? 0,
+        streak: data.streak ?? 0,
+        accuracy: data.accuracy ?? 0,
+      })
+    )
+    .catch(() => {});
+}, []);
 
   useEffect(() => {
     const id = setInterval(() => {
@@ -55,7 +106,7 @@ export default function Dashboard() {
 
   const handleLogout = async () => { await logout(); navigate("/login"); };
   const openLearn = (folderId) => { setSelectedFolderId(folderId); setShowLearn(true); setShowReview(false); };
-  const openReview = () => { setShowReview(true); setShowLearn(false); };
+  const openReview = () => { setActiveTab("review"); };
   const closeLearn = () => { setShowLearn(false); setShowReview(false); setSelectedFolderId(null); };
 
   const handleNavigate = (target) => {
@@ -106,7 +157,7 @@ export default function Dashboard() {
             )}
 
             {activeTab === "review" && !showLearn && !showReview && (
-              <ReviewLanding dueCount={dueCount} onReview={openReview} onGoLearn={() => setActiveTab("thuvien")} />
+              <ReviewLanding dueWords={dueWords} onReview={openReview} onGoLearn={() => setActiveTab("thuvien")} />
             )}
 
             {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}

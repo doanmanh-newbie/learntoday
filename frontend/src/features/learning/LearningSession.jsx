@@ -1,802 +1,439 @@
 // src/features/learning/LearningSession.jsx
-// STT 6.5 - Module Quy trình học từ vựng (CỐT LÕI)
-// Được gọi bởi LearnPage (STT 6, loại="learn") và ReviewPage (STT 5, loại="review")
+// STT 6.5 - Module cốt lõi, viết lại theo cơ chế mới (4 dạng bài + lặp thông minh).
+// Logic lặp nằm ở sessionMachine.js (đã test riêng), file này chỉ lo UI + gọi API.
 
-import { useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { wordsApi } from '../../api/client';
 import { speak } from '../../utils/tts';
 import { shuffle, pickRandom } from '../../utils/helpers';
-import { SRS_SECONDS } from '../../constants/srs';
-import SuggestionDialog from '../../components/learning/SuggestionDialog';
-import { POS_MAP } from '../../data/vocabulary';
+import { initMachine, stepMachine, MAX_LEVEL } from './sessionMachine';
 
-// ── SessionTopBar ──────────────────────────────────────────────────────────────
-function SessionTopBar({ phase, exType, queueLen, qIdx, roundNum, wordsLearned, dailyGoal, onBack, folder }) {
-  const pct = Math.min((wordsLearned / dailyGoal) * 100, 100);
-  const isPhase1 = phase === 1;
-  const phaseColor = isPhase1 ? "#6366f1" : "#10b981";
-  const isRetry = roundNum > 1;
-  const exLabels = { 1: "Trắc nghiệm", 2: "Điền từ", 3: "Ghép cặp · Tất cả 5 từ" };
+const BATCH_SIZE = 5;
+const TYPE_LABEL = { 1: 'Nhập chính tả', 2: 'Trắc nghiệm', 3: 'Dịch từ vựng', 4: 'Nghe' };
+const REMIND_DAYS = [1, 3, 7];
 
-  return (
-    <div style={{ maxWidth: "680px", margin: "0 auto", padding: "20px 24px 0" }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-        <button onClick={onBack} style={{
-          padding: "6px 12px", borderRadius: "8px", fontSize: "13px", fontWeight: 500,
-          background: "rgba(255,255,255,0.05)", color: "#c7d2fe",
-          border: "0.8px solid rgba(255,255,255,0.1)", cursor: "pointer",
-        }}>← {folder.name}</button>
-
-        <div style={{ display: "flex", alignItems: "center", gap: "7px" }}>
-          <span style={{
-            fontSize: "11px", fontWeight: 800, padding: "4px 12px", borderRadius: "9999px",
-            background: isPhase1 ? "rgba(99,102,241,0.2)" : "rgba(16,185,129,0.15)",
-            color: phaseColor, border: `1px solid ${phaseColor}55`, fontFamily: "Outfit, sans-serif",
-          }}>
-            {isPhase1 ? "GIAI ĐOẠN 1 · Chính tả" : `GIAI ĐOẠN 2 · ${exLabels[exType] || ""}`}
-          </span>
-          {isRetry && (
-            <span style={{
-              fontSize: "11px", fontWeight: 700, padding: "4px 10px", borderRadius: "9999px",
-              background: "rgba(251,191,36,0.15)", color: "#fbbf24",
-              border: "1px solid rgba(251,191,36,0.3)", fontFamily: "Outfit, sans-serif",
-            }}>↺ Ôn lại vòng {roundNum}</span>
-          )}
-        </div>
-
-        <span style={{ fontSize: "12px", fontWeight: 700, color: "#a5b4fc", fontFamily: "Outfit, sans-serif" }}>
-          {wordsLearned}/{dailyGoal} từ
-        </span>
-      </div>
-
-      <div style={{ height: "4px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", marginBottom: "14px" }}>
-        <div style={{
-          width: `${pct}%`, height: "100%", borderRadius: "9999px",
-          background: "linear-gradient(90deg,#6366f1,#8b5cf6)",
-          boxShadow: "0 0 8px rgba(139,92,246,0.5)", transition: "width 0.5s ease",
-        }} />
-      </div>
-
-      {exType !== 3 && queueLen > 0 && (
-        <div style={{ display: "flex", gap: "7px", marginBottom: "20px" }}>
-          {Array.from({ length: queueLen }).map((_, i) => {
-            const done = i < qIdx;
-            const cur = i === qIdx;
-            return (
-              <div key={i} style={{
-                flex: 1, height: "6px", borderRadius: "9999px",
-                background: done ? phaseColor : cur ? phaseColor : "rgba(255,255,255,0.1)",
-                opacity: done ? 0.55 : cur ? 1 : 0.28,
-                boxShadow: cur ? `0 0 8px ${phaseColor}aa` : "none",
-                transition: "all 0.3s",
-              }} />
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
 }
 
-// ── Phase 1: Spelling ──────────────────────────────────────────────────────────
-function Phase1Spelling({ word, onPass, onFail }) {
-  const [input, setInput] = useState("");
-  const [result, setResult] = useState(null);
-  // useState với lazy initializer thay vì useRef(...): tránh gọi Math.random()
-  // ngay trong thân render (useRef(initialValue) vẫn tính lại arg mỗi lần
-  // render dù chỉ dùng lần đầu, gây lỗi "impure function during render").
-  const [ex] = useState(() => word.examples[Math.floor(Math.random() * word.examples.length)]);
-  const parts = ex.en.split("___");
+// ── Bước lướt từ (chỉ mode="learn") ─────────────────────────────────────────
 
-  const check = () => {
-    if (!input.trim() || result) return;
-    const ok = input.trim().toLowerCase() === word.word.toLowerCase();
-    speak(word.word);
-    setResult(ok ? "correct" : "wrong");
-    if (ok) setTimeout(onPass, 1000);
-  };
-
+function BrowseCard({ word, onSkip, onKnown, onLearn }) {
   return (
-    <div style={{ animation: "fadeSlideIn 0.28s ease" }}>
-      <div style={{
-        background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.3)",
-        borderRadius: "14px", padding: "20px 24px", marginBottom: "16px", textAlign: "center",
-      }}>
-        <p style={{ fontSize: "11px", fontWeight: 700, color: "#a5b4fc",
-          textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px" }}>Nghĩa tiếng Việt</p>
-        <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "28px",
-          color: "#ffffff", lineHeight: 1.2, marginBottom: "6px" }}>{word.meaning}</p>
-        <span style={{
-          fontSize: "12px", fontWeight: 600, padding: "3px 10px", borderRadius: "6px",
-          background: "rgba(165,180,252,0.15)", color: "#c7d2fe",
-          border: "0.8px solid rgba(165,180,252,0.25)",
-        }}>{POS_MAP[word.pos] || word.pos}</span>
-      </div>
-
-      <div style={{
-        background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)",
-        borderRadius: "12px", padding: "16px 20px", marginBottom: "18px",
-      }}>
-        <p style={{ fontSize: "11px", fontWeight: 700, color: "#8892b0",
-          textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "10px" }}>Ví dụ — điền từ còn thiếu</p>
-        <p style={{ fontSize: "17px", color: "#e8eaf6", lineHeight: 1.9, fontFamily: "Inter, sans-serif" }}>
-          {parts[0]}
-          <span style={{
-            display: "inline-block", minWidth: "90px", height: "24px",
-            borderBottom: `2px solid ${result === "correct" ? "#10b981" : result === "wrong" ? "#f87171" : "#6366f1"}`,
-            verticalAlign: "bottom", margin: "0 4px",
-            color: result === "correct" ? "#10b981" : result === "wrong" ? "#f87171" : "#a5b4fc",
-            fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "17px",
-            textAlign: "center", lineHeight: "24px",
-          }}>{result ? word.word : ""}</span>
-          {parts[1]}
-        </p>
-        <p style={{ fontSize: "13px", color: "#8892b0", marginTop: "8px", fontStyle: "italic" }}>{ex.vi}</p>
-      </div>
-
-      {!result && (
-        <>
-          <input
-            autoFocus
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => { if (e.key === "Enter") check(); }}
-            placeholder="Nhập từ tiếng Anh vào đây…"
-            style={{
-              width: "100%", padding: "15px 18px", borderRadius: "12px",
-              fontSize: "20px", fontFamily: "Outfit, sans-serif", fontWeight: 700,
-              textAlign: "center", background: "rgba(255,255,255,0.06)",
-              border: "1.5px solid rgba(99,102,241,0.4)", color: "#ffffff",
-              outline: "none", boxSizing: "border-box", marginBottom: "12px",
-            }}
-          />
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button onClick={check} disabled={!input.trim()} style={{
-              flex: 3, padding: "14px", borderRadius: "12px", fontSize: "15px", fontWeight: 800,
-              fontFamily: "Outfit, sans-serif", border: "none",
-              cursor: input.trim() ? "pointer" : "not-allowed",
-              background: input.trim() ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "rgba(255,255,255,0.08)",
-              color: input.trim() ? "#fff" : "#5a6a8a",
-              boxShadow: input.trim() ? "0 0 20px rgba(99,102,241,0.45)" : "none",
-            }}>Kiểm tra ↵</button>
-            <button onClick={() => speak(word.word)} style={{
-              flex: 1, padding: "14px", borderRadius: "12px", fontSize: "13px",
-              background: "rgba(16,185,129,0.12)", color: "#10b981",
-              border: "1px solid rgba(16,185,129,0.3)", cursor: "pointer",
-            }}>🔊</button>
-          </div>
-        </>
-      )}
-
-      {result === "correct" && (
-        <div style={{
-          padding: "18px", borderRadius: "12px", textAlign: "center",
-          background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.4)",
-          animation: "fadeSlideIn 0.25s ease",
-        }}>
-          <p style={{ fontSize: "22px", marginBottom: "4px" }}>✅</p>
-          <p style={{ fontSize: "16px", fontWeight: 800, color: "#10b981", fontFamily: "Outfit, sans-serif" }}>Chính xác!</p>
-          <p style={{ fontSize: "13px", color: "#6ee7b7", marginTop: "4px" }}>Chuyển từ tiếp theo…</p>
-        </div>
-      )}
-
-      {result === "wrong" && (
-        <div style={{
-          padding: "18px 20px", borderRadius: "12px",
-          background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.4)",
-          animation: "fadeSlideIn 0.25s ease",
-        }}>
-          <p style={{ fontSize: "14px", fontWeight: 800, color: "#f87171",
-            fontFamily: "Outfit, sans-serif", marginBottom: "4px" }}>❌ Chưa đúng</p>
-          <p style={{ fontSize: "15px", color: "#fca5a5", marginBottom: "14px" }}>
-            Đáp án: <strong style={{ color: "#ffffff", fontFamily: "Outfit, sans-serif" }}>{word.word}</strong>
-          </p>
-          <p style={{ fontSize: "12px", color: "#f87171", marginBottom: "12px", fontStyle: "italic" }}>
-            Từ này sẽ được ôn lại ở vòng tiếp theo.
-          </p>
-          <button onClick={onFail} style={{
-            width: "100%", padding: "12px", borderRadius: "10px", fontSize: "14px", fontWeight: 700,
-            background: "rgba(255,255,255,0.08)", color: "#c7d2fe",
-            border: "1px solid rgba(255,255,255,0.15)", cursor: "pointer", fontFamily: "Outfit, sans-serif",
-          }}>Từ tiếp theo →</button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ── Phase Transition ───────────────────────────────────────────────────────────
-function PhaseTransition({ batch, p1FirstRound, onStartPhase2 }) {
-  const correct = Object.values(p1FirstRound).filter(Boolean).length;
-  return (
-    <div style={{
-      maxWidth: "640px", margin: "0 auto", padding: "48px 24px",
-      display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
-      animation: "fadeSlideIn 0.35s ease",
-    }}>
-      <div style={{
-        width: "72px", height: "72px", borderRadius: "50%", fontSize: "32px",
-        display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "20px",
-        background: "rgba(99,102,241,0.15)", border: "1.5px solid rgba(99,102,241,0.4)",
-        boxShadow: "0 0 30px rgba(99,102,241,0.3)",
-      }}>🏁</div>
-      <h2 style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "24px",
-        color: "#ffffff", marginBottom: "6px" }}>Giai đoạn 1 hoàn thành!</h2>
-      <p style={{ fontSize: "15px", color: "#a5b4fc", marginBottom: "24px" }}>
-        Đúng ngay lần đầu: {correct}/{batch.length} từ
-      </p>
-      <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center", marginBottom: "28px" }}>
-        {batch.map(w => {
-          const ok = p1FirstRound[w.id];
-          return (
-            <span key={w.id} style={{
-              padding: "6px 14px", borderRadius: "9999px", fontSize: "13px", fontWeight: 700,
-              fontFamily: "Outfit, sans-serif",
-              background: ok ? "rgba(16,185,129,0.15)" : "rgba(248,113,113,0.12)",
-              color: ok ? "#10b981" : "#f87171",
-              border: `1px solid ${ok ? "rgba(16,185,129,0.4)" : "rgba(248,113,113,0.35)"}`,
-            }}>{ok ? "✓" : "✗"} {w.word}</span>
-          );
-        })}
-      </div>
-      <div style={{
-        padding: "16px 24px", borderRadius: "14px", marginBottom: "28px", width: "100%",
-        background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)",
-      }}>
-        <p style={{ fontSize: "14px", fontWeight: 700, color: "#10b981", marginBottom: "4px" }}>
-          Tiếp theo: Giai đoạn 2 – Bài tập
-        </p>
-        <p style={{ fontSize: "13px", color: "#6ee7b7" }}>
-          Dạng 1 (Trắc nghiệm) → Dạng 2 (Điền từ) → Dạng 3 (Ghép cặp tất cả 5 từ)
-        </p>
-      </div>
-      <button onClick={onStartPhase2} style={{
-        padding: "15px 48px", borderRadius: "13px", fontSize: "16px", fontWeight: 800,
-        fontFamily: "Outfit, sans-serif", border: "none", cursor: "pointer",
-        background: "linear-gradient(135deg,#10b981,#059669)", color: "#fff",
-        boxShadow: "0 0 28px rgba(16,185,129,0.45)",
-      }}>Bắt đầu Giai đoạn 2 →</button>
-    </div>
-  );
-}
-
-// ── Phase 2 Helpers ────────────────────────────────────────────────────────────
-const EX_COLORS = { 1: "#a5b4fc", 2: "#fbbf24", 3: "#34d399" };
-const EX_BGS = { 1: "rgba(99,102,241,0.15)", 2: "rgba(245,158,11,0.12)", 3: "rgba(52,211,153,0.12)" };
-const EX_ICONS = { 1: "🔤", 2: "📝", 3: "🔗" };
-const EX_NAMES = { 1: "Trắc nghiệm", 2: "Điền từ", 3: "Ghép cặp" };
-const EX_DESCS = {
-  1: "Chọn từ tiếng Anh đúng với nghĩa bên dưới",
-  2: "Chọn từ đúng để hoàn thành câu",
-  3: "Ghép tất cả 5 từ với nghĩa tương ứng",
-};
-
-function ExBadge({ type }) {
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "14px" }}>
-      <span style={{
-        display: "inline-flex", alignItems: "center", gap: "6px",
-        padding: "5px 14px", borderRadius: "9999px", fontSize: "12px", fontWeight: 800,
-        fontFamily: "Outfit, sans-serif", background: EX_BGS[type], color: EX_COLORS[type],
-        border: `1px solid ${EX_COLORS[type]}55`,
-      }}>{EX_ICONS[type]} Dạng {type} · {EX_NAMES[type]}</span>
-      <span style={{ fontSize: "12px", color: "#8892b0" }}>{EX_DESCS[type]}</span>
-    </div>
-  );
-}
-
-function P2ResultFooter({ word, result, onPass, onFail }) {
-  if (!result) return null;
-  const ok = result === "correct";
-  const accent = ok ? "#10b981" : "#f87171";
-  const accentBg = ok ? "rgba(16,185,129,0.1)" : "rgba(248,113,113,0.1)";
-  const accentBorder = ok ? "rgba(16,185,129,0.35)" : "rgba(248,113,113,0.35)";
-
-  return (
-    <div style={{
-      marginTop: "12px", padding: "14px 16px", borderRadius: "12px",
-      background: accentBg, border: `1px solid ${accentBorder}`,
-      animation: "fadeSlideIn 0.2s ease",
-    }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "12px" }}>
-        <div style={{ display: "flex", alignItems: "baseline", gap: "10px", flexWrap: "wrap" }}>
-          <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "20px", color: "#ffffff" }}>
+    <div style={s.card}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+        <div>
+          <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 28, color: '#e8eaf6' }}>
             {word.word}
-          </span>
-          <span style={{ fontSize: "13px", color: "#8892b0" }}>{word.phonetic}</span>
-          <span style={{
-            fontSize: "11px", fontWeight: 700, padding: "2px 8px", borderRadius: "5px",
-            background: "rgba(165,180,252,0.12)", color: "#a5b4fc",
-            border: "0.8px solid rgba(165,180,252,0.25)",
-          }}>({word.pos})</span>
+            {word.pos && <span style={{ fontSize: 14, color: '#8892b0', fontWeight: 500 }}> ({word.pos})</span>}
+          </div>
+          <div style={{ color: '#8892b0', fontSize: 14, marginTop: 4 }}>{word.phonetic}</div>
         </div>
-        <button onClick={() => speak(word.word)} style={{
-          padding: "7px 13px", borderRadius: "8px", fontSize: "13px", fontWeight: 600,
-          background: `${accentBg}`, color: accent,
-          border: `1px solid ${accentBorder}`, cursor: "pointer", flexShrink: 0,
-        }}>🔊 Nghe lại</button>
+        <button type="button" onClick={() => speak(word.word)} style={s.speakBtn}>🔊</button>
       </div>
-      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-        <span style={{ fontSize: "13px", fontWeight: 700, color: accent, flex: 1 }}>
-          {ok ? "✅ Chính xác!" : `❌ Sai — đáp án: ${word.word}`}
-          {!ok && <span style={{ fontSize: "11px", color: "#f87171", marginLeft: "8px", fontStyle: "italic" }}>ôn lại vòng sau</span>}
-        </span>
-        <button onClick={ok ? onPass : onFail} style={{
-          padding: "9px 20px", borderRadius: "9px", fontSize: "14px", fontWeight: 700,
-          background: ok ? "linear-gradient(135deg,#10b981,#059669)" : "rgba(255,255,255,0.08)",
-          color: ok ? "#fff" : "#c7d2fe",
-          border: ok ? "none" : "1px solid rgba(255,255,255,0.15)",
-          cursor: "pointer", fontFamily: "Outfit, sans-serif",
-          boxShadow: ok ? "0 0 16px rgba(16,185,129,0.35)" : "none",
-        }}>Tiếp theo →</button>
-      </div>
-    </div>
-  );
-}
 
-// ── Phase 2: Multiple Choice ───────────────────────────────────────────────────
-function P2MultipleChoice({ word, batch, onPass, onFail }) {
-  const others = batch.filter(w => w.id !== word.id);
-  const [options] = useState(() => shuffle([word, ...pickRandom(others, Math.min(3, others.length))]));
-  const [selected, setSelected] = useState(null);
-  const [result, setResult] = useState(null);
-
-  const pick = (opt) => {
-    if (result) return;
-    setSelected(opt.id);
-    const ok = opt.id === word.id;
-    speak(word.word);
-    setResult(ok ? "correct" : "wrong");
-  };
-
-  return (
-    <div style={{ animation: "fadeSlideIn 0.25s ease" }}>
-      <ExBadge type={1} />
-      <div style={{
-        background: "rgba(99,102,241,0.1)", border: "1px solid rgba(99,102,241,0.25)",
-        borderRadius: "12px", padding: "18px 20px", marginBottom: "16px",
-      }}>
-        <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "24px",
-          color: "#ffffff", textAlign: "center" }}>"{word.meaning}"</p>
-      </div>
-      <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-        {options.map(opt => {
-          const isSel = selected === opt.id;
-          const isOk = opt.id === word.id;
-          return (
-            <button key={opt.id} onClick={() => pick(opt)} style={{
-              padding: "14px 20px", borderRadius: "11px", textAlign: "left",
-              cursor: result ? "default" : "pointer",
-              fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "17px",
-              background: !result ? (isSel ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.06)")
-                : isOk ? "rgba(16,185,129,0.18)" : isSel ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.03)",
-              border: !result ? (isSel ? "1.5px solid rgba(99,102,241,0.5)" : "1px solid rgba(255,255,255,0.12)")
-                : isOk ? "1.5px solid rgba(16,185,129,0.5)" : isSel ? "1.5px solid rgba(248,113,113,0.5)" : "1px solid rgba(255,255,255,0.06)",
-              color: !result ? "#ffffff" : isOk ? "#10b981" : isSel ? "#f87171" : "#5a6a8a",
-              transition: "all 0.18s",
-            }}>{opt.word}</button>
-          );
-        })}
-      </div>
-      <P2ResultFooter word={word} result={result} onPass={onPass} onFail={onFail} />
-    </div>
-  );
-}
-
-// ── Phase 2: Fill Blank ────────────────────────────────────────────────────────
-function P2FillBlank({ word, batch, onPass, onFail }) {
-  const others = batch.filter(w => w.id !== word.id);
-  const [ex] = useState(() => word.examples[Math.floor(Math.random() * word.examples.length)]);
-  const [options] = useState(() => shuffle([word, ...pickRandom(others, Math.min(3, others.length))]));
-  const [selected, setSelected] = useState(null);
-  const [result, setResult] = useState(null);
-  const parts = ex.en.split("___");
-
-  const pick = (opt) => {
-    if (result) return;
-    setSelected(opt.id);
-    const ok = opt.id === word.id;
-    speak(word.word);
-    setResult(ok ? "correct" : "wrong");
-  };
-
-  return (
-    <div style={{ animation: "fadeSlideIn 0.25s ease" }}>
-      <ExBadge type={2} />
-      <div style={{
-        background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)",
-        borderRadius: "12px", padding: "16px 20px", marginBottom: "16px",
-      }}>
-        <p style={{ fontSize: "17px", color: "#e8eaf6", lineHeight: 1.9, fontFamily: "Inter, sans-serif" }}>
-          {parts[0]}
-          <span style={{
-            display: "inline-block", minWidth: "80px", height: "22px",
-            borderBottom: `2.5px solid ${result === "correct" ? "#10b981" : result === "wrong" ? "#f87171" : "#fbbf24"}`,
-            verticalAlign: "bottom", margin: "0 4px",
-            color: result === "correct" ? "#10b981" : result === "wrong" ? "#f87171" : "#fbbf24",
-            fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "17px",
-            textAlign: "center", lineHeight: "22px",
-          }}>{result ? word.word : ""}</span>
-          {parts[1]}
-        </p>
-        <p style={{ fontSize: "13px", color: "#8892b0", marginTop: "8px", fontStyle: "italic" }}>{ex.vi}</p>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        {options.map(opt => {
-          const isSel = selected === opt.id;
-          const isOk = opt.id === word.id;
-          return (
-            <button key={opt.id} onClick={() => pick(opt)} style={{
-              padding: "14px", borderRadius: "11px", cursor: result ? "default" : "pointer",
-              fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "16px",
-              background: !result ? (isSel ? "rgba(245,158,11,0.15)" : "rgba(255,255,255,0.06)")
-                : isOk ? "rgba(16,185,129,0.18)" : isSel ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.03)",
-              border: !result ? (isSel ? "1.5px solid rgba(245,158,11,0.5)" : "1px solid rgba(255,255,255,0.12)")
-                : isOk ? "1.5px solid rgba(16,185,129,0.5)" : isSel ? "1.5px solid rgba(248,113,113,0.5)" : "1px solid rgba(255,255,255,0.06)",
-              color: !result ? "#ffffff" : isOk ? "#10b981" : isSel ? "#f87171" : "#5a6a8a",
-              transition: "all 0.18s",
-            }}>{opt.word}</button>
-          );
-        })}
-      </div>
-      <P2ResultFooter word={word} result={result} onPass={onPass} onFail={onFail} />
-    </div>
-  );
-}
-
-// ── Phase 2: Matching All ──────────────────────────────────────────────────────
-function P2MatchingAll({ batch, onComplete }) {
-  const [left] = useState(() => shuffle(batch));
-  const [right] = useState(() => shuffle(batch));
-  const [selLeft, setSelLeft] = useState(null);
-  const [matched, setMatched] = useState({});
-  const [wrongPair, setWrongPair] = useState(null);
-  const [allDone, setAllDone] = useState(false);
-
-  const pickLeft = (id) => {
-    if (matched[id]) return;
-    setSelLeft(id);
-    setWrongPair(null);
-  };
-
-  const pickRight = (rw) => {
-    if (!selLeft || matched[rw.id]) return;
-    const ok = selLeft === rw.id;
-    if (ok) {
-      const next = { ...matched, [rw.id]: true };
-      setMatched(next);
-      setSelLeft(null);
-      if (Object.keys(next).length === batch.length) {
-        setAllDone(true);
-        setTimeout(onComplete, 1000);
-      }
-    } else {
-      setWrongPair({ l: selLeft, r: rw.id });
-      setSelLeft(null);
-      setTimeout(() => setWrongPair(null), 700);
-    }
-  };
-
-  return (
-    <div style={{ animation: "fadeSlideIn 0.25s ease" }}>
-      <ExBadge type={3} />
-      <p style={{ fontSize: "13px", color: "#8892b0", marginBottom: "16px" }}>
-        Chọn từ tiếng Anh → chọn nghĩa tiếng Việt tương ứng. Ghép đúng tất cả {batch.length} từ.
-      </p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
-            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>Từ tiếng Anh</p>
-          {left.map(w => {
-            const done = matched[w.id];
-            const isSel = selLeft === w.id;
-            const isWrong = wrongPair?.l === w.id;
-            return (
-              <button key={w.id} onClick={() => pickLeft(w.id)} style={{
-                padding: "12px 14px", borderRadius: "11px",
-                fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "14px",
-                background: done ? "rgba(16,185,129,0.15)" : isWrong ? "rgba(248,113,113,0.15)" : isSel ? "rgba(52,211,153,0.15)" : "rgba(255,255,255,0.06)",
-                border: done ? "1.5px solid rgba(16,185,129,0.45)" : isWrong ? "1.5px solid rgba(248,113,113,0.5)" : isSel ? "1.5px solid rgba(52,211,153,0.55)" : "1px solid rgba(255,255,255,0.12)",
-                color: done ? "#10b981" : isWrong ? "#f87171" : isSel ? "#34d399" : "#ffffff",
-                cursor: done ? "default" : "pointer",
-                transition: "all 0.18s",
-                opacity: done ? 0.65 : 1,
-              }}>{done ? "✓ " : ""}{w.word}</button>
-            );
-          })}
-        </div>
-        <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
-            textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "2px" }}>Nghĩa tiếng Việt</p>
-          {right.map(w => {
-            const done = matched[w.id];
-            const isWrong = wrongPair?.r === w.id;
-            return (
-              <button key={w.id} onClick={() => pickRight(w)} style={{
-                padding: "12px 14px", borderRadius: "11px", fontSize: "12px",
-                fontFamily: "Inter, sans-serif", fontWeight: 600,
-                background: done ? "rgba(16,185,129,0.15)" : isWrong ? "rgba(248,113,113,0.15)" : "rgba(255,255,255,0.06)",
-                border: done ? "1.5px solid rgba(16,185,129,0.45)" : isWrong ? "1.5px solid rgba(248,113,113,0.5)" : "1px solid rgba(255,255,255,0.12)",
-                color: done ? "#10b981" : isWrong ? "#f87171" : "#e8eaf6",
-                cursor: done ? "default" : "pointer",
-                transition: "all 0.18s",
-                opacity: done ? 0.65 : 1,
-                lineHeight: 1.4,
-              }}>{w.meaning}</button>
-            );
-          })}
-        </div>
-      </div>
-      {wrongPair && (
-        <div style={{ marginTop: "10px", padding: "10px 14px", borderRadius: "9px",
-          background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.3)",
-          animation: "fadeSlideIn 0.2s ease" }}>
-          <p style={{ fontSize: "13px", color: "#f87171", fontWeight: 600 }}>❌ Ghép sai — thử cặp khác</p>
+      <div style={{ color: '#e8eaf6', fontSize: 16, marginBottom: 6 }}>{word.meaning}</div>
+      {word.examples?.[0] && (
+        <div style={{ color: '#8892b0', fontSize: 13.5, lineHeight: 1.5 }}>
+          <div>{word.examples[0].en.replace('___', word.word)}</div>
+          <div>{word.examples[0].vi}</div>
         </div>
       )}
-      {allDone && (
-        <div style={{ marginTop: "14px", padding: "16px", borderRadius: "12px", textAlign: "center",
-          background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.4)",
-          animation: "fadeSlideIn 0.25s ease" }}>
-          <p style={{ fontSize: "22px", marginBottom: "4px" }}>🎉</p>
-          <p style={{ fontSize: "16px", fontWeight: 800, color: "#10b981", fontFamily: "Outfit, sans-serif" }}>
-            Ghép đúng tất cả {batch.length} từ!
-          </p>
+
+      <div style={{ display: 'flex', gap: 10, marginTop: 22 }}>
+        <button type="button" onClick={onSkip} style={{ ...s.btn, background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: '#8892b0' }}>
+          Bỏ qua
+        </button>
+        <button type="button" onClick={onKnown} style={{ ...s.btn, background: 'rgba(16,185,129,0.12)', border: '1px solid rgba(16,185,129,0.3)', color: '#10b981' }}>
+          Đã biết
+        </button>
+        <button type="button" onClick={onLearn} style={{ ...s.btn, flex: 2, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', fontWeight: 700 }}>
+          Học từ này
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ── 4 dạng bài tập ───────────────────────────────────────────────────────────
+// Mỗi component nhận: word, pool (để tạo nhiễu trắc nghiệm), onAnswer(correct)
+
+function Type1Spelling({ word, onAnswer }) {
+  const [value, setValue] = useState('');
+  const [result, setResult] = useState(null); // null | 'correct' | 'wrong'
+  const ex = useMemo(() => pickRandom(word.examples || [{ en: '___', vi: '' }], 1)[0], [word.id]);
+
+  const submit = () => {
+    if (result) return;
+    const ok = value.trim().toLowerCase() === word.word.toLowerCase();
+    setResult(ok ? 'correct' : 'wrong');
+    setTimeout(() => onAnswer(ok), ok ? 300 : 1400);
+  };
+
+  return (
+    <div style={s.card}>
+      <div style={s.typeTag}>Dạng 1 · Nhập chính tả</div>
+      <div style={{ color: '#e8eaf6', fontSize: 17, fontWeight: 700, marginBottom: 6 }}>{word.meaning}</div>
+      <div style={{ color: '#8892b0', fontSize: 14, marginBottom: 18, fontStyle: 'italic' }}>{ex.en} — {ex.vi}</div>
+      <input
+        autoFocus
+        value={value}
+        disabled={!!result}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
+        placeholder="Nhập từ tiếng Anh..."
+        style={{ ...s.input, borderColor: result === 'wrong' ? '#f43f5e' : result === 'correct' ? '#10b981' : 'rgba(255,255,255,0.12)' }}
+      />
+      {result === 'wrong' && <div style={s.wrongHint}>Đáp án đúng: <strong>{word.word}</strong></div>}
+      {!result && (
+        <button type="button" onClick={submit} disabled={!value.trim()} style={s.submitBtn}>Kiểm tra</button>
+      )}
+    </div>
+  );
+}
+
+function Type2ChooseMeaning({ word, pool, onAnswer }) {
+  const [picked, setPicked] = useState(null);
+  const options = useMemo(() => {
+    const distractors = pickRandom(pool.filter((w) => w.id !== word.id), 3).map((w) => w.meaning);
+    return shuffle([word.meaning, ...distractors]);
+  }, [word.id]);
+
+  const pick = (opt) => {
+    if (picked) return;
+    setPicked(opt);
+    const ok = opt === word.meaning;
+    setTimeout(() => onAnswer(ok), ok ? 300 : 1400);
+  };
+
+  return (
+    <div style={s.card}>
+      <div style={s.typeTag}>Dạng 2 · Trắc nghiệm</div>
+      <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 24, color: '#e8eaf6', marginBottom: 18 }}>
+        {word.word} <span style={{ fontSize: 13, color: '#8892b0', fontWeight: 500 }}>{word.phonetic}</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {options.map((opt) => (
+          <button key={opt} type="button" onClick={() => pick(opt)} style={optStyle(opt, picked, opt === word.meaning)}>
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Type3ChooseWord({ word, pool, onAnswer }) {
+  const [picked, setPicked] = useState(null);
+  const options = useMemo(() => {
+    const distractors = pickRandom(pool.filter((w) => w.id !== word.id), 3).map((w) => w.word);
+    return shuffle([word.word, ...distractors]);
+  }, [word.id]);
+
+  const pick = (opt) => {
+    if (picked) return;
+    setPicked(opt);
+    const ok = opt === word.word;
+    setTimeout(() => onAnswer(ok), ok ? 300 : 1400);
+  };
+
+  return (
+    <div style={s.card}>
+      <div style={s.typeTag}>Dạng 3 · Dịch từ vựng</div>
+      <div style={{ color: '#e8eaf6', fontSize: 17, fontWeight: 700, marginBottom: 18 }}>{word.meaning}</div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        {options.map((opt) => (
+          <button key={opt} type="button" onClick={() => pick(opt)} style={optStyle(opt, picked, opt === word.word)}>
+            {opt}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function Type4Listening({ word, onAnswer }) {
+  const [value, setValue] = useState('');
+  const [result, setResult] = useState(null);
+  const played = useRef(false);
+
+  useEffect(() => {
+    if (!played.current) { speak(word.word); played.current = true; }
+  }, [word.id]);
+
+  const submit = () => {
+    if (result) return;
+    const ok = value.trim().toLowerCase() === word.word.toLowerCase();
+    setResult(ok ? 'correct' : 'wrong');
+    setTimeout(() => onAnswer(ok), ok ? 300 : 1400);
+  };
+
+  return (
+    <div style={s.card}>
+      <div style={s.typeTag}>Dạng 4 · Nghe</div>
+      <button type="button" onClick={() => speak(word.word)} style={{ ...s.speakBtn, width: '100%', height: 64, fontSize: 26, marginBottom: 18 }}>
+        🔊 Nghe lại
+      </button>
+      <input
+        autoFocus
+        value={value}
+        disabled={!!result}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === 'Enter' && submit()}
+        placeholder="Nghe và gõ lại từ..."
+        style={{ ...s.input, borderColor: result === 'wrong' ? '#f43f5e' : result === 'correct' ? '#10b981' : 'rgba(255,255,255,0.12)' }}
+      />
+      {result === 'wrong' && <div style={s.wrongHint}>Đáp án đúng: <strong>{word.word}</strong></div>}
+      {!result && (
+        <button type="button" onClick={submit} disabled={!value.trim()} style={s.submitBtn}>Kiểm tra</button>
+      )}
+    </div>
+  );
+}
+
+// ── Popup sau khi trả lời đúng ────────────────────────────────────────────────
+
+function CorrectPopup({ word, onContinue, onRemindLater, onSkipForever }) {
+  const [pickingDays, setPickingDays] = useState(false);
+  return (
+    <div style={s.card}>
+      <div style={{ color: '#10b981', fontWeight: 700, fontSize: 14, marginBottom: 10 }}>✅ Chính xác!</div>
+      <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 22, color: '#e8eaf6' }}>{word.word}</div>
+      <div style={{ color: '#8892b0', fontSize: 14, marginBottom: 4 }}>{word.meaning}</div>
+      {word.examples?.[0] && (
+        <div style={{ color: '#8892b0', fontSize: 13, fontStyle: 'italic', marginTop: 6 }}>
+          {word.examples[0].en.replace('___', word.word)}
+        </div>
+      )}
+
+      {!pickingDays ? (
+        <div style={{ display: 'flex', gap: 8, marginTop: 20, flexWrap: 'wrap' }}>
+          <button type="button" onClick={() => setPickingDays(true)} style={{ ...s.btn, background: 'transparent', border: '1px solid rgba(255,255,255,0.12)', color: '#8892b0', fontSize: 12.5 }}>
+            Nhắc nhở sau X ngày
+          </button>
+          <button type="button" onClick={onSkipForever} style={{ ...s.btn, background: 'rgba(244,63,94,0.1)', border: '1px solid rgba(244,63,94,0.25)', color: '#f43f5e', fontSize: 12.5 }}>
+            Bỏ qua từ này
+          </button>
+          <button type="button" onClick={onContinue} style={{ ...s.btn, flex: 1, minWidth: 100, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', fontWeight: 700 }}>
+            Tiếp tục
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 8, marginTop: 20 }}>
+          {REMIND_DAYS.map((d) => (
+            <button key={d} type="button" onClick={() => onRemindLater(d)} style={{ ...s.btn, flex: 1, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.3)', color: '#c7d2fe' }}>
+              {d} ngày
+            </button>
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-// ── Main LearningSession ───────────────────────────────────────────────────────
-// Áp dụng lựa chọn của người dùng trong hộp thoại đề xuất (STT 6.5 bước 4B)
-// lên 1 từ. Đặt ở module scope (ngoài component) - đây chỉ là 1 hàm xử lý
-// dữ liệu thuần, được gọi từ trong 1 event handler khi người dùng bấm chọn,
-// không phải lúc render.
-function applySuggestionAction(word, action) {
-  switch (action) {
-    case 'reset':
-      word.lv = 1;
-      word.next_review = Date.now() + 20 * 60 * 1000;
-      break;
-    case 'demote': {
-      word.lv = Math.max(word.lv - 1, 1);
-      // ✅ FIX: Sử dụng SRS_SECONDS để lấy đúng số giây
-      const seconds = SRS_SECONDS[word.lv] || 0;
-      word.next_review = Date.now() + seconds * 1000;
-      break;
-    }
-    case 'skip':
-      // Giữ nguyên
-      break;
-    default:
-      break;
-  }
-}
+// ── Component chính ───────────────────────────────────────────────────────────
 
-function LearningSession({ folder, dailyGoal, wordsLearned, onWordComplete, onBack, mode = "learn" }) {
-  const isReview = mode === "review";
-  const srcWords = isReview
-    ? folder.words.filter(w => w.lv > 0)
-    : folder.words.filter(w => w.lv === 0);
-  const [batch] = useState(() => shuffle(srcWords).slice(0, Math.min(5, srcWords.length)));
+export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordComplete, onBack }) {
+  // Danh sách từ cố định cho cả phiên (không đổi khi re-render)
+  const sessionWords = useRef(folder.words.slice(0, dailyGoal || folder.words.length)).current;
+  const batches = useRef(chunk(sessionWords, BATCH_SIZE)).current;
+  const pool = folder.words; // nguồn tạo nhiễu trắc nghiệm - dùng cả folder cho đa dạng
 
-  const [phase, setPhase] = useState(1);
-  const [exType, setExType] = useState(1);
-  const [queue, setQueue] = useState(() => [...batch]);
-  const [qIdx, setQIdx] = useState(0);
-  const [failedIds, setFailedIds] = useState([]);
-  const [roundNum, setRoundNum] = useState(1);
-  const [p1FirstRound, setP1FirstRound] = useState({});
-  const [errorCounts, setErrorCounts] = useState({});
-  const [showSuggestion, setShowSuggestion] = useState(null);
+  const [batchIdx, setBatchIdx] = useState(0);
+  const [phase, setPhase] = useState(mode === 'learn' ? 'browse' : 'exercise');
+  const [browseIdx, setBrowseIdx] = useState(0);
+  const [workingBatch, setWorkingBatch] = useState(() => (mode === 'learn' ? [] : batches[0] || []));
+  const [machine, setMachine] = useState(() => (mode === 'review' ? initMachine(batches[0] || []) : null));
+  const [showPopup, setShowPopup] = useState(false);
+  const wrongCounts = useRef({}); // wordId -> tổng số lần sai trong cả phiên (gửi lên backend)
 
-  const currentWord = queue[Math.min(qIdx, queue.length - 1)];
+  const currentBatch = batches[batchIdx] || [];
 
-  // ── Hoàn thành 1 từ ──
-  const completeWord = (wordId, isCorrect) => {
-    const wId = wordId || queue[qIdx]?.id;
-    if (!wId) return;
+  const bumpWrong = (wordId) => { wrongCounts.current[wordId] = (wrongCounts.current[wordId] || 0) + 1; };
 
-    // Review mode: tracking errors
-    if (mode === 'review' && !isCorrect) {
-      const newCount = (errorCounts[wId] || 0) + 1;
-      setErrorCounts(prev => ({ ...prev, [wId]: newCount }));
-
-      if (newCount >= 4) {
-        const word = batch.find(w => w.id === wId);
-        if (word) {
-          setShowSuggestion({ word, wordId: wId });
-          return;
-        }
-      }
-    }
-
-    const newFailed = isCorrect ? failedIds : [...failedIds, wId];
-
-    if (phase === 1 && roundNum === 1) {
-      setP1FirstRound(prev => ({ ...prev, [wId]: isCorrect }));
-    }
-
-    const nextIdx = qIdx + 1;
-    if (nextIdx < queue.length) {
-      setQIdx(nextIdx);
-      setFailedIds(newFailed);
+  const finishWord = (word, opts = {}) => {
+    if (mode === 'learn') {
+      wordsApi.completeLearn(word.id).catch((err) => console.error('completeLearn lỗi:', err));
     } else {
-      if (newFailed.length > 0) {
-        const retryQueue = batch.filter(w => newFailed.includes(w.id));
-        setQueue(retryQueue);
-        setQIdx(0);
-        setFailedIds([]);
-        setRoundNum(r => r + 1);
-      } else {
-        finishCurrentRound();
-      }
+      wordsApi.completeReview(word.id, { wrong_count: wrongCounts.current[word.id] || 0, choice: opts.choice })
+        .catch((err) => console.error('completeReview lỗi:', err));
     }
+    onWordComplete?.();
   };
 
-  // ── Xử lý Suggestion ──
-  const handleSuggestion = (wordId, action) => {
-    const word = batch.find(w => w.id === wordId);
-    if (!word) {
-      setShowSuggestion(null);
+  const startExerciseBatch = (words) => {
+    if (words.length === 0) {
+      goNextBatch();
       return;
     }
+    setWorkingBatch(words);
+    setMachine(initMachine(words));
+    setPhase('exercise');
+  };
 
-    applySuggestionAction(word, action);
-
-    // ✅ FIX: Gọi onWordComplete để cập nhật tiến độ
-    if (onWordComplete) {
-      onWordComplete();
+  const goNextBatch = () => {
+    const next = batchIdx + 1;
+    if (next >= batches.length) {
+      setPhase('sessionDone');
+      return;
     }
-
-    setShowSuggestion(null);
-    setErrorCounts(prev => ({ ...prev, [wordId]: 0 }));
-
-    const newFailed = failedIds.filter(id => id !== wordId);
-    const nextIdx = qIdx + 1;
-
-    if (nextIdx < queue.length) {
-      setQIdx(nextIdx);
-      setFailedIds(newFailed);
+    setBatchIdx(next);
+    setBrowseIdx(0);
+    if (mode === 'learn') {
+      setWorkingBatch([]); // tránh lẫn từ đã hoàn thành ở batch trước vào batch mới
+      setPhase('browse');
     } else {
-      if (newFailed.length > 0) {
-        const retryQueue = batch.filter(w => newFailed.includes(w.id));
-        setQueue(retryQueue);
-        setQIdx(0);
-        setFailedIds([]);
-        setRoundNum(r => r + 1);
-      } else {
-        finishCurrentRound();
-      }
+      startExerciseBatch(batches[next] || []);
     }
   };
 
-  const finishCurrentRound = () => {
-    if (phase === 1) {
-      setPhase("transition");
-    } else if (exType === 1) {
-      setExType(2);
-      resetQueue();
-    } else if (exType === 2) {
-      setExType(3);
-      // Matching all sẽ handle riêng
+  // ── Bước lướt từ ──
+  const handleBrowseAction = (action) => {
+    const word = currentBatch[browseIdx];
+    let nextWorkingBatch = workingBatch;
+
+    if (action === 'skip' || action === 'known') {
+      if (action === 'known') word.lv = 1; // học ngay LV1, không qua bài tập
+      finishWord(word);
+    } else if (action === 'learn') {
+      nextWorkingBatch = [...workingBatch, word];
+      setWorkingBatch(nextWorkingBatch);
+    }
+
+    const nextIdx = browseIdx + 1;
+    if (nextIdx < currentBatch.length) {
+      setBrowseIdx(nextIdx);
+    } else {
+      // Hết batch lướt -> bắt đầu bài tập với các từ đã chọn "Học từ này"
+      startExerciseBatch(nextWorkingBatch);
     }
   };
 
-  const resetQueue = () => {
-    setQueue([...batch]);
-    setQIdx(0);
-    setFailedIds([]);
-    setRoundNum(1);
-    setErrorCounts({});
+  // ── Trả lời bài tập ──
+  const handleAnswer = (correct) => {
+    const word = workingBatch.find((w) => w.id === currentWordId);
+    if (!correct) bumpWrong(word.id);
+    if (correct) {
+      setShowPopup(true);
+    } else {
+      advanceMachine(word.id, false, false);
+    }
   };
 
-  const startPhase2 = () => {
-    setPhase(2);
-    setExType(1);
-    resetQueue();
+  const advanceMachine = (wordId, correct, removed, choice) => {
+    if (removed) {
+      const w = workingBatch.find((x) => x.id === wordId);
+      if (w) finishWord(w, { choice });
+    }
+    const batchNow = workingBatch.filter((w) => w.id !== wordId || !removed);
+    const res = stepMachine(machine, { wordId, correct, removed, batch: batchNow });
+    setWorkingBatch(batchNow);
+    setShowPopup(false);
+    if (res.done) {
+      // Mọi từ còn lại đều đã qua đủ 4 dạng -> tính là hoàn thành
+      batchNow.forEach((w) => finishWord(w));
+      goNextBatch();
+    } else {
+      setMachine(res.state);
+    }
   };
 
-  const onMatchingComplete = () => {
-    // ✅ FIX: Gọi onWordComplete cho mỗi từ trong batch
-    batch.forEach(() => {
-      if (onWordComplete) onWordComplete();
-    });
-    onBack();
-  };
+  const currentWordId = machine?.remaining[0]?.id;
+  const currentWord = workingBatch.find((w) => w.id === currentWordId);
 
-  const showTopBar = phase !== "transition";
-  const cardShadow = phase === 1
-    ? "0 0 40px rgba(99,102,241,0.18)"
-    : exType === 1 ? "0 0 40px rgba(99,102,241,0.15)"
-    : exType === 2 ? "0 0 40px rgba(245,158,11,0.12)"
-    : "0 0 40px rgba(52,211,153,0.15)";
+  // ── Render ──
+  if (phase === 'sessionDone' || sessionWords.length === 0) {
+    return (
+      <div style={{ ...s.wrap, alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ color: '#8892b0' }}>Đang hoàn tất phiên học...</div>
+      </div>
+    );
+  }
 
-  return (
-    <div style={{ minHeight: "100vh" }}>
-      {showTopBar && (
-        <SessionTopBar
-          phase={phase}
-          exType={exType}
-          queueLen={queue.length}
-          qIdx={qIdx}
-          roundNum={roundNum}
-          wordsLearned={wordsLearned}
-          dailyGoal={dailyGoal}
-          onBack={onBack}
-          folder={folder}
+  if (phase === 'browse') {
+    const word = currentBatch[browseIdx];
+    if (!word) { goNextBatch(); return null; }
+    return (
+      <div style={s.wrap}>
+        <ProgressBar done={wordsLearned} total={dailyGoal} label={`Lướt từ ${browseIdx + 1}/${currentBatch.length}`} />
+        <BrowseCard
+          key={word.id}
+          word={word}
+          onSkip={() => handleBrowseAction('skip')}
+          onKnown={() => handleBrowseAction('known')}
+          onLearn={() => handleBrowseAction('learn')}
         />
-      )}
+      </div>
+    );
+  }
 
-      {phase === "transition" && (
-        <PhaseTransition
-          batch={batch}
-          p1FirstRound={p1FirstRound}
-          onStartPhase2={startPhase2}
-        />
-      )}
-
-      {phase !== "transition" && (
-        <div style={{ maxWidth: "680px", margin: "0 auto", padding: "0 24px 80px" }}>
-          {phase === 2 && exType === 3 && (
-            <p style={{ fontSize: "14px", fontWeight: 700, color: "#34d399",
-              fontFamily: "Outfit, sans-serif", marginBottom: "16px" }}>
-              Dạng 3 — Ghép tất cả {batch.length} từ với nghĩa
-            </p>
-          )}
-
-          <div style={{
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.1)",
-            borderRadius: "20px",
-            padding: "26px 28px",
-            boxShadow: `${cardShadow}, inset 0 1px 0 rgba(255,255,255,0.05)`,
-          }}>
-            {phase === 1 && currentWord && (
-              <Phase1Spelling
-                key={`p1-${currentWord.id}-r${roundNum}`}
-                word={currentWord}
-                onPass={() => completeWord(currentWord.id, true)}
-                onFail={() => completeWord(currentWord.id, false)}
-              />
-            )}
-            {phase === 2 && exType === 1 && currentWord && (
-              <P2MultipleChoice
-                key={`mc-${currentWord.id}-r${roundNum}`}
-                word={currentWord}
-                batch={batch}
-                onPass={() => completeWord(currentWord.id, true)}
-                onFail={() => completeWord(currentWord.id, false)}
-              />
-            )}
-            {phase === 2 && exType === 2 && currentWord && (
-              <P2FillBlank
-                key={`fb-${currentWord.id}-r${roundNum}`}
-                word={currentWord}
-                batch={batch}
-                onPass={() => completeWord(currentWord.id, true)}
-                onFail={() => completeWord(currentWord.id, false)}
-              />
-            )}
-            {phase === 2 && exType === 3 && (
-              <P2MatchingAll
-                key="matching-all"
-                batch={batch}
-                onComplete={onMatchingComplete}
-              />
-            )}
-          </div>
+  if (phase === 'exercise' && currentWord) {
+    if (showPopup) {
+      return (
+        <div style={s.wrap}>
+          <ProgressBar done={wordsLearned} total={dailyGoal} label={TYPE_LABEL[machine.level]} />
+          <CorrectPopup
+            word={currentWord}
+            onContinue={() => advanceMachine(currentWord.id, true, false)}
+            onRemindLater={(days) => advanceMachine(currentWord.id, true, true, `remind_${days}d`)}
+            onSkipForever={() => advanceMachine(currentWord.id, true, true, 'skip_forever')}
+          />
         </div>
-      )}
+      );
+    }
+    const commonProps = { key: `${currentWord.id}-${machine.level}-${machine.seq}`, word: currentWord, pool, onAnswer: handleAnswer };
+    return (
+      <div style={s.wrap}>
+        <ProgressBar done={wordsLearned} total={dailyGoal} label={TYPE_LABEL[machine.level]} />
+        {machine.level === 1 && <Type1Spelling {...commonProps} />}
+        {machine.level === 2 && <Type2ChooseMeaning {...commonProps} />}
+        {machine.level === 3 && <Type3ChooseWord {...commonProps} />}
+        {machine.level === 4 && <Type4Listening {...commonProps} />}
+      </div>
+    );
+  }
 
-      {showSuggestion && (
-        <SuggestionDialog
-          word={showSuggestion.word}
-          onChoose={(action) => handleSuggestion(showSuggestion.wordId, action)}
-        />
-      )}
+  return null;
+}
+
+function ProgressBar({ done, total, label }) {
+  const pct = total > 0 ? Math.min(100, Math.round((done / total) * 100)) : 0;
+  return (
+    <div style={{ maxWidth: 480, margin: '0 auto 18px' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#8892b0', marginBottom: 6 }}>
+        <span>{label}</span>
+        <span>{done}/{total} từ</span>
+      </div>
+      <div style={{ height: 5, borderRadius: 999, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
+        <div style={{ height: '100%', width: `${pct}%`, borderRadius: 999, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)' }} />
+      </div>
     </div>
   );
 }
 
-export { LearningSession };
+function optStyle(opt, picked, isCorrect) {
+  let bg = 'rgba(255,255,255,0.03)', border = '1px solid rgba(255,255,255,0.08)', color = '#e8eaf6';
+  if (picked) {
+    if (opt === picked) {
+      bg = isCorrect ? 'rgba(16,185,129,0.15)' : 'rgba(244,63,94,0.15)';
+      border = `1px solid ${isCorrect ? '#10b981' : '#f43f5e'}`;
+    } else if (isCorrect) {
+      bg = 'rgba(16,185,129,0.1)';
+      border = '1px solid rgba(16,185,129,0.3)';
+    }
+  }
+  return { textAlign: 'left', padding: '12px 14px', borderRadius: 10, background: bg, border, color, fontSize: 14.5, cursor: picked ? 'default' : 'pointer' };
+}
+
+const s = {
+  wrap: { width: '100%', maxWidth: 520, margin: '0 auto', padding: '24px 16px' },
+  card: { background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 16, padding: 22 },
+  btn: { padding: '11px 16px', borderRadius: 10, fontSize: 13.5, fontWeight: 600, cursor: 'pointer' },
+  speakBtn: { width: 44, height: 44, borderRadius: 10, background: 'rgba(99,102,241,0.12)', border: '1px solid rgba(99,102,241,0.25)', color: '#c7d2fe', cursor: 'pointer' },
+  typeTag: { fontSize: 11, fontWeight: 700, color: '#a5b4fc', letterSpacing: 0.5, marginBottom: 12, textTransform: 'uppercase' },
+  input: { width: '100%', padding: '12px 14px', borderRadius: 10, background: 'rgba(255,255,255,0.03)', border: '1px solid', color: '#e8eaf6', fontSize: 15, outline: 'none', marginBottom: 10 },
+  wrongHint: { color: '#f43f5e', fontSize: 13, marginBottom: 10 },
+  submitBtn: { width: '100%', padding: '11px', borderRadius: 10, background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', border: 'none', color: '#fff', fontWeight: 700, cursor: 'pointer' },
+};
