@@ -259,3 +259,78 @@ def complete_review(user_id, word_id, wrong_count, choice):
         'result': result,
         'user_word': user_word.to_dict()
     }
+    
+    
+# ============================================================
+# STT 6: ĐÁNH DẤU "ĐÃ BIẾT"
+# ============================================================
+def mark_known(user_id, word_id):
+    """User đã biết từ → LV1, next_review xa 30 ngày, KHÔNG tính daily goal"""
+    from datetime import timedelta
+    
+    word = Word.query.filter_by(id=word_id, deleted_at=None).first()
+    if not word:
+        raise ServiceError('Không tìm thấy từ vựng!', 404)
+
+    existing = UserWord.get_by_user_and_word(user_id, word_id)
+    if existing:
+        user_word = existing
+        level_before = user_word.level
+    else:
+        user_word = UserWord(id=str(uuid.uuid4()), user_id=user_id, word_id=word_id)
+        db.session.add(user_word)
+        level_before = 0
+
+    user_word.level = 1
+    user_word.next_review = datetime.utcnow() + timedelta(days=30)
+    user_word.last_reviewed = datetime.utcnow()
+
+    log = LearningLog(
+        id=str(uuid.uuid4()), user_id=user_id, word_id=word_id,
+        action='learn', choice='da_biet',
+        level_before=level_before, level_after=1, wrong_count=0
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    return {'result': 'da_biet', 'user_word': user_word.to_dict()}
+
+
+# ============================================================
+# STT 6: BỎ QUA TỪ
+# ============================================================
+def skip_word(user_id, word_id):
+    """User bỏ qua từ → không học, KHÔNG tính daily goal"""
+    word = Word.query.filter_by(id=word_id, deleted_at=None).first()
+    if not word:
+        raise ServiceError('Không tìm thấy từ vựng!', 404)
+
+    log = LearningLog(
+        id=str(uuid.uuid4()), user_id=user_id, word_id=word_id,
+        action='skip', choice='bo_qua',
+        level_before=0, level_after=0, wrong_count=0
+    )
+    db.session.add(log)
+    db.session.commit()
+
+    return {'result': 'bo_qua', 'word_id': word_id}
+
+
+# ============================================================
+# STT 6: NHẮC NHỞ SAU X NGÀY
+# ============================================================
+def snooze_word(user_id, word_id, days=7):
+    """User muốn nhắc sau X ngày → set next_review = now + X days"""
+    from datetime import timedelta
+    
+    if days < 1 or days > 365:
+        raise ServiceError('Số ngày phải từ 1 đến 365!', 400)
+
+    user_word = UserWord.get_by_user_and_word(user_id, word_id)
+    if not user_word:
+        raise ServiceError('Từ này chưa được học!', 409)
+
+    user_word.next_review = datetime.utcnow() + timedelta(days=days)
+    db.session.commit()
+
+    return {'result': 'snooze', 'next_review': user_word.next_review.isoformat(), 'days': days}

@@ -1,0 +1,185 @@
+{
+  "folder": "Khoa học",
+  "words": [
+    {
+      "word": "hypothesis",
+      "pronunciation": "/-əsəs/",
+      "word_type": "noun",
+      "meaning": "Used loosely, a tentative conjecture explaining an observation, phenomenon or scientific problem that can be tested by further observation, investigation and/or experimentation. As a scientific term of art, see the attached quotation. Compare to theory, and quotation given there.",
+      "meaning_en": "Used loosely, a tentative conjecture explaining an observation, phenomenon or scientific problem that can be tested by further observation, investigation and/or experimentation. As a scientific term of art, see the attached quotation. Compare to theory, and quotation given there.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/hypothesis-us.mp3",
+      "synonyms": [
+        "educated guess",
+        "guess",
+        "supposition",
+        "theory",
+        "thesis"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "experiment",
+      "pronunciation": "/ɛk.ˈspɛ.ɹɪ.mənt/",
+      "word_type": "noun",
+      "meaning": "A test under controlled conditions made to either demonstrate a known truth, examine the validity of a hypothesis, or determine the efficacy of something previously untried.",
+      "meaning_en": "A test under controlled conditions made to either demonstrate a known truth, examine the validity of a hypothesis, or determine the efficacy of something previously untried.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/experiment-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "molecule",
+      "pronunciation": "/ˈmɒləkjuːl/",
+      "word_type": "noun",
+      "meaning": "The smallest particle of a specific element or compound that retains the chemical properties of that element or compound; two or more atoms held together by chemical bonds.",
+      "meaning_en": "The smallest particle of a specific element or compound that retains the chemical properties of that element or compound; two or more atoms held together by chemical bonds.",
+      "example": "Hydrogen chloride is a diatomic molecule, consisting of a hydrogen atom and a chlorine atom.",
+      "example_meaning": "Hydrogen chloride is a diatomic molecule, consisting of a hydrogen atom and a chlorine atom.",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "analysis",
+      "pronunciation": "/əˈnælɪsɪs/",
+      "word_type": "noun",
+      "meaning": "Decomposition into components in order to study (a complex thing, concept, theory etc.).",
+      "meaning_en": "Decomposition into components in order to study (a complex thing, concept, theory etc.).",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/analysis-us.mp3",
+      "synonyms": [],
+      "antonyms": [
+        "synthesis"
+      ]
+    },
+    {
+      "word": "evolution",
+      "pronunciation": "/ˈɛvəluːʃ(ə)n/",
+      "word_type": "noun",
+      "meaning": "A change of position.",
+      "meaning_en": "A change of position.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/evolution-us.mp3",
+      "synonyms": [],
+      "antonyms": [
+        "stagnation",
+        "revolution",
+        "extinction"
+      ]
+    },
+    {
+      "word": "gravity",
+      "pronunciation": "/ˈɡɹævɪti/",
+      "word_type": "noun",
+      "meaning": "The state or condition of having weight; weight; heaviness.",
+      "meaning_en": "The state or condition of having weight; weight; heaviness.",
+      "example": "I hope you appreciate the gravity of the situation.",
+      "example_meaning": "I hope you appreciate the gravity of the situation.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/gravity-us.mp3",
+      "synonyms": [
+        "grave",
+        "graveness",
+        "seriousness",
+        "weightfulness"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "reaction",
+      "pronunciation": "/ɹiˈækʃən/",
+      "word_type": "noun",
+      "meaning": "An action or statement in response to a stimulus or other event.",
+      "meaning_en": "An action or statement in response to a stimulus or other event.",
+      "example": "The announcement of the verdict brought a violent reaction.",
+      "example_meaning": "The announcement of the verdict brought a violent reaction.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/reaction-us.mp3",
+      "synonyms": [
+        "reax",
+        "rxn"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "theory",
+      "pronunciation": "/ˈθiːəɹi/",
+      "word_type": "noun",
+      "meaning": "A description of an event or system that is considered to be accurate.",
+      "meaning_en": "A description of an event or system that is considered to be accurate.",
+      "example": "Knot theory classifies the mappings of a circle into 3-space.",
+      "example_meaning": "Knot theory classifies the mappings of a circle into 3-space.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/theory-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "chemistry",
+      "pronunciation": "/ˈkɛm.ɪ.stɹi/",
+      "word_type": "noun",
+      "meaning": "The branch of natural science that deals with the composition and constitution of substances and the changes that they undergo as a consequence of alterations in the constitution of their molecules.",
+      "meaning_en": "The branch of natural science that deals with the composition and constitution of substances and the changes that they undergo as a consequence of alterations in the constitution of their molecules.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/chemistry-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "physics",
+      "pronunciation": "/ˈfɪz.ɪks/",
+      "word_type": "noun",
+      "meaning": "A medicine or drug, especially a cathartic or purgative.",
+      "meaning_en": "A medicine or drug, especially a cathartic or purgative.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/physics-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "biology",
+      "pronunciation": "/baɪˈɒlədʒɪ/",
+      "word_type": "noun",
+      "meaning": "The study of all life or living matter.",
+      "meaning_en": "The study of all life or living matter.",
+      "example": "the biology of the whale",
+      "example_meaning": "the biology of the whale",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/biology-us.mp3",
+      "synonyms": [
+        "life science",
+        "life sciences",
+        "lifelore"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "laboratory",
+      "pronunciation": "/ləˈbɔɹətɹi/",
+      "word_type": "noun",
+      "meaning": "A room, building or institution equipped for scientific research, experimentation or analysis.",
+      "meaning_en": "A room, building or institution equipped for scientific research, experimentation or analysis.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/laboratory-uk.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "microscope",
+      "pronunciation": "/ˈmaɪkɹəˌskəʊp/",
+      "word_type": "noun",
+      "meaning": "An optical instrument used for observing small objects.",
+      "meaning_en": "An optical instrument used for observing small objects.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    }
+  ]
+}

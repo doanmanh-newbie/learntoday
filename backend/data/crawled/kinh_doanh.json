@@ -1,0 +1,165 @@
+{
+  "folder": "Kinh doanh",
+  "words": [
+    {
+      "word": "deadline",
+      "pronunciation": "/ˈdɛdˌlaɪn/",
+      "word_type": "noun",
+      "meaning": "A time limit in the form of a date on or before which something must be completed.",
+      "meaning_en": "A time limit in the form of a date on or before which something must be completed.",
+      "example": "I must make this deadline or my boss will kill me!",
+      "example_meaning": "I must make this deadline or my boss will kill me!",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/deadline-uk.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "negotiate",
+      "pronunciation": "/nəˈɡəʊ.ʃi.eɪt/",
+      "word_type": "verb",
+      "meaning": "To confer with others in order to come to terms or reach an agreement.",
+      "meaning_en": "To confer with others in order to come to terms or reach an agreement.",
+      "example": "The client and server computers must first negotiate a network protocol to be used.",
+      "example_meaning": "The client and server computers must first negotiate a network protocol to be used.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/negotiate-au.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "revenue",
+      "pronunciation": "/ˈɹɛvənjuː/",
+      "word_type": "noun",
+      "meaning": "The income returned by an investment.",
+      "meaning_en": "The income returned by an investment.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/revenue-us.mp3",
+      "synonyms": [
+        "net sales",
+        "turnover"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "investment",
+      "pronunciation": "/ɪnˈvɛsmənt/",
+      "word_type": "noun",
+      "meaning": "The act of investing, or state of being invested.",
+      "meaning_en": "The act of investing, or state of being invested.",
+      "example": "Giving your children a good education is a wise long-term investment.",
+      "example_meaning": "Giving your children a good education is a wise long-term investment.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/investment-us.mp3",
+      "synonyms": [],
+      "antonyms": [
+        "divestment"
+      ]
+    },
+    {
+      "word": "strategy",
+      "pronunciation": "/ˈstɹætədʒi/",
+      "word_type": "noun",
+      "meaning": "The science and art of military command as applied to the overall planning and conduct of warfare.",
+      "meaning_en": "The science and art of military command as applied to the overall planning and conduct of warfare.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [
+        "generalship"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "productivity",
+      "pronunciation": "/ˌpɹɒdʌkˈtɪvəti/",
+      "word_type": "noun",
+      "meaning": "The state of being productive, fertile or efficient",
+      "meaning_en": "The state of being productive, fertile or efficient",
+      "example": "You can see the computer age everywhere but in the productivity statistics.",
+      "example_meaning": "You can see the computer age everywhere but in the productivity statistics.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/productivity-us.mp3",
+      "synonyms": [
+        "productiveness"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "milestone",
+      "pronunciation": "",
+      "word_type": "noun",
+      "meaning": "A stone milepost (or by extension in other materials), one of a series of numbered markers placed along a road at regular intervals, typically at the side of the road or in a median.",
+      "meaning_en": "A stone milepost (or by extension in other materials), one of a series of numbered markers placed along a road at regular intervals, typically at the side of the road or in a median.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [
+        "landmark"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "stakeholder",
+      "pronunciation": "/ˈsteɪkhoʊldə(ɹ)/",
+      "word_type": "noun",
+      "meaning": "A person holding the stakes of bettors, with the responsibility of delivering the pot to the winner of the bet.",
+      "meaning_en": "A person holding the stakes of bettors, with the responsibility of delivering the pot to the winner of the bet.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/stakeholder-uk.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "profitable",
+      "pronunciation": "/ˈpɹɒfɪtəbl̩/",
+      "word_type": "adjective",
+      "meaning": "Producing a profit.",
+      "meaning_en": "Producing a profit.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/profitable-us.mp3",
+      "synonyms": [
+        "beneficial",
+        "lucrative"
+      ],
+      "antonyms": [
+        "unprofitable"
+      ]
+    },
+    {
+      "word": "entrepreneur",
+      "pronunciation": "/ˌɒn.tɹə.pɹəˈnɜː/",
+      "word_type": "noun",
+      "meaning": "A person who organizes and operates a business venture and assumes much of the associated risk.",
+      "meaning_en": "A person who organizes and operates a business venture and assumes much of the associated risk.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/entrepreneur-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "budget",
+      "pronunciation": "/ˈbʌdʒ.ɪt/",
+      "word_type": "noun",
+      "meaning": "The amount of money or resources earmarked for a particular institution, activity or time-frame.",
+      "meaning_en": "The amount of money or resources earmarked for a particular institution, activity or time-frame.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/budget-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "contract",
+      "pronunciation": "/ˈkɒntɹækt/",
+      "word_type": "noun",
+      "meaning": "An agreement between two or more parties, to perform a specific job or work order, often temporary or of fixed duration and usually governed by a written agreement.",
+      "meaning_en": "An agreement between two or more parties, to perform a specific job or work order, often temporary or of fixed duration and usually governed by a written agreement.",
+      "example": "Marriage is a contract.",
+      "example_meaning": "Marriage is a contract.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/contract-1-uk.mp3",
+      "synonyms": [],
+      "antonyms": []
+    }
+  ]
+}

@@ -118,6 +118,20 @@ export const wordsApi = {
     apiRequest(`/api/words/${wordId}/complete-learn`, { method: 'POST', body: '{}' }),
   completeReview: (wordId, body) =>
     apiRequest(`/api/words/${wordId}/complete-review`, { method: 'POST', body: JSON.stringify(body) }),
+  markKnown: (wordId) =>
+    apiRequest(`/api/words/${wordId}/mark-known`, { method: 'POST', body: '{}' }),
+  skip: (wordId) =>
+    apiRequest(`/api/words/${wordId}/skip`, { method: 'POST', body: '{}' }),
+  snooze: (wordId, days = 7) =>
+    apiRequest(`/api/words/${wordId}/snooze`, { method: 'POST', body: JSON.stringify({ days }) }),
+  
+  // ✅ THÊM 2 API MỚI
+  lookup: (word, translate = true) =>
+    apiRequest(`/api/words/lookup/${encodeURIComponent(word)}?translate=${translate}`),
+  suggestions: (word, pos = '') => {
+    const qs = pos ? `?pos=${pos}` : '';
+    return apiRequest(`/api/words/suggestions/${encodeURIComponent(word)}${qs}`);
+  },
 };
 
 export const profileApi = {

@@ -9,4 +9,5 @@ bcrypt
 Flask-Migrate
 tzdata
 pytz
+requests
 deep-translator

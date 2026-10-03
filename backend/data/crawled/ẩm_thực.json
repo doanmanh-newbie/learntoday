@@ -1,0 +1,128 @@
+{
+  "folder": "Ẩm thực",
+  "words": [
+    {
+      "word": "cuisine",
+      "pronunciation": "/kwɪˈziːn/",
+      "word_type": "noun",
+      "meaning": "A characteristic style of preparing food, often associated with a place of origin.",
+      "meaning_en": "A characteristic style of preparing food, often associated with a place of origin.",
+      "example": "French cuisine is considered to be one of the world's most refined and elegant styles of cooking.",
+      "example_meaning": "French cuisine is considered to be one of the world's most refined and elegant styles of cooking.",
+      "audio_url": "",
+      "synonyms": [
+        "culinary art",
+        "kitchen"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "ingredient",
+      "pronunciation": "/ɪnˈɡɹiːdi.ənt/",
+      "word_type": "noun",
+      "meaning": "One of the substances present in a mixture, especially food.",
+      "meaning_en": "One of the substances present in a mixture, especially food.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/ingredient-uk.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "recipe",
+      "pronunciation": "/ˈɹɛs.ə.pi/",
+      "word_type": "noun",
+      "meaning": "A formula for preparing or using a medicine; a prescription; also, a medicine prepared from such instructions.",
+      "meaning_en": "A formula for preparing or using a medicine; a prescription; also, a medicine prepared from such instructions.",
+      "example": "His new approach is definitely a recipe for success.",
+      "example_meaning": "His new approach is definitely a recipe for success.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/recipe-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "simmer",
+      "pronunciation": "/ˈsɪmə/",
+      "word_type": "noun",
+      "meaning": "The state or process of simmering.",
+      "meaning_en": "The state or process of simmering.",
+      "example": "The kettle was kept on the simmer.",
+      "example_meaning": "The kettle was kept on the simmer.",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "savory",
+      "pronunciation": "/ˈseɪvəɹi/",
+      "word_type": "noun",
+      "meaning": "A savory snack.",
+      "meaning_en": "A savory snack.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/savory-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "delicious",
+      "pronunciation": "/dɪˈlɪʃəs/",
+      "word_type": "adjective",
+      "meaning": "Pleasing to taste; tasty.",
+      "meaning_en": "Pleasing to taste; tasty.",
+      "example": "The irony is delicious!",
+      "example_meaning": "The irony is delicious!",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/delicious-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "beverage",
+      "pronunciation": "/ˈbevəɹɪdʒ/",
+      "word_type": "noun",
+      "meaning": "A liquid to consume; a drink, such as tea, coffee, liquor, beer, milk, juice, or soft drinks, usually excluding water.",
+      "meaning_en": "A liquid to consume; a drink, such as tea, coffee, liquor, beer, milk, juice, or soft drinks, usually excluding water.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/beverage-us.mp3",
+      "synonyms": [
+        "drink"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "dessert",
+      "pronunciation": "/dɪˈzɜːt/",
+      "word_type": "noun",
+      "meaning": "A sweet confection served as the last course of a meal",
+      "meaning_en": "A sweet confection served as the last course of a meal",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/dessert-us.mp3",
+      "synonyms": [
+        "afters",
+        "pudding",
+        "sweet"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "appetite",
+      "pronunciation": "/ˈæp.ə.taɪt/",
+      "word_type": "noun",
+      "meaning": "Desire to eat food or consume drink.",
+      "meaning_en": "Desire to eat food or consume drink.",
+      "example": "appetite for reading",
+      "example_meaning": "appetite for reading",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/appetite-us.mp3",
+      "synonyms": [
+        "appetency",
+        "craving",
+        "desire",
+        "longing",
+        "passion"
+      ],
+      "antonyms": []
+    }
+  ]
+}

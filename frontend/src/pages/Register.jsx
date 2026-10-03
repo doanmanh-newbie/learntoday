@@ -25,7 +25,7 @@ export default function Register() {
     setSubmitting(true);
     try {
       await register({ username, email, password });
-      navigate('/');
+      navigate('/app');
     } catch (err) {
       setError(err.message);
     } finally {

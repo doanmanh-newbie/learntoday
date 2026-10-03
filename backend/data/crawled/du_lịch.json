@@ -1,0 +1,189 @@
+{
+  "folder": "Du lịch",
+  "words": [
+    {
+      "word": "itinerary",
+      "pronunciation": "/aɪˈtɪnəɹi/",
+      "word_type": "noun",
+      "meaning": "A written schedule of activities for a vacation or road trip.",
+      "meaning_en": "A written schedule of activities for a vacation or road trip.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/itinerary-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "destination",
+      "pronunciation": "/dɛstɪˈneɪʃən/",
+      "word_type": "noun",
+      "meaning": "The act of destining or appointing.",
+      "meaning_en": "The act of destining or appointing.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/destination-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "accommodation",
+      "pronunciation": "/ə.ˌkɒm.ə.ˈdeɪ.ʃən/",
+      "word_type": "noun",
+      "meaning": "(usually a mass noun) Lodging in a dwelling or similar living quarters afforded to travellers in hotels or on cruise ships, or prisoners, etc.",
+      "meaning_en": "(usually a mass noun) Lodging in a dwelling or similar living quarters afforded to travellers in hotels or on cruise ships, or prisoners, etc.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/accommodation-uk.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "excursion",
+      "pronunciation": "/ɛks.kɜː(ɹ).ʃən/",
+      "word_type": "noun",
+      "meaning": "A brief recreational trip; a journey out of the usual way.",
+      "meaning_en": "A brief recreational trip; a journey out of the usual way.",
+      "example": "While driving home I took an excursion and saw some deer.",
+      "example_meaning": "While driving home I took an excursion and saw some deer.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/excursion-us.mp3",
+      "synonyms": [
+        "journey",
+        "trip",
+        "digression",
+        "excursus"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "passport",
+      "pronunciation": "/ˈpɑːspɔːt/",
+      "word_type": "noun",
+      "meaning": "An official document normally used for international journeys, which proves the identity and nationality of the person for whom it was issued.",
+      "meaning_en": "An official document normally used for international journeys, which proves the identity and nationality of the person for whom it was issued.",
+      "example": "You will have to bring your passport to prove who you are.",
+      "example_meaning": "You will have to bring your passport to prove who you are.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/passport-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "souvenir",
+      "pronunciation": "/ˌsuːvəˈnɪə(ɹ)/",
+      "word_type": "noun",
+      "meaning": "An item of sentimental value, to remember an event or location.",
+      "meaning_en": "An item of sentimental value, to remember an event or location.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [
+        "keepsake",
+        "memento",
+        "memorabilia"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "departure",
+      "pronunciation": "/dɪˈpɑː(ɹ)tjə(ɹ)/",
+      "word_type": "noun",
+      "meaning": "The act of departing or something that has departed.",
+      "meaning_en": "The act of departing or something that has departed.",
+      "example": "The departure was scheduled for noon.",
+      "example_meaning": "The departure was scheduled for noon.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/departure-uk.mp3",
+      "synonyms": [
+        "leaving"
+      ],
+      "antonyms": [
+        "arrival"
+      ]
+    },
+    {
+      "word": "arrival",
+      "pronunciation": "/əˈɹaɪ.vəl/",
+      "word_type": "noun",
+      "meaning": "The act of arriving or something that has arrived.",
+      "meaning_en": "The act of arriving or something that has arrived.",
+      "example": "The early arrival of the bride created a stir.",
+      "example_meaning": "The early arrival of the bride created a stir.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/arrival-uk.mp3",
+      "synonyms": [],
+      "antonyms": [
+        "departure",
+        "non-arrival",
+        "nonarrival"
+      ]
+    },
+    {
+      "word": "luggage",
+      "pronunciation": "/ˈlʌɡɪd͡ʒ/",
+      "word_type": "noun",
+      "meaning": "The bags and other containers that hold a traveller's belongings.",
+      "meaning_en": "The bags and other containers that hold a traveller's belongings.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/luggage-uk.mp3",
+      "synonyms": [
+        "baggage"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "boarding",
+      "pronunciation": "",
+      "word_type": "verb",
+      "meaning": "To step or climb onto or otherwise enter a ship, aircraft, train or other conveyance.",
+      "meaning_en": "To step or climb onto or otherwise enter a ship, aircraft, train or other conveyance.",
+      "example": "It is time to board the aircraft.",
+      "example_meaning": "It is time to board the aircraft.",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": [
+        "alight",
+        "disembark"
+      ]
+    },
+    {
+      "word": "reservation",
+      "pronunciation": "/ˌɹɛzəˈveɪʃən/",
+      "word_type": "noun",
+      "meaning": "The act of reserving, withholding or keeping back.",
+      "meaning_en": "The act of reserving, withholding or keeping back.",
+      "example": "The committee authorised the reservation of funds.",
+      "example_meaning": "The committee authorised the reservation of funds.",
+      "audio_url": "",
+      "synonyms": [
+        "res",
+        "reserve",
+        "rez",
+        "booking",
+        "median"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "terminal",
+      "pronunciation": "/ˈtɚmɪnəl/",
+      "word_type": "noun",
+      "meaning": "A building in an airport where passengers transfer from ground transportation to the facilities that allow them to board airplanes.",
+      "meaning_en": "A building in an airport where passengers transfer from ground transportation to the facilities that allow them to board airplanes.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "customs",
+      "pronunciation": "/ˈkʌstəmz/",
+      "word_type": "noun",
+      "meaning": "(in the plural) The duties or taxes imposed on imported or exported goods.",
+      "meaning_en": "(in the plural) The duties or taxes imposed on imported or exported goods.",
+      "example": "Customs of £200 were due on all the wine we took back from France.",
+      "example_meaning": "Customs of £200 were due on all the wine we took back from France.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/customs-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    }
+  ]
+}

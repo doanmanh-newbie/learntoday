@@ -1,0 +1,203 @@
+{
+  "folder": "IELTS",
+  "words": [
+    {
+      "word": "exacerbate",
+      "pronunciation": "/ɪkˈsæs-/",
+      "word_type": "verb",
+      "meaning": "To make worse (a problem, bad situation, negative feeling, etc.); aggravate; exasperate.",
+      "meaning_en": "To make worse (a problem, bad situation, negative feeling, etc.); aggravate; exasperate.",
+      "example": "The proposed shutdown would exacerbate unemployment problems.",
+      "example_meaning": "The proposed shutdown would exacerbate unemployment problems.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/exacerbate-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "mitigate",
+      "pronunciation": "/ˈmɪt.ɪ.ɡeɪt/",
+      "word_type": "verb",
+      "meaning": "To reduce, lessen, or decrease; to make less severe or easier to bear.",
+      "meaning_en": "To reduce, lessen, or decrease; to make less severe or easier to bear.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/mitigate-au.mp3",
+      "synonyms": [
+        "alleviate",
+        "check",
+        "diminish",
+        "ease",
+        "lighten"
+      ],
+      "antonyms": [
+        "aggrandize",
+        "aggravate",
+        "exacerbate",
+        "incite",
+        "increase"
+      ]
+    },
+    {
+      "word": "substantiate",
+      "pronunciation": "/səbˈstanʃɪeɪt/",
+      "word_type": "verb",
+      "meaning": "To verify something by supplying evidence; to authenticate or corroborate",
+      "meaning_en": "To verify something by supplying evidence; to authenticate or corroborate",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "alleviate",
+      "pronunciation": "/əˈli.vi.eɪt/",
+      "word_type": "verb",
+      "meaning": "To make less severe, as a pain or difficulty.",
+      "meaning_en": "To make less severe, as a pain or difficulty.",
+      "example": "Alcohol is often a cheap tool to alleviate the stress of a hard day.",
+      "example_meaning": "Alcohol is often a cheap tool to alleviate the stress of a hard day.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/alleviate-us.mp3",
+      "synonyms": [
+        "address",
+        "allay",
+        "ameliorate",
+        "assuage",
+        "ease"
+      ],
+      "antonyms": [
+        "aggravate"
+      ]
+    },
+    {
+      "word": "detrimental",
+      "pronunciation": "/ˌdɛtɹɪˈmɛntəl/",
+      "word_type": "adjective",
+      "meaning": "Causing damage or harm.",
+      "meaning_en": "Causing damage or harm.",
+      "example": "Smoking tobacco can be detrimental to your health.",
+      "example_meaning": "Smoking tobacco can be detrimental to your health.",
+      "audio_url": "",
+      "synonyms": [
+        "harmful",
+        "injurious"
+      ],
+      "antonyms": [
+        "beneficial"
+      ]
+    },
+    {
+      "word": "unprecedented",
+      "pronunciation": "/ʌnˈpɹɛsɪdɛntɪd/",
+      "word_type": "adjective",
+      "meaning": "Never before seen, done, or experienced; without precedent.",
+      "meaning_en": "Never before seen, done, or experienced; without precedent.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/unprecedented-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "sustainable",
+      "pronunciation": "/səˈsteɪnəbəl/",
+      "word_type": "adjective",
+      "meaning": "Able to be sustained.",
+      "meaning_en": "Able to be sustained.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "infrastructure",
+      "pronunciation": "/ˈɪnfɹəˌstɹʌk(t)ʃɚ/",
+      "word_type": "noun",
+      "meaning": "(systems theory) An underlying base or foundation especially for an organization or system.",
+      "meaning_en": "(systems theory) An underlying base or foundation especially for an organization or system.",
+      "example": "The parasitic tyranny's infrastructure depends on secrecy in order to be effective.",
+      "example_meaning": "The parasitic tyranny's infrastructure depends on secrecy in order to be effective.",
+      "audio_url": "",
+      "synonyms": [
+        "underbuilding"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "comprehensive",
+      "pronunciation": "/ˌkɒm.pɹɪˈhɛn.sɪv/",
+      "word_type": "noun",
+      "meaning": "A comprehensive school.",
+      "meaning_en": "A comprehensive school.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/comprehensive-au.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "significant",
+      "pronunciation": "/sɪɡˈnɪ.fɪ.kənt/",
+      "word_type": "noun",
+      "meaning": "That which has significance; a sign; a token; a symbol.",
+      "meaning_en": "That which has significance; a sign; a token; a symbol.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/significant-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "fundamental",
+      "pronunciation": "/ˌfʌndəˈmɛntəl/",
+      "word_type": "noun",
+      "meaning": "(usually in the plural) A leading or primary principle, rule, law, or article, which serves as the groundwork of a system; an essential part",
+      "meaning_en": "(usually in the plural) A leading or primary principle, rule, law, or article, which serves as the groundwork of a system; an essential part",
+      "example": "one of the fundamentals of linear algebra",
+      "example_meaning": "one of the fundamentals of linear algebra",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/fundamental-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "phenomenon",
+      "pronunciation": "/fɪˈnɒmənɒn/",
+      "word_type": "noun",
+      "meaning": "A thing or being, event or process, perceptible through senses; or a fact or occurrence thereof.",
+      "meaning_en": "A thing or being, event or process, perceptible through senses; or a fact or occurrence thereof.",
+      "example": "An electromagnetic phenomenon.",
+      "example_meaning": "An electromagnetic phenomenon.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/phenomenon-uk.mp3",
+      "synonyms": [
+        "event",
+        "legend",
+        "marvel",
+        "miracle",
+        "oddity"
+      ],
+      "antonyms": [
+        "noumenon",
+        "thing-in-itself"
+      ]
+    },
+    {
+      "word": "hypothesis",
+      "pronunciation": "/-əsəs/",
+      "word_type": "noun",
+      "meaning": "Used loosely, a tentative conjecture explaining an observation, phenomenon or scientific problem that can be tested by further observation, investigation and/or experimentation. As a scientific term of art, see the attached quotation. Compare to theory, and quotation given there.",
+      "meaning_en": "Used loosely, a tentative conjecture explaining an observation, phenomenon or scientific problem that can be tested by further observation, investigation and/or experimentation. As a scientific term of art, see the attached quotation. Compare to theory, and quotation given there.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/hypothesis-us.mp3",
+      "synonyms": [
+        "educated guess",
+        "guess",
+        "supposition",
+        "theory",
+        "thesis"
+      ],
+      "antonyms": []
+    }
+  ]
+}

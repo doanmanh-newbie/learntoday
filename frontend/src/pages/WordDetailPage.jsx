@@ -3,14 +3,7 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { DICTIONARY } from "../data/dictionary";
 import SaveModal from "../components/sections/dashboard/SaveModal";
-
-function speak(text, lang = "en-US") {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = lang;
-  window.speechSynthesis.speak(utt);
-}
+import { speak } from "../utils/tts";
 
 const INITIAL_FOLDERS = [
   { id: 1, name: "Công việc", color: "#6366f1", words: [] },

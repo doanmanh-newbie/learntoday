@@ -65,6 +65,7 @@ class LearningLog(db.Model):
         return cls.query.filter(
             cls.user_id == user_id,
             cls.action == 'learn',
+            db.or_(cls.choice != 'da_biet', cls.choice.is_(None)),
             cls.created_at >= today_start_utc
         ).count()
 

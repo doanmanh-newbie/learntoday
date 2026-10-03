@@ -162,7 +162,7 @@ useEffect(() => {
 
             {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}
 
-            {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={openLearn} />}
+            {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={(folder) => openLearn(folder.id)} />}
 
             {activeTab === "datcau" && !showLearn && !showReview && <SentencePracticeFull />}
 
