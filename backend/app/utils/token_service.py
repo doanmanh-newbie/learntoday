@@ -1,25 +1,22 @@
 """Quản lý Refresh Token trong database (STT 2)."""
 import datetime
 import jwt
-import os
 import uuid
 
 from app import db
 from app.models import RefreshToken
-from app.utils.auth import generate_token
-
-
-def _jwt_secret():
-    return os.getenv('JWT_SECRET', 'dev-secret-key')
+from app.utils.auth import generate_token, _secret
 
 
 def decode_refresh_token(token: str):
-    """Giải mã Refresh Token JWT, trả về user_id nếu hợp lệ."""
+    """Giải mã Refresh Token JWT, trả về user_id nếu hợp lệ (phải đúng loại 'refresh')."""
     try:
-        payload = jwt.decode(token, _jwt_secret(), algorithms=['HS256'])
-        return payload.get('user_id')
+        payload = jwt.decode(token, _secret(), algorithms=['HS256'])
     except jwt.InvalidTokenError:
         return None
+    if payload.get('type') != 'refresh':
+        return None
+    return payload.get('user_id')
 
 
 def store_refresh_token(user_id: str, refresh_token: str, days: int = 7):
@@ -42,6 +39,14 @@ def revoke_refresh_token(token: str):
         record.is_revoked = True
         return True
     return False
+
+
+def purge_stale_tokens(user_id: str):
+    """Xóa Refresh Token đã hết hạn/đã thu hồi của user - tránh bảng refresh_tokens phình mãi."""
+    RefreshToken.query.filter(
+        RefreshToken.user_id == str(user_id),
+        db.or_(RefreshToken.is_revoked.is_(True), RefreshToken.expires_at < datetime.datetime.utcnow()),
+    ).delete(synchronize_session=False)
 
 
 def revoke_all_user_tokens(user_id: str):

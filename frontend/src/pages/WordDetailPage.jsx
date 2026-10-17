@@ -1,40 +1,98 @@
 // src/pages/WordDetailPage.jsx
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { DICTIONARY } from "../data/dictionary";
 import SaveModal from "../components/sections/dashboard/SaveModal";
 import { speak } from "../utils/tts";
-
-const INITIAL_FOLDERS = [
-  { id: 1, name: "Công việc", color: "#6366f1", words: [] },
-  { id: 2, name: "Học thuật", color: "#10b981", words: [] },
-  { id: 3, name: "Phẩm chất", color: "#f59e0b", words: [] },
-  { id: 4, name: "Công nghệ", color: "#8b5cf6", words: [] },
-  { id: 5, name: "Giao tiếp", color: "#06b6d4", words: [] },
-];
+import { foldersApi, searchApi, translateApi, wordsApi } from "../api/client";
 
 export default function WordDetailPage({ word }) {
-  const entry = DICTIONARY[word];
-
+  const [entry, setEntry] = useState(DICTIONARY[word] || null);
   const [activeTab, setActiveTab] = useState("anh-viet");
-  const [folders, setFolders] = useState(INITIAL_FOLDERS);
+  const [folders, setFolders] = useState([]);
   const [showSave, setShowSave] = useState(false);
   const [savedToast, setSavedToast] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const handleSave = (folderId, w) => {
-    setFolders(prev => prev.map(f =>
-      f.id === folderId && !f.words.includes(w)
-        ? { ...f, words: [...f.words, w] } : f
-    ));
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      let result;
+      try {
+        const searched = await searchApi.query(word);
+        result = (searched.results || []).find(item => item.word.toLowerCase() === word.toLowerCase()) || null;
+        if (!result) {
+          const lookedUp = await wordsApi.lookup(word);
+          if (lookedUp.found) result = lookedUp.word;
+        }
+      } catch {
+        result = null;
+      }
+
+      if (cancelled) return;
+      if (result) {
+        setEntry({
+          ...result,
+          phonetic: result.pronunciation || result.phonetic || "",
+          pos: [{
+            type: result.word_type || result.pos || "Từ vựng",
+            defs: [{
+              vi: result.meaning || "",
+              def: result.meaning_en || result.meaning || "",
+              example: result.example || "",
+              example_vi: result.example_meaning || "",
+            }],
+          }],
+          collocations: result.synonyms || [],
+        });
+      } else {
+        setEntry(DICTIONARY[word] || null);
+      }
+      setLoading(false);
+    };
+    load();
+    return () => { cancelled = true; };
+  }, [word]);
+
+  useEffect(() => {
+    let cancelled = false;
+    foldersApi.list().then(data => {
+      if (cancelled) return;
+      setFolders((data.personal_folders || []).map(folder => ({
+        id: folder.id,
+        name: folder.name,
+        color: folder.color || "#6366f1",
+        words: Array(folder.word_count || 0).fill(null),
+      })));
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
+  const handleSave = async (folderId) => {
+    let savedWord = entry.id ? { word: entry } : null;
+    if (!savedWord) {
+      savedWord = await translateApi.save({
+        word: entry.word,
+        meaning: entry.pos?.[0]?.defs?.[0]?.vi || entry.meaning || entry.word,
+        word_type: entry.pos?.[0]?.type || "noun",
+        example: entry.pos?.[0]?.defs?.[0]?.example,
+        example_meaning: entry.pos?.[0]?.defs?.[0]?.example_vi,
+      });
+    }
+    await foldersApi.addWord(folderId, savedWord.word.id);
     setSavedToast(true);
     setTimeout(() => setSavedToast(false), 2000);
   };
 
-  const handleCreate = (name, color) => {
-    const id = Date.now();
-    setFolders(prev => [...prev, { id, name, color, words: [] }]);
-    return id;
+  const handleCreate = async (name) => {
+    const result = await foldersApi.create(name);
+    setFolders(prev => [...prev, { id: result.folder.id, name: result.folder.name, color: result.folder.color || "#6366f1", words: [] }]);
+    return result.folder.id;
   };
+
+  if (loading && !entry) {
+    return <div style={{ padding: 40, textAlign: "center", color: "#94a3b8" }}>Đang tra từ...</div>;
+  }
 
   if (!entry) {
     return (

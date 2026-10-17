@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { foldersApi, historyApi, learningApi } from "../../../api/client";
 import {
   BarChart,
   Bar,
@@ -75,7 +76,6 @@ const vocabData = [
 ];
 
 const ALL_FOLDERS = [...new Set(vocabData.map(v => v.folder))];
-const ALL_LVS     = ["Lv1", "Lv2", "Lv3", "Lv4", "Lv5", "Lv6"];
 
 // ── Custom Tooltip ────────────────────────────────────────────────────────────
 
@@ -168,6 +168,73 @@ export default function StatisticsPage() {
   const [chartView, setChartView] = useState("date"); // "date" | "level"
   const [period, setPeriod]       = useState("week");  // "week" | "month"
   const [hoveredBar, setHoveredBar] = useState(null);
+  const [chartWeek, setChartWeek] = useState(weekData);
+  const [chartMonth, setChartMonth] = useState(monthData);
+  const [chartLevels, setChartLevels] = useState(levelChartData);
+  const [vocabulary, setVocabulary] = useState(vocabData);
+  const [folderOptions, setFolderOptions] = useState(ALL_FOLDERS);
+  const [stats, setStats] = useState({ total_words_learned: 0, streak: 0, total_study_minutes: 0 });
+  const [daily, setDaily] = useState({ learned_today: 0, daily_target: 10 });
+  const [totalAvailable, setTotalAvailable] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.allSettled([
+      historyApi.stats(), historyApi.words(1), historyApi.logs(),
+      learningApi.todayProgress(), foldersApi.list(),
+    ]).then(([statsResult, wordsResult, logsResult, dailyResult, foldersResult]) => {
+      if (cancelled) return;
+      if (statsResult.status === "fulfilled") setStats(statsResult.value);
+      if (dailyResult.status === "fulfilled") setDaily(dailyResult.value);
+      if (wordsResult.status === "fulfilled") {
+        const items = wordsResult.value.words || [];
+        setVocabulary(items.map(item => ({
+          word: item.word,
+          meaning: item.meaning,
+          folder: item.category || "Từ vựng",
+          level: `Lv${item.level || 1}`,
+          learned: true,
+        })));
+      }
+      if (foldersResult.status === "fulfilled") {
+        const allFolders = [...(foldersResult.value.system_folders || []), ...(foldersResult.value.personal_folders || [])];
+        setTotalAvailable(allFolders.reduce((sum, folder) => sum + (folder.word_count || 0), 0));
+        setFolderOptions([...new Set(allFolders.map(folder => folder.name))]);
+      }
+      if (logsResult.status === "fulfilled") {
+        const logs = (logsResult.value.logs || []).filter(log => log.action === "learn" && log.choice !== "da_biet");
+        const keyOf = date => `${date.getFullYear()}-${date.getMonth()}-${date.getDate()}`;
+        const today = new Date();
+        const weekdays = ["CN", "T2", "T3", "T4", "T5", "T6", "T7"];
+        const week = Array.from({ length: 7 }, (_, index) => {
+          const date = new Date(today);
+          date.setDate(today.getDate() - 6 + index);
+          const count = logs.filter(log => {
+            const created = new Date(log.created_at);
+            return keyOf(created) === keyOf(date);
+          }).length;
+          return { label: weekdays[date.getDay()], words: count };
+        });
+        const month = Array.from({ length: 12 }, (_, index) => {
+          const date = new Date(today.getFullYear(), today.getMonth() - 11 + index, 1);
+          const count = logs.filter(log => {
+            const created = new Date(log.created_at);
+            return created.getFullYear() === date.getFullYear() && created.getMonth() === date.getMonth();
+          }).length;
+          return { label: `T${date.getMonth() + 1}`, words: count };
+        });
+        setChartWeek(week);
+        setChartMonth(month);
+        const counts = new Map();
+        (wordsResult.status === "fulfilled" ? wordsResult.value.words || [] : []).forEach(item => {
+          const level = Math.min(6, Math.max(1, item.level || 1));
+          counts.set(level, (counts.get(level) || 0) + 1);
+        });
+        setChartLevels(levelChartData.map(item => ({ ...item, words: counts.get(Number(item.label.slice(2))) || 0 })));
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   // vocab list
   const [expanded,      setExpanded]      = useState(false);
@@ -176,12 +243,12 @@ export default function StatisticsPage() {
   const [activeLevel,   setActiveLevel]   = useState(null);
 
   // resolve chart data
-  const dateData  = period === "week" ? weekData : monthData;
-  const chartData = chartView === "level" ? levelChartData : dateData;
+  const dateData  = period === "week" ? chartWeek : chartMonth;
+  const chartData = chartView === "level" ? chartLevels : dateData;
   const barSize   = chartView === "level" ? 36 : period === "week" ? 32 : 20;
 
   // resolve vocab list
-  const pool = expanded ? vocabData : vocabData.slice(0, 5);
+  const pool = expanded ? vocabulary : vocabulary.slice(0, 5);
   const filteredVocab = pool.filter(v => {
     if (filterMode === "folder" && activeFolder) return v.folder === activeFolder;
     if (filterMode === "level"  && activeLevel)  return v.level  === activeLevel;
@@ -246,16 +313,16 @@ export default function StatisticsPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: "22px" }}>📖</span>
               <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "9999px",
-                background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}>75%</span>
+                background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}>{totalAvailable ? Math.min(100, Math.round((stats.total_words_learned || 0) * 100 / totalAvailable)) : 0}%</span>
             </div>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
-                186<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/247</span>
+                {stats.total_words_learned || 0}<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/{totalAvailable}</span>
               </p>
               <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>từ đã học</p>
             </div>
             <div style={{ width: "100%", height: "6px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-              <div style={{ width: "75%", height: "100%", borderRadius: "9999px",
+              <div style={{ width: `${totalAvailable ? Math.min(100, (stats.total_words_learned || 0) * 100 / totalAvailable) : 0}%`, height: "100%", borderRadius: "9999px",
                 background: "linear-gradient(90deg,#6366f1,#8b5cf6)", boxShadow: "0 0 8px rgba(139,92,246,0.5)", transition: "width 0.7s ease" }} />
             </div>
           </StatCard>
@@ -265,15 +332,15 @@ export default function StatisticsPage() {
             <span style={{ fontSize: "22px" }}>🔥</span>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "26px", fontWeight: 800,
-                background: "linear-gradient(135deg,#fb923c,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>5</p>
+                background: "linear-gradient(135deg,#fb923c,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{stats.streak || 0}</p>
               <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>ngày liên tiếp</p>
             </div>
             <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
               {Array.from({ length: 7 }).map((_, i) => (
                 <div key={i} style={{
                   flex: 1, height: "6px", borderRadius: "9999px",
-                  background: i < 5 ? "linear-gradient(90deg,#f97316,#fb923c)" : "rgba(255,255,255,0.07)",
-                  boxShadow: i < 5 ? "0 0 6px rgba(249,115,22,0.4)" : "none",
+                  background: i < Math.min(stats.streak || 0, 7) ? "linear-gradient(90deg,#f97316,#fb923c)" : "rgba(255,255,255,0.07)",
+                  boxShadow: i < Math.min(stats.streak || 0, 7) ? "0 0 6px rgba(249,115,22,0.4)" : "none",
                 }} />
               ))}
             </div>
@@ -284,7 +351,7 @@ export default function StatisticsPage() {
             <span style={{ fontSize: "22px" }}>⏰</span>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
-                54h <span style={{ fontSize: "16px" }}>12p</span>
+                {Math.floor((stats.total_study_minutes || 0) / 60)}h <span style={{ fontSize: "16px" }}>{(stats.total_study_minutes || 0) % 60}p</span>
               </p>
               <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>từ trước đến nay</p>
             </div>
@@ -296,16 +363,16 @@ export default function StatisticsPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: "22px" }}>🎯</span>
               <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "9999px",
-                background: "rgba(16,185,129,0.15)", color: "#10b981" }}>40%</span>
+                background: "rgba(16,185,129,0.15)", color: "#10b981" }}>{daily.daily_target ? Math.min(100, Math.round((daily.learned_today || 0) * 100 / daily.daily_target)) : 0}%</span>
             </div>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
-                4<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/10</span>
+                {daily.learned_today || 0}<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/{daily.daily_target || 10}</span>
               </p>
               <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>mục tiêu hôm nay</p>
             </div>
             <div style={{ width: "100%", height: "6px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
-              <div style={{ width: "40%", height: "100%", borderRadius: "9999px",
+              <div style={{ width: `${daily.daily_target ? Math.min(100, (daily.learned_today || 0) * 100 / daily.daily_target) : 0}%`, height: "100%", borderRadius: "9999px",
                 background: "linear-gradient(90deg,#10b981,#059669)", boxShadow: "0 0 8px rgba(16,185,129,0.5)", transition: "width 0.7s ease" }} />
             </div>
           </StatCard>
@@ -370,7 +437,7 @@ export default function StatisticsPage() {
           {/* Level legend strip */}
           {chartView === "level" && (
             <div style={{ display: "flex", gap: "8px", marginBottom: "16px", flexWrap: "wrap" }}>
-              {levelChartData.map(d => (
+              {chartLevels.map(d => (
                 <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                   <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: d.color,
                     boxShadow: `0 0 6px ${d.glow}` }} />
@@ -458,7 +525,7 @@ export default function StatisticsPage() {
                 Danh sách từ vựng
               </h2>
               <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>
-                {vocabData.length} từ · {vocabData.filter(v => v.learned).length} đã học
+                {vocabulary.length} từ · {vocabulary.filter(v => v.learned).length} đã học
               </p>
             </div>
 
@@ -491,7 +558,7 @@ export default function StatisticsPage() {
               background: "rgba(99,102,241,0.03)",
             }}>
               <Pill active={activeFolder === null} onClick={() => setActiveFolder(null)}>Tất cả chủ đề</Pill>
-              {ALL_FOLDERS.map(f => (
+              {folderOptions.map(f => (
                 <Pill key={f} active={activeFolder === f} onClick={() => setActiveFolder(f)}>{f}</Pill>
               ))}
             </div>
@@ -505,7 +572,7 @@ export default function StatisticsPage() {
               background: "rgba(99,102,241,0.03)",
             }}>
               <Pill active={activeLevel === null} onClick={() => setActiveLevel(null)}>Tất cả cấp</Pill>
-              {ALL_LVS.map(lv => {
+              {["Lv1", "Lv2", "Lv3", "Lv4", "Lv5", "Lv6"].map(lv => {
                 const cfg = LEVELS[lv];
                 const isActive = activeLevel === lv;
                 return (
@@ -626,7 +693,7 @@ export default function StatisticsPage() {
             onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.06)"; e.currentTarget.style.color = "#a5b4fc"; }}
             onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#8892b0"; }}
           >
-            <span>{expanded ? "Thu gọn" : `Xem thêm ${vocabData.length - 5} từ`}</span>
+            <span>{expanded ? "Thu gọn" : `Xem thêm ${vocabulary.length - 5} từ`}</span>
             <span style={{ display: "inline-block", transform: expanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease" }}>↓</span>
           </button>
         </div>

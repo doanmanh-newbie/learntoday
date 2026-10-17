@@ -36,7 +36,7 @@ def check_and_create_milestones(user_id: str, total_words: int):
         milestones_created.append(milestone)
 
     if milestones_created:
-        db.session.commit()
+        db.session.flush()       # KHÔNG commit ở đây: caller commit cả transaction 1 lần (nguyên tử)
 
     return milestones_created
 

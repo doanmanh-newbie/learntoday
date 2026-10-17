@@ -9,3 +9,7 @@ class RefreshToken(db.Model):
     token = db.Column(db.String(255), unique=True, nullable=False)
     expires_at = db.Column(db.DateTime, nullable=False)
     is_revoked = db.Column(db.Boolean, default=False)
+
+    __table_args__ = (
+        db.Index('idx_refresh_tokens_user', 'user_id'),
+    )

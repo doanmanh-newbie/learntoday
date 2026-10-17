@@ -4,6 +4,7 @@ Module 6.5 - Quy trình học từ vựng (CỐT LÕI).
 Được gọi bởi routes/words.py (dùng chung cho learn và review).
 """
 from app import db
+from sqlalchemy.exc import IntegrityError
 from app.models import Word, UserWord, LearningLog, User
 from app.utils.srs import get_next_review
 from app.services.streak_service import update_streak_if_goal_met
@@ -22,6 +23,25 @@ class ServiceError(Exception):
 
 
 VALID_STEPS = ['spelling', 'quiz1', 'quiz2', 'quiz3']
+
+
+def count_learned_words(user_id):
+    """Số từ đã học = số bản ghi user_words có level >= 1 (đúng định nghĩa STT 16).
+
+    Dùng làm NGUỒN SỰ THẬT thay cho bộ đếm users.total_words_learned (+1 mỗi lần) vốn bị lệch
+    khi dùng mark_known / reset level / học lại.
+    """
+    return UserWord.query.filter(UserWord.user_id == user_id, UserWord.level >= 1).count()
+
+
+def _sync_learned_total(user_id):
+    """Đồng bộ users.total_words_learned theo COUNT thật + tạo mốc Pass nếu vượt 50/100/..."""
+    user = db.session.get(User, user_id)
+    if not user:
+        return []
+    db.session.flush()                       # để COUNT thấy cả bản ghi vừa thêm
+    user.total_words_learned = count_learned_words(user_id)
+    return check_and_create_milestones(user_id, user.total_words_learned)
 
 
 def normalize_text(text):
@@ -161,14 +181,14 @@ def complete_learn(user_id, word_id):
     )
     db.session.add(log)
 
-    user = User.query.get(user_id)
-    new_milestones = []
-    new_streak = None
-    if user:
-        user.total_words_learned = (user.total_words_learned or 0) + 1
-        new_milestones = check_and_create_milestones(user_id, user.total_words_learned)
-
-    db.session.commit()
+    try:
+        new_milestones = _sync_learned_total(user_id)
+        db.session.commit()
+    except IntegrityError:
+        # Bấm "hoàn thành" 2 lần / mở 2 tab: cả 2 request cùng qua bước kiểm tra,
+        # UNIQUE(user_id, word_id) chỉ cho 1 request thắng -> báo 409 thay vì lỗi 500.
+        db.session.rollback()
+        raise ServiceError('Từ này đã được học rồi!', 409)
 
     new_streak = update_streak_if_goal_met(user_id)
 
@@ -199,7 +219,7 @@ def complete_review(user_id, word_id, wrong_count, choice):
     if not user_word or user_word.level < 1:
         raise ServiceError('Từ này chưa được học, không thể ôn tập!', 409)
 
-    if wrong_count is None or not isinstance(wrong_count, int) or wrong_count < 0:
+    if wrong_count is None or isinstance(wrong_count, bool) or not isinstance(wrong_count, int) or wrong_count < 0:
         raise ServiceError('wrong_count phải là số nguyên >= 0!', 400)
 
     level_before = user_word.level
@@ -273,6 +293,10 @@ def mark_known(user_id, word_id):
         raise ServiceError('Không tìm thấy từ vựng!', 404)
 
     existing = UserWord.get_by_user_and_word(user_id, word_id)
+    if existing and existing.level > 0:
+        # Trước đây gọi lại sẽ ĐẶT LẠI từ đang ở LV5 về LV1 -> mất toàn bộ tiến độ SRS
+        raise ServiceError('Từ này đã được học rồi, không thể đánh dấu "đã biết"!', 409)
+
     if existing:
         user_word = existing
         level_before = user_word.level
@@ -291,9 +315,14 @@ def mark_known(user_id, word_id):
         level_before=level_before, level_after=1, wrong_count=0
     )
     db.session.add(log)
-    db.session.commit()
+    try:
+        new_milestones = _sync_learned_total(user_id)
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        raise ServiceError('Từ này đã được đánh dấu rồi!', 409)
 
-    return {'result': 'da_biet', 'user_word': user_word.to_dict()}
+    return {'result': 'da_biet', 'user_word': user_word.to_dict(), 'new_milestones': new_milestones}
 
 
 # ============================================================
@@ -323,8 +352,8 @@ def snooze_word(user_id, word_id, days=7):
     """User muốn nhắc sau X ngày → set next_review = now + X days"""
     from datetime import timedelta
     
-    if days < 1 or days > 365:
-        raise ServiceError('Số ngày phải từ 1 đến 365!', 400)
+    if isinstance(days, bool) or not isinstance(days, int) or days < 1 or days > 365:
+        raise ServiceError('Số ngày phải là số nguyên từ 1 đến 365!', 400)
 
     user_word = UserWord.get_by_user_and_word(user_id, word_id)
     if not user_word:

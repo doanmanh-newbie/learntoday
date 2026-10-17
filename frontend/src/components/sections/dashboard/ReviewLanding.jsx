@@ -1,4 +1,5 @@
 // src/components/sections/dashboard/ReviewLanding.jsx
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 const SRS_SECONDS = { 1: 20 * 60, 2: 10 * 3600, 3: 86400, 4: 3 * 86400, 5: 7 * 86400, 6: 5 * 86400 };
@@ -20,6 +21,7 @@ function formatNextReview(ms) {
 
 export default function ReviewLanding({ dueWords = [], onReview, onGoLearn }) {
   const navigate = useNavigate();
+  const [now] = useState(() => Date.now());   // chốt 1 lần: Date.now() trực tiếp trong render là không thuần khiết
 
   // Group by level for schedule
   const byLevel = {};
@@ -29,7 +31,6 @@ export default function ReviewLanding({ dueWords = [], onReview, onGoLearn }) {
     byLevel[lv].push(w);
   });
 
-  const now = Date.now();
   const schedule = Object.entries(byLevel)
     .map(([lv, words]) => {
       const lvNum = Number(lv);

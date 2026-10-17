@@ -1,4 +1,4 @@
-import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon, BookOpenIcon } from "../../../icons/dashboard/index.jsx";
+import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon, BookOpenIcon, CheckCircleIcon } from "../../../icons/dashboard/index.jsx";
 import { useNavigate } from "react-router-dom";
 
 const TABS = [
@@ -7,7 +7,8 @@ const TABS = [
   { id: "thongke", icon: <BarChartIcon />, label: "Thống kê" },
   { id: "thuvien", icon: <BookIcon />, label: "Thư viện chủ đề" },
   { id: "datcau", icon: <PenIcon />, label: "Đặt câu · Sửa lỗi" },
-  { id: "dictionary", icon: <BookOpenIcon />, label: "Từ điển" }, // Thêm cái này
+  { id: "dictionary", icon: <BookOpenIcon />, label: "Từ điển" },
+  { id: "kiemtra", icon: <CheckCircleIcon />, label: "Kiểm tra" },   // STT 16 - trang đã code nhưng trước đây KHÔNG có lối vào nào
 ];
 
 export default function Nav({ activeTab, setActiveTab }) {
@@ -26,6 +27,7 @@ export default function Nav({ activeTab, setActiveTab }) {
     thuvien: "/app/thuvien",
     datcau: "/app/datcau",
     dictionary: "/app/dictionary",
+    kiemtra: "/app/kiem-tra",
   };
 
   const handleTabClick = (id) => {

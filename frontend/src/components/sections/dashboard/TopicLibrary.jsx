@@ -1,5 +1,5 @@
 // src/components/sections/dashboard/TopicLibrary.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { foldersApi } from "../../../api/client";
 
 // ── Map ảnh theo tên folder (backend chưa có field image) ─────────────
@@ -51,13 +51,13 @@ const PHRASE_FOLDERS = [
   },
 ];
 
-const LEVEL_OPTS = ["Tất cả", "Lv1", "Lv2", "Lv3", "Lv4", "Lv5"];
-const LEVEL_CFG = {
-  Lv1: { color: "#10b981", bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.3)" },
-  Lv2: { color: "#34d399", bg: "rgba(52,211,153,0.15)", border: "rgba(52,211,153,0.3)" },
-  Lv3: { color: "#a5b4fc", bg: "rgba(165,180,252,0.15)", border: "rgba(165,180,252,0.3)" },
-  Lv4: { color: "#8b5cf6", bg: "rgba(139,92,246,0.15)", border: "rgba(139,92,246,0.3)" },
-  Lv5: { color: "#f59e0b", bg: "rgba(245,158,11,0.15)", border: "rgba(245,158,11,0.3)" },
+// Trạng thái hiển thị theo % tiến độ THẬT của folder. KHÔNG hiển thị "Level" ở cấp folder:
+// SRS Level chỉ có nghĩa với TỪNG TỪ (STT 8) - 1 folder có từ ở nhiều level khác nhau.
+// (Badge 'Lv3' cứng này đã tái phát nhiều lần qua các bản src.zip.)
+const STATUS_CFG = {
+  done:    { label: "✓ Hoàn thành", color: "#10b981", bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.3)" },
+  started: { label: "▶ Đang học",   color: "#a5b4fc", bg: "rgba(165,180,252,0.15)", border: "rgba(165,180,252,0.3)" },
+  new:     { label: "Chưa học",     color: "#8892b0", bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.1)" },
 };
 
 // ── Loading ────────────────────────────────────────────────────────────
@@ -94,9 +94,9 @@ function ErrorState({ message, onRetry }) {
 // ── Topic Card ─────────────────────────────────────────────────────────
 function TopicCard({ topic, big = false, onSelectFolder }) {
   const [hovered, setHovered] = useState(false);
-  const lv = LEVEL_CFG[topic.level] || LEVEL_CFG.Lv3;
   const done = topic.progress === 100;
   const started = topic.progress > 0 && !done;
+  const status = done ? STATUS_CFG.done : started ? STATUS_CFG.started : STATUS_CFG.new;
 
   return (
     <div
@@ -134,37 +134,13 @@ function TopicCard({ topic, big = false, onSelectFolder }) {
       <div style={{
         position: "absolute", top: "12px", right: "12px",
         padding: "3px 10px", borderRadius: "9999px", fontSize: "11px", fontWeight: 700,
-        background: lv.bg, color: lv.color, border: `0.8px solid ${lv.border}`,
+        background: status.bg, color: status.color, border: `0.8px solid ${status.border}`,
         backdropFilter: "blur(8px)",
       }}>
-        {topic.level}
+        {status.label}
       </div>
 
-      {done && (
-        <div style={{
-          position: "absolute", top: "12px", left: "12px",
-          padding: "3px 10px", borderRadius: "9999px", fontSize: "10px", fontWeight: 700,
-          background: "rgba(16,185,129,0.2)", color: "#10b981",
-          border: "0.8px solid rgba(16,185,129,0.35)",
-          backdropFilter: "blur(8px)",
-        }}>
-          ✓ Hoàn thành
-        </div>
-      )}
-
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px" }}>
-        {topic.tags && topic.tags.length > 0 && (
-          <div style={{ display: "flex", gap: "6px", marginBottom: "8px", flexWrap: "wrap" }}>
-            {topic.tags.map(t => (
-              <span key={t} style={{
-                fontSize: "10px", fontWeight: 500, padding: "2px 7px", borderRadius: "4px",
-                background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)",
-                backdropFilter: "blur(4px)", fontFamily: "Inter, sans-serif",
-              }}>{t}</span>
-            ))}
-          </div>
-        )}
-
         <p style={{
           fontFamily: "Outfit, sans-serif", fontWeight: 800,
           fontSize: big ? "22px" : "17px", color: "#e8eaf6", marginBottom: "2px",
@@ -353,7 +329,6 @@ function CreateFolderCard({ onCreate }) {
 // ── Main Page ──────────────────────────────────────────────────────────
 export default function TopicLibraryPage({ onSelectFolder }) {
   const [search, setSearch] = useState("");
-  const [levelFilter, setLevelFilter] = useState("Tất cả");
   const [progressFilter, setProgressFilter] = useState("all");
 
   const [systemFolders, setSystemFolders] = useState([]);
@@ -361,62 +336,60 @@ export default function TopicLibraryPage({ onSelectFolder }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
-  const loadFolders = () => {
+  const loadFolders = useCallback(async () => {
     setLoading(true);
     setError("");
-    foldersApi.list()
-      .then((data) => {
-        // ✅ Map data backend → format UI cũ
-        const system = (data.system_folders || []).map(f => {
-          const total = f.word_count || 0;
-          return {
-            id: f.id,
-            name: f.name,
-            nameEn: f.description || f.name,
-            img: FOLDER_IMAGES[f.name] || DEFAULT_IMG,
-            totalWords: total,
-            learnedWords: 0, // TODO: backend chưa trả - cần API /api/folders/:id/progress
-            level: 'Lv3', // Mặc định
-            tags: [], // Backend chưa có field tags
-            featured: false,
-            progress: 0,
-          };
-        });
-
-        const personal = (data.personal_folders || []).map(f => ({
-          id: f.id,
-          name: f.name,
-          icon: f.icon || '📁',
-          totalWords: f.word_count || 0,
-          learnedWords: 0,
-        }));
-
-        // Featured = 3 folder đầu tiên
-        system.slice(0, 3).forEach((f, i) => { system[i].featured = true; });
-
-        setSystemFolders(system);
-        setPersonalFolders(personal);
-      })
-      .catch((err) => setError(err.message || "Có lỗi xảy ra"))
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    loadFolders();
+    try {
+      const data = await foldersApi.list();
+      // Backend đã trả sẵn total_words / learned_words / progress cho từng folder trong CÙNG response
+      // (trước đây gọi thêm GET /folders/<id>/progress cho TỪNG folder: 1 + N request, mỗi cái nhiều
+      // truy vấn DB tới server ở xa -> trang Thư viện tải rất chậm).
+      const mapFolder = (f) => ({
+        id: f.id,
+        name: f.name,
+        nameEn: f.description || f.name,
+        img: f.image || FOLDER_IMAGES[f.name] || DEFAULT_IMG,
+        totalWords: f.total_words ?? f.word_count ?? 0,
+        learnedWords: f.learned_words ?? 0,
+        featured: false,
+        progress: f.progress ?? 0,
+      });
+      const system = (data.system_folders || []).map(mapFolder);
+      const personal = (data.personal_folders || []).map((f) => ({ ...mapFolder(f), icon: f.icon || '📁' }));
+      system.slice(0, 3).forEach((f, i) => { system[i].featured = true; });
+      setSystemFolders(system);
+      setPersonalFolders(personal);
+    } catch (err) {
+      setError(err.message || "Có lỗi xảy ra");
+    } finally {
+      setLoading(false);
+    }
   }, []);
+
+  useEffect(() => { Promise.resolve().then(loadFolders); }, [loadFolders]);
+
+  const createFolder = async () => {
+    const name = window.prompt("Tên folder mới:");
+    if (!name?.trim()) return;
+    try {
+      await foldersApi.create(name.trim());
+      await loadFolders();
+    } catch (err) {
+      setError(err.message || "Không tạo được folder");
+    }
+  };
 
   if (loading) return <LoadingState />;
   if (error) return <ErrorState message={error} onRetry={loadFolders} />;
 
   const filtered = systemFolders.filter(t => {
     const matchSearch = t.name.toLowerCase().includes(search.toLowerCase());
-    const matchLevel = levelFilter === "Tất cả" || t.level === levelFilter;
     const matchProg =
       progressFilter === "all" ? true :
       progressFilter === "done" ? t.progress === 100 :
       progressFilter === "inprogress" ? t.progress > 0 && t.progress < 100 :
       progressFilter === "notstarted" ? t.progress === 0 : true;
-    return matchSearch && matchLevel && matchProg;
+    return matchSearch && matchProg;
   });
 
   const featured = systemFolders.filter(t => t.featured);
@@ -465,24 +438,6 @@ export default function TopicLibraryPage({ onSelectFolder }) {
             />
           </div>
 
-          <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-            {LEVEL_OPTS.map(lv => {
-              const active = levelFilter === lv;
-              const cfg = lv !== "Tất cả" ? LEVEL_CFG[lv] : null;
-              return (
-                <button key={lv} onClick={() => setLevelFilter(lv)} style={{
-                  padding: "6px 14px", borderRadius: "9999px", fontSize: "12px", fontWeight: 500,
-                  fontFamily: "Inter, sans-serif", cursor: "pointer", transition: "all 0.2s ease",
-                  background: active ? (cfg ? cfg.bg : "rgba(99,102,241,0.2)") : "rgba(255,255,255,0.05)",
-                  color: active ? (cfg ? cfg.color : "#a5b4fc") : "#5a6a8a",
-                  border: active ? `0.8px solid ${cfg ? cfg.border : "rgba(99,102,241,0.4)"}` : "0.8px solid rgba(255,255,255,0.07)",
-                }}>
-                  {lv}
-                </button>
-              );
-            })}
-          </div>
-
           <div style={{ display: "flex", gap: "6px", marginLeft: "auto" }}>
             {[["all","Tất cả"],["inprogress","Đang học"],["notstarted","Chưa bắt đầu"],["done","Hoàn thành"]].map(([v,label]) => (
               <button key={v} onClick={() => setProgressFilter(v)} style={{
@@ -508,12 +463,12 @@ export default function TopicLibraryPage({ onSelectFolder }) {
             {personalFolders.map(f => (
               <PersonalFolderCard key={f.id} folder={f} onSelectFolder={onSelectFolder} />
             ))}
-            <CreateFolderCard onCreate={() => alert("Sẽ nối API tạo folder sau")} />
+            <CreateFolderCard onCreate={createFolder} />
           </div>
         </div>
 
         {/* Featured */}
-        {featured.length > 0 && search === "" && levelFilter === "Tất cả" && progressFilter === "all" && (
+        {featured.length > 0 && search === "" && progressFilter === "all" && (
           <div style={{ marginBottom: "36px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
               <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e8eaf6" }}>

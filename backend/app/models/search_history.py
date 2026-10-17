@@ -12,6 +12,10 @@ class SearchHistory(db.Model):
     query = db.Column(db.String(200), nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+    __table_args__ = (
+        db.Index('idx_search_history_user_created', 'user_id', 'created_at'),
+    )
+
     def to_dict(self):
         return {
             'id': str(self.id),

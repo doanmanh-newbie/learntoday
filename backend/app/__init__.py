@@ -1,73 +1,73 @@
 # app/__init__.py
 import logging
+import time
+
 from flask import Flask, jsonify
 from flask_cors import CORS
-from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
-from .config import Config
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 
-# Cấu hình logging cơ bản - trước đây middleware.py gọi logger.info() nhưng
-# chưa từng có basicConfig() nào, nên log không có format/level rõ ràng.
+from .config import Config, validate_config
+
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s [%(levelname)s] %(name)s: %(message)s'
 )
 
 db = SQLAlchemy()
+migrate = Migrate()
 
-def create_app():
+
+def create_app(config_object=Config):
+    """
+    config_object: truyền 1 lớp/dict cấu hình khác khi test (vd: SQLite trong bộ nhớ).
+    """
     app = Flask(__name__)
-    app.config.from_object(Config)
+    app.config.from_object(config_object)
 
-    CORS(app, origins=['http://localhost:5173', 'http://127.0.0.1:5173'], supports_credentials=True)
+    if config_object is Config:
+        validate_config(Config)        # dừng sớm, báo rõ nếu thiếu cấu hình DB
+
+    CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     db.init_app(app)
+    migrate.init_app(app, db)
 
-    # ✅ Khởi tạo Migrate
-    migrate = Migrate(app, db)
+    # Import tất cả models (để Alembic/SQLAlchemy nhìn thấy metadata)
+    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog, SearchHistory, UserMilestone  # noqa: F401
 
-    # ✅ Import tất cả models
-    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog, SearchHistory, UserMilestone
-
-    # ✅ Import tất cả Blueprint
     from .routes import (
         auth_bp, folders_bp, learning_bp, review_bp, words_bp,
         profile_bp, history_bp, search_bp, translate_bp, study_bp,
         pass_test_bp, ai_practice_bp,
     )
+    for bp in (auth_bp, folders_bp, learning_bp, review_bp, words_bp, profile_bp,
+               history_bp, search_bp, translate_bp, study_bp, pass_test_bp, ai_practice_bp):
+        app.register_blueprint(bp)
 
-    # ✅ Đăng ký tất cả Blueprint
-    app.register_blueprint(auth_bp)
-    app.register_blueprint(folders_bp)
-    app.register_blueprint(learning_bp)
-    app.register_blueprint(review_bp)
-    app.register_blueprint(words_bp)
-    app.register_blueprint(profile_bp)
-    app.register_blueprint(history_bp)
-    app.register_blueprint(search_bp)
-    app.register_blueprint(translate_bp)
-    app.register_blueprint(study_bp)
-    app.register_blueprint(pass_test_bp)
-    app.register_blueprint(ai_practice_bp)
+    from .utils.errors import register_error_handlers
+    register_error_handlers(app)
 
     @app.route('/')
-    def health_check():
+    def root():
         return jsonify({"status": "ok", "message": "Backend đang chạy"})
 
-    @app.route('/test-db')
-    def test_db():
+    @app.route('/api/health')
+    @app.route('/test-db')          # giữ đường dẫn cũ cho tương thích
+    def health():
+        """Kiểm tra kết nối DB thật sự (SELECT 1) + đo độ trễ."""
+        started = time.perf_counter()
         try:
-            user = User.query.first()
-            return jsonify({
-                "status": "ok",
-                "connected": True,
-                "sample_user": user.username if user else None,
-                "note": "Bảng users đang trống, nhưng kết nối OK" if not user else None
-            })
-        except Exception as e:
-            return jsonify({
-                "status": "error",
-                "connected": False,
-                "message": str(e)
-            }), 500
+            db.session.execute(text('SELECT 1'))
+            latency = round((time.perf_counter() - started) * 1000)
+            return jsonify({"status": "ok", "connected": True, "latency_ms": latency})
+        except Exception as e:  # noqa: BLE001
+            db.session.rollback()
+            app.logger.error('Health check DB lỗi: %s', e)
+            body = {"status": "error", "connected": False,
+                    "message": "Không kết nối được database. Chạy: python scripts/diagnose_db.py"}
+            if app.debug or app.config.get('EXPOSE_ERRORS'):
+                body["detail"] = str(getattr(e, 'orig', None) or e)
+            return jsonify(body), 503
 
     return app

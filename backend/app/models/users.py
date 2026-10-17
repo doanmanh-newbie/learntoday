@@ -20,6 +20,9 @@ class User(db.Model):
     last_goal_date = db.Column(db.Date, nullable=True)
     total_words_learned = db.Column(db.Integer, default=0)
     total_study_minutes = db.Column(db.Integer, default=0)
+    # STT 12: phút học TRONG NGÀY (giờ VN). Tự reset khi sang ngày mới (xem routes/study.py)
+    study_minutes_today = db.Column(db.Integer, default=0, server_default='0')
+    study_minutes_date = db.Column(db.Date, nullable=True)
     tts_voice = db.Column(db.String(10), default='en-US')  # STT 15: en-US | en-GB
     badges = db.Column(db.Text, default='[]')  # JSON danh sách huy hiệu
 
@@ -40,6 +43,7 @@ class User(db.Model):
             'reminder_time': self.reminder_time.isoformat() if self.reminder_time else None,
             'total_words_learned': self.total_words_learned,
             'total_study_minutes': self.total_study_minutes,
+            'study_minutes_today': self.study_minutes_today or 0,
             'tts_voice': self.tts_voice or 'en-US',
             'last_goal_date': self.last_goal_date.isoformat() if self.last_goal_date else None,
             'badges': self._parse_badges(),

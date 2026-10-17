@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { aiPracticeApi } from "../../../api/client";
 
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -254,13 +255,45 @@ export default function SentencePracticePageFull() {
   const [history,    setHistory]    = useState([]);
   // freeze scores on submit so they don't recompute
   const [frozenScores, setFrozenScores] = useState(null);
+  const [apiSentence, setApiSentence] = useState(null);
+  const [apiResult, setApiResult] = useState(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [apiError, setApiError] = useState("");
+
+  const loadApiSentence = useCallback(async () => {
+    const apiMode = direction === "en-vi" ? "en_vi" : "vi_en";
+    setApiLoading(true);
+    setApiError("");
+    setApiResult(null);
+    try {
+      const data = await aiPracticeApi.sentence(randomLevel, apiMode);
+      setApiSentence({
+        id: `${randomLevel}-${apiMode}`,
+        word: "",
+        tip: "",
+        en: apiMode === "en_vi" ? data.prompt : "",
+        vi: apiMode === "vi_en" ? data.prompt : "",
+      });
+      setCurrentIdx(0);
+      resetWorkspace();
+    } catch (err) {
+      setApiError(err.message || "Không tải được câu luyện tập.");
+      setApiSentence(null);
+    } finally {
+      setApiLoading(false);
+    }
+  }, [direction, randomLevel]);
+
+  useEffect(() => {
+    if (mode === "random") Promise.resolve().then(loadApiSentence);
+  }, [mode, loadApiSentence]);
 
   // Resolve active sentence list
   const sentences = useMemo(() => {
-    if (mode === "random") return RANDOM_SENTENCES[randomLevel];
+    if (mode === "random") return apiSentence ? [apiSentence] : [];
     if (vocabFilter === "folder") return VOCAB_SENTENCES.filter(s => s.folder === activeFolder);
     return VOCAB_SENTENCES.filter(s => s.lv === activeLv);
-  }, [mode, vocabFilter, activeFolder, activeLv, randomLevel]);
+  }, [mode, vocabFilter, activeFolder, activeLv, apiSentence]);
 
   const safeIdx   = Math.min(currentIdx, sentences.length - 1);
   const current   = sentences[safeIdx];
@@ -273,25 +306,40 @@ export default function SentencePracticePageFull() {
   const accentGlow = mode === "random" ? LEVEL_CFG[randomLevel].glow : "rgba(99,102,241,0.2)";
 
   const scores    = frozenScores;
-  const isCorrect = submitted && scores && (scores.grammar + scores.vocab + scores.natural) >= 24;
+  const isCorrect = submitted && scores && (mode === "random" ? !!apiResult?.correct : (scores.grammar + scores.vocab + scores.natural) >= 24);
 
   const sourceText  = direction === "en-vi" ? current.en : current.vi;
-  const modelAnswer = direction === "en-vi" ? current.vi : current.en;
+  const modelAnswer = mode === "random" && apiResult
+    ? apiResult.expected_answer
+    : direction === "en-vi" ? current.vi : current.en;
 
   function resetWorkspace() { setUserAnswer(""); setSubmitted(false); setShowTip(false); setFrozenScores(null); }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     if (!userAnswer.trim()) return;
-    const s = {
-      grammar: userAnswer.length > 8 ? Math.floor(7 + Math.random() * 3) : 5,
-      vocab:   userAnswer.length > 8 ? Math.floor(7 + Math.random() * 3) : 4,
-      natural: userAnswer.length > 8 ? Math.floor(6 + Math.random() * 4) : 4,
-    };
-    setFrozenScores(s);
+    if (mode === "random") {
+      try {
+        const result = await aiPracticeApi.check({
+          level: randomLevel,
+          mode: direction === "en-vi" ? "en_vi" : "vi_en",
+          answer: userAnswer,
+        });
+        setApiResult(result);
+        const score = result.correct ? 10 : 0;
+        setFrozenScores({ grammar: score, vocab: score, natural: score });
+      } catch (err) {
+        setApiError(err.message || "Không chấm được câu trả lời.");
+        return;
+      }
+    } else {
+      const score = userAnswer.length > 8 ? 8 : 4;
+      setFrozenScores({ grammar: score, vocab: score, natural: score });
+    }
     setSubmitted(true);
   }
 
   function handleNext() {
+    if (mode === "random") { loadApiSentence(); return; }
     if (scores) {
       setHistory(prev => [{
         word: current.word,
@@ -305,11 +353,13 @@ export default function SentencePracticePageFull() {
   }
 
   function handleSkip() {
+    if (mode === "random") { loadApiSentence(); return; }
     setCurrentIdx((safeIdx + 1) % sentences.length);
     resetWorkspace();
   }
 
   function generateNew() {
+    if (mode === "random") { loadApiSentence(); return; }
     const pool = sentences.filter((_, i) => i !== safeIdx);
     if (pool.length === 0) return;
     const pick = pool[Math.floor(Math.random() * pool.length)];
@@ -344,7 +394,7 @@ export default function SentencePracticePageFull() {
   if (!current) return (
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center",
       height: "60vh", color: "#5a6a8a", fontSize: "14px" }}>
-      Không có câu nào. Hãy chọn bộ lọc khác.
+      {apiLoading ? "Đang tải câu luyện tập..." : apiError || "Không có câu nào. Hãy chọn bộ lọc khác."}
     </div>
   );
 

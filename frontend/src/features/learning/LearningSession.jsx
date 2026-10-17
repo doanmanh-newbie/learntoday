@@ -3,7 +3,8 @@
 // thêm nút quay lại, ô ảnh, chức năng sửa từ.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { wordsApi } from '../../api/client';
+// Lưu tiến độ qua hàng đợi bền vững (tự thử lại khi mất mạng/DB bận) thay vì gọi API rồi bỏ mặc lỗi.
+import { enqueueProgress } from '../../api/outbox';
 import { speak } from '../../utils/tts';
 import { shuffle, pickRandom } from '../../utils/helpers';
 import { initMachine, stepMachine } from './sessionMachine';
@@ -164,13 +165,6 @@ function WordImageUploader({ word, onImageAdded }) {
 function WordInfoPanel({ word, variant = 'default', onEdit, showImage = true }) {
   const lvCfg = LEVEL_CFG[word.lv || word.level || 0] || LEVEL_CFG[0];
   const posLabel = POS_MAP[word.pos] || word.pos;
-  const [imageUrl, setImageUrl] = useState(word.image_url || null);
-
-  // Load ảnh từ localStorage
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('word_images') || '{}');
-    if (saved[word.id]) setImageUrl(saved[word.id]);
-  }, [word.id]);
 
   return (
     <div style={{
@@ -259,7 +253,7 @@ function WordInfoPanel({ word, variant = 'default', onEdit, showImage = true }) 
 
       {/* ✅ Ô thêm ảnh */}
       {showImage && (
-        <WordImageUploader word={word} onImageAdded={(url) => setImageUrl(url)} />
+        <WordImageUploader word={word} />
       )}
     </div>
   );
@@ -535,6 +529,7 @@ function AnswerFeedback({ correct, word, onContinue, onRemindLater, onSkipForeve
 function Type1Spelling({ word, onAnswer, onRemindLater, onSkipForever, onEdit }) {
   const [value, setValue] = useState('');
   const [result, setResult] = useState(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cố ý chỉ phụ thuộc vào từ hiện tại: thêm deps khác sẽ xáo lại câu ví dụ mỗi lần render
   const ex = useMemo(() => pickRandom(word.examples || [{ en: '___', vi: '' }], 1)[0], [word.id]);
 
   const submit = () => {
@@ -581,6 +576,7 @@ function Type2ChooseMeaning({ word, pool, onAnswer, onRemindLater, onSkipForever
   const options = useMemo(() => {
     const distractors = pickRandom(pool.filter((w) => w.id !== word.id && w.meaning), 3).map((w) => w.meaning);
     return shuffle([word.meaning, ...distractors]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cố ý chỉ phụ thuộc vào từ hiện tại: thêm deps khác sẽ xáo lại đáp án/câu hỏi mỗi lần render
   }, [word.id]);
 
   const pick = (opt) => {
@@ -625,6 +621,7 @@ function Type3ChooseWord({ word, pool, onAnswer, onRemindLater, onSkipForever, o
   const options = useMemo(() => {
     const distractors = pickRandom(pool.filter((w) => w.id !== word.id), 3).map((w) => w.word);
     return shuffle([word.word, ...distractors]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cố ý chỉ phụ thuộc vào từ hiện tại: thêm deps khác sẽ xáo lại đáp án/câu hỏi mỗi lần render
   }, [word.id]);
 
   const pick = (opt) => {
@@ -672,6 +669,7 @@ function Type4Listening({ word, onAnswer, onRemindLater, onSkipForever, onEdit }
 
   useEffect(() => {
     if (!played.current) { speak(word.word); played.current = true; setPlayCount(1); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- cố ý chỉ phụ thuộc vào từ hiện tại: thêm deps khác sẽ xáo lại đáp án/câu hỏi mỗi lần render
   }, [word.id]);
 
   const submit = () => {
@@ -720,8 +718,9 @@ function Type4Listening({ word, onAnswer, onRemindLater, onSkipForever, onEdit }
 
 // ── Component chính ─────────────────────────────────────────────────────
 export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordComplete, onBack }) {
-  const sessionWords = useRef(folder.words.slice(0, dailyGoal || folder.words.length)).current;
-  const batches = useRef(chunk(sessionWords, BATCH_SIZE)).current;
+  // Cố định cho cả phiên học: useState lazy-init (thay cho useRef(...).current - đọc ref lúc render là sai nguyên tắc)
+  const [sessionWords] = useState(() => folder.words.slice(0, dailyGoal || folder.words.length));
+  const [batches] = useState(() => chunk(sessionWords, BATCH_SIZE));
   const pool = folder.words;
 
   const [batchIdx, setBatchIdx] = useState(0);
@@ -740,9 +739,9 @@ export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordC
 
   const finishWord = (word, opts = {}) => {
     if (mode === 'learn') {
-      wordsApi.completeLearn(word.id).catch(console.error);
+      enqueueProgress('learn', word.id);
     } else {
-      wordsApi.completeReview(word.id, { wrong_count: wrongCounts.current[word.id] || 0, choice: opts.choice }).catch(console.error);
+      enqueueProgress('review', word.id, { wrong_count: wrongCounts.current[word.id] || 0, choice: opts.choice });
     }
     onWordComplete?.();
   };
@@ -769,8 +768,8 @@ export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordC
   const handleBrowseAction = (action) => {
     const word = currentBatch[browseIdx];
     let nextWorkingBatch = workingBatch;
-    if (action === 'skip') { wordsApi.skip(word.id).catch(console.error); }
-    else if (action === 'known') { wordsApi.markKnown(word.id).catch(console.error); }
+    if (action === 'skip') { enqueueProgress('skip', word.id); }
+    else if (action === 'known') { enqueueProgress('known', word.id); }
     else if (action === 'learn') { nextWorkingBatch = [...workingBatch, word]; setWorkingBatch(nextWorkingBatch); }
 
     const nextIdx = browseIdx + 1;
@@ -788,7 +787,7 @@ export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordC
   const handleRemindLater = (days) => {
     const word = workingBatch.find((w) => w.id === currentWordId);
     if (!word) return;
-    wordsApi.snooze(word.id, days).catch(console.error);
+    enqueueProgress('snooze', word.id, { days });
     advanceMachine(word.id, true, false);
   };
 

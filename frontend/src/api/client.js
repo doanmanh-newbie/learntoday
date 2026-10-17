@@ -1,7 +1,32 @@
-const API_BASE = import.meta.env.VITE_API_URL || 'http://127.0.0.1:5000';
+// src/api/client.js - MỘT lớp gọi API duy nhất cho toàn app.
+const API_BASE = (import.meta.env?.VITE_API_URL || 'http://127.0.0.1:5000').replace(/\/+$/, '');
+const REQUEST_TIMEOUT_MS = 20000;
+
+// Các endpoint xác thực: 401 ở đây nghĩa là "sai thông tin" chứ KHÔNG phải "token hết hạn",
+// nên không được thử refresh/đăng xuất. (Trước đây nhập sai mật khẩu -> bị coi là hết phiên ->
+// tải lại trang /login và mất luôn thông báo lỗi.)
+const AUTH_PATHS = [
+  '/api/auth/login', '/api/auth/register', '/api/auth/refresh-token',
+  '/api/auth/forgot-password', '/api/auth/reset-password',
+];
 
 let accessToken = localStorage.getItem('access_token');
 let refreshToken = localStorage.getItem('refresh_token');
+
+/** Lỗi gọi API có đủ thông tin để UI phân biệt: mất mạng / quá chậm / DB sập / lỗi nhập liệu. */
+export class ApiError extends Error {
+  constructor(message, { status = 0, code = '', data = null } = {}) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.code = code;       // NETWORK | TIMEOUT | SESSION_EXPIRED | DB_UNAVAILABLE | DB_CONFLICT | ...
+    this.data = data;
+  }
+  /** Lỗi tạm thời (mất mạng, quá chậm, server/DB đang bận) - đáng để thử lại. */
+  get retryable() {
+    return this.code === 'NETWORK' || this.code === 'TIMEOUT' || this.status >= 500;
+  }
+}
 
 export function setTokens(access, refresh) {
   accessToken = access;
@@ -24,55 +49,91 @@ export function getRefreshToken() {
   return refreshToken || localStorage.getItem('refresh_token');
 }
 
-async function refreshAccessToken() {
-  const rt = refreshToken || localStorage.getItem('refresh_token');
-  if (!rt) return false;
+function messageForStatus(status) {
+  if (status === 503) return 'Hệ thống đang bảo trì hoặc không kết nối được cơ sở dữ liệu. Vui lòng thử lại sau ít phút.';
+  if (status >= 500) return 'Máy chủ gặp lỗi, vui lòng thử lại.';
+  if (status === 404) return 'Không tìm thấy dữ liệu yêu cầu.';
+  if (status === 429) return 'Bạn thao tác quá nhanh, vui lòng chờ một chút.';
+  return 'Có lỗi xảy ra';
+}
 
+async function fetchWithTimeout(url, options, timeoutMs) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    const res = await fetch(`${API_BASE}/api/auth/refresh-token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: rt }),
-    });
-
-    if (!res.ok) return false;
-    const data = await res.json();
-    setTokens(data.access_token, rt);
-    return true;
-  } catch {
-    return false;
+    return await fetch(url, { ...options, signal: controller.signal });
+  } catch (e) {
+    if (e.name === 'AbortError') {
+      throw new ApiError('Máy chủ phản hồi quá lâu, vui lòng thử lại.', { code: 'TIMEOUT' });
+    }
+    throw new ApiError('Không thể kết nối đến server. Kiểm tra lại kết nối mạng hoặc thử lại sau.', { code: 'NETWORK' });
+  } finally {
+    clearTimeout(timer);
   }
 }
 
+// Nhiều request cùng gặp 401 -> chỉ gọi refresh MỘT lần, các request còn lại chờ chung kết quả.
+let refreshPromise = null;
+
+/** @returns {'ok' | 'invalid' | 'error'}  invalid = refresh token hỏng/hết hạn (phải đăng nhập lại);
+ *  error = lỗi tạm thời (mất mạng/server bận) -> KHÔNG đăng xuất người dùng. */
+function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const rt = getRefreshToken();
+      if (!rt) return 'invalid';
+      try {
+        const res = await fetchWithTimeout(`${API_BASE}/api/auth/refresh-token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refresh_token: rt }),
+        }, REQUEST_TIMEOUT_MS);
+        if (res.status >= 500) return 'error';
+        if (!res.ok) return 'invalid';
+        const data = await res.json();
+        setTokens(data.access_token, rt);
+        return 'ok';
+      } catch {
+        return 'error';
+      }
+    })().finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
+
+function notifySessionExpired() {
+  clearTokens();
+  // AuthContext lắng nghe sự kiện này -> user = null -> ProtectedRoute tự chuyển sang /login
+  // (không tải lại trang, và không đá người đang xem trang chủ công khai).
+  window.dispatchEvent(new CustomEvent('auth:expired'));
+}
+
 export async function apiRequest(path, options = {}) {
-  const headers = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
+  const { _retry, timeout = REQUEST_TIMEOUT_MS, ...fetchOptions } = options;
+  const isAuthPath = AUTH_PATHS.some((p) => path.startsWith(p));
 
+  const headers = { 'Content-Type': 'application/json', ...fetchOptions.headers };
   const token = getAccessToken();
-  if (token) headers.Authorization = `Bearer ${token}`;
+  if (token && !isAuthPath) headers.Authorization = `Bearer ${token}`;
 
-  let res;
-  try {
-    res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-  } catch {
-    throw new Error('Không thể kết nối đến server. Kiểm tra lại kết nối mạng.');
-  }
+  const res = await fetchWithTimeout(`${API_BASE}${path}`, { ...fetchOptions, headers }, timeout);
 
-  if (res.status === 401 && !options._retry) {
-    const refreshed = await refreshAccessToken();
-    if (refreshed) {
-      return apiRequest(path, { ...options, _retry: true });
+  if (res.status === 401 && !isAuthPath && !_retry && getRefreshToken()) {
+    const outcome = await refreshAccessToken();
+    if (outcome === 'ok') return apiRequest(path, { ...options, _retry: true });
+    if (outcome === 'invalid') {
+      notifySessionExpired();
+      throw new ApiError('Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại.', { status: 401, code: 'SESSION_EXPIRED' });
     }
-    clearTokens();
-    window.location.href = '/login';
-    throw new Error('Phiên đăng nhập đã hết hạn');
+    throw new ApiError('Không thể làm mới phiên đăng nhập lúc này, vui lòng thử lại.', { code: 'NETWORK' });
   }
 
-  const data = await res.json().catch(() => ({}));
+  const data = await res.json().catch(() => ({}));   // backend luôn trả JSON; phòng khi proxy trả HTML
   if (!res.ok) {
-    throw new Error(data.message || 'Có lỗi xảy ra');
+    if (res.status === 401 && !isAuthPath) notifySessionExpired();
+    throw new ApiError(data.message || messageForStatus(res.status), {
+      status: res.status, code: data.code || '', data,
+    });
   }
   return data;
 }
@@ -92,12 +153,15 @@ export const foldersApi = {
   create: (name) => apiRequest('/api/folders', { method: 'POST', body: JSON.stringify({ name }) }),
   update: (id, name) => apiRequest(`/api/folders/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
   remove: (id) => apiRequest(`/api/folders/${id}`, { method: 'DELETE' }),
+  progress: (id) => apiRequest(`/api/folders/${id}/progress`),
   words: (id, params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return apiRequest(`/api/folders/${id}/words${qs ? `?${qs}` : ''}`);
   },
   addWord: (folderId, wordId) =>
     apiRequest(`/api/folders/${folderId}/words`, { method: 'POST', body: JSON.stringify({ word_id: wordId }) }),
+  removeWord: (folderId, wordId) =>
+    apiRequest(`/api/folders/${folderId}/words/${wordId}`, { method: 'DELETE' }),
 };
 
 export const learningApi = {
@@ -140,9 +204,9 @@ export const profileApi = {
 };
 
 export const historyApi = {
-  words: (page = 1) => apiRequest(`/api/history/words?page=${page}`),
+  words: (page = 1, limit = 100) => apiRequest(`/api/history/words?page=${page}&limit=${limit}`),
   stats: () => apiRequest('/api/history/stats'),
-  logs: () => apiRequest('/api/history/logs'),
+  logs: (limit = 200) => apiRequest(`/api/history/logs?limit=${limit}`),
 };
 
 export const searchApi = {

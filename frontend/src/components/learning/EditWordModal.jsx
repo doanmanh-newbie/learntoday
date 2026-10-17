@@ -2,7 +2,7 @@
 // Module sửa từ — user sửa thông tin từ cho riêng mình
 
 import { useState, useRef, useEffect } from 'react';
-import { speak } from '../../utils/tts';
+import { wordsApi } from '../../api/client';
 
 const POS_OPTIONS = [
   { value: 'n', label: 'Danh từ (noun)' },
@@ -61,70 +61,63 @@ function HighlightExample({ text, word, hideWord = true }) {
 
 // ── Main Modal ───────────────────────────────────────────────────────────
 export default function EditWordModal({ word, folders = [], onClose, onSave }) {
-  const [form, setForm] = useState({
-    word: word.word || '',
-    folder_id: word.folder_id || (folders[0]?.id ?? ''),
-    level: word.level || word.lv || 'A2',
-    pos: word.pos || word.word_type || 'n',
-    meaning: word.meaning || '',
-    example_en: word.examples?.[0]?.en || word.example || '',
-    example_vi: word.examples?.[0]?.vi || word.example_meaning || '',
-    image_url: word.image_url || null,
+  const [form, setForm] = useState(() => {
+    // Ảnh người dùng đã chọn được giữ ở localStorage: đọc ngay lúc khởi tạo (không cần effect + setState)
+    let savedImage = null;
+    try { savedImage = JSON.parse(localStorage.getItem('word_images') || '{}')[word.id] || null; } catch { /* JSON hỏng */ }
+    return {
+      word: word.word || '',
+      folder_id: word.folder_id || (folders[0]?.id ?? ''),
+      level: word.level || word.lv || 'A2',
+      pos: word.pos || word.word_type || 'n',
+      meaning: word.meaning || '',
+      // Ưu tiên câu GỐC: word.examples[0].en đã bị che từ cần học bằng "___" (dành cho bài tập),
+      // nếu lấy nó làm giá trị form thì lưu lại sẽ ghi đè câu ví dụ thật bằng câu có "___".
+      example_en: word.example || word.examples?.[0]?.en || '',
+      example_vi: word.example_meaning || word.examples?.[0]?.vi || '',
+      image_url: savedImage || word.image_url || null,
+    };
   });
 
   const [meaningSuggestions, setMeaningSuggestions] = useState([]);
   const [exampleSuggestions, setExampleSuggestions] = useState([]);
   const [imageSuggestions, setImageSuggestions] = useState([]);
-  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  // "Đang tải gợi ý" suy ra từ việc kết quả đã về cho đúng (từ, loại từ) hiện tại chưa - không setState đồng bộ trong effect
+  const [loadedKey, setLoadedKey] = useState(null);
+  const reqKey = form.word && form.pos ? `${form.word}|${form.pos}` : null;
+  const loadingSuggestions = reqKey !== null && loadedKey !== reqKey;
   const fileInput = useRef(null);
-
-  // Load ảnh từ localStorage
-  useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem('word_images') || '{}');
-    if (saved[word.id]) {
-      setForm(f => ({ ...f, image_url: saved[word.id] }));
-    }
-  }, [word.id]);
 
   // Khi đổi POS → fetch suggestions
   useEffect(() => {
     if (!form.word || !form.pos) return;
     let cancelled = false;
-    setLoadingSuggestions(true);
-    
-    // TODO: Gọi API thật để lấy suggestions
-    // Tạm mock data
-    setTimeout(() => {
-      if (cancelled) return;
-      
-      // Mock meanings theo POS
-      const mockMeanings = {
-        v: ['cất cánh', 'rời đi', 'khởi hành', 'bắt đầu'],
-        n: ['sự cất cánh', 'chuyến bay', 'hành trình'],
-        adj: ['đang cất cánh', 'khởi hành'],
-        'phrasal verb': ['cất cánh', 'cởi ra', 'bắt chước'],
-      };
-      const meanings = mockMeanings[form.pos] || ['nghĩa 1', 'nghĩa 2', 'nghĩa 3'];
-      setMeaningSuggestions(meanings.map(m => ({ pos: form.pos, meaning: m })));
-      
-      // Mock examples
-      setExampleSuggestions([
-        { en: `The plane ${form.word} at 8am.`, vi: `Máy bay ${form.word} vào 8h.` },
-        { en: `We need to ${form.word} early.`, vi: `Chúng ta cần ${form.word} sớm.` },
-      ]);
-      
-      // Mock images (dùng placeholder)
-      setImageSuggestions([
-        'https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=300&h=200&fit=crop',
-        'https://images.unsplash.com/photo-1569154941061-e231b4725ef1?w=300&h=200&fit=crop',
-        'https://images.unsplash.com/photo-1540962351504-03099e0a754b?w=300&h=200&fit=crop',
-      ]);
-      
-      setLoadingSuggestions(false);
-    }, 300);
-    
+
+    wordsApi.suggestions(form.word)
+      .then((data) => {
+        if (cancelled) return;
+        const posMap = { n: 'noun', v: 'verb', adj: 'adjective', adv: 'adverb' };
+        const expectedPos = posMap[form.pos] || form.pos;
+        const suggestions = (data.suggestions || []).filter((item) =>
+          !expectedPos || item.word_type === expectedPos
+        );
+        setMeaningSuggestions(suggestions.map(item => ({ pos: item.word_type, meaning: item.meaning })));
+        setExampleSuggestions(suggestions
+          .filter(item => item.example)
+          .map(item => ({ en: item.example, vi: item.example_meaning || '' })));
+        setImageSuggestions([]);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMeaningSuggestions([]);
+          setExampleSuggestions([]);
+          setImageSuggestions([]);
+        }
+      })
+      .finally(() => { if (!cancelled) setLoadedKey(reqKey); });
+
     return () => { cancelled = true; };
-  }, [form.word, form.pos]);
+  }, [form.word, form.pos, reqKey]);
 
   const handleChange = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));

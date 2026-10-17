@@ -1,75 +1,61 @@
 // src/pages/learn/LearnPage.jsx
 // Chỉ load data và chuyển thẳng vào LearningSession
 import { useState, useEffect } from "react";
-import { foldersApi } from "../../api/client";
+import { foldersApi, learningApi } from "../../api/client";
+import { toUiWord } from "../../api/adapters";
 import { LearningSession } from "../../features/learning/LearningSession";
 
 export default function LearnPage({ onNavigateHome, mode = "learn", folderId = null }) {
   const [folder, setFolder] = useState(null);
   const [words, setWords] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  // Trạng thái đầu suy ra thẳng từ folderId (không setState đồng bộ trong effect)
+  const [loading, setLoading] = useState(!!folderId);
+  const [error, setError] = useState(folderId ? "" : "Không có folder nào được chọn");
   const [wordsLearned, setWordsLearned] = useState(0);
   const DAILY_GOAL = 10;
 
   useEffect(() => {
-    if (!folderId) {
-      setError("Không có folder nào được chọn");
-      setLoading(false);
-      return;
-    }
+    if (!folderId) return;
+    let cancelled = false;
 
-    setLoading(true);
-    setError("");
-
-    Promise.all([
-      foldersApi.list(),
-      foldersApi.words(folderId),
-    ])
-      .then(([foldersData, wordsData]) => {
-        const allFolders = [
-          ...(foldersData.system_folders || []),
-          ...(foldersData.personal_folders || []),
-        ];
-        const found = allFolders.find(f => String(f.id) === String(folderId));
-
+    // 1 request: backend trả cả thông tin folder lẫn danh sách từ mới (trước đây gọi thêm
+    // GET /api/folders - kèm tính tiến độ mọi folder - chỉ để lấy tên folder).
+    learningApi.newWords(folderId, 30)
+      .then(async (wordsData) => {
+        if (cancelled) return;
+        let found = wordsData.folder;
+        if (!found) {                               // backend cũ chưa trả 'folder'
+          const foldersData = await foldersApi.list();
+          found = [...(foldersData.system_folders || []), ...(foldersData.personal_folders || [])]
+            .find((f) => String(f.id) === String(folderId));
+        }
         if (!found) {
-          setError(`Không tìm thấy folder`);
+          setError('Không tìm thấy folder');
           return;
         }
 
-        // Normalize folder
         setFolder({
           id: found.id,
           name: found.name,
           type: found.type,
           icon: found.icon,
           color: found.color || '#6366f1',
-          image: found.icon,
+          image: found.image || '',
         });
 
-        // Normalize words
-        const normalized = (wordsData.words || []).map(w => ({
-          id: w.id,
-          word: w.word,
-          phonetic: w.pronunciation || '',
-          pronunciation: w.pronunciation || '',
-          pos: w.word_type || 'n',
-          word_type: w.word_type || 'n',
-          meaning: w.meaning,
-          example: w.example,
-          example_meaning: w.example_meaning,
-          examples: w.examples || (w.example ? [{ en: w.example, vi: w.example_meaning || '' }] : []),
-          lv: w.level ?? 0,
-          level: w.level ?? 0,
-        }));
+        const normalized = (wordsData.words || []).map(toUiWord);
+        if (normalized.length === 0) {
+          setError(wordsData.message || "Folder này không còn từ mới để học.");
+          return;
+        }
         setWords(normalized);
       })
       .catch((err) => {
-        console.error(err);
-        setError(err.message || "Không tải được dữ liệu");
+        if (!cancelled) setError(err.message || "Không tải được dữ liệu");
       })
-      .finally(() => setLoading(false));
+      .finally(() => { if (!cancelled) setLoading(false); });
+
+    return () => { cancelled = true; };
   }, [folderId]);
 
   if (loading) {

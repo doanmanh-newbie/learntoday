@@ -1,0 +1,13 @@
+flask
+flask-cors
+python-dotenv
+psycopg2-binary
+sqlalchemy
+flask-sqlalchemy
+pyjwt
+bcrypt
+Flask-Migrate
+tzdata
+pytz
+requests
+deep-translator

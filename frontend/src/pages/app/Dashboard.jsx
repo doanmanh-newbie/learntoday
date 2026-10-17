@@ -1,5 +1,5 @@
 // src/pages/app/Dashboard.jsx
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import Header from "../../components/sections/dashboard/Header.jsx";
 import Nav from "../../components/sections/dashboard/Nav.jsx";
@@ -12,8 +12,11 @@ import LearnPage from "../learn/LearnPage.jsx";
 import DictionaryPage from "../../components/sections/dashboard/DictionaryPage";
 import ReviewPage from "../review/ReviewPage.jsx";
 import WordDetailPage from "../WordDetailPage";
+import PassTestPage from "./PassTestPage";
 import { useAuth } from "../../hooks/useAuth";
 import { reviewApi, learningApi, historyApi, studyApi } from "../../api/client";
+import { toUiWord } from "../../api/adapters";
+import SyncBanner from "../../components/SyncBanner.jsx";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -31,6 +34,7 @@ export default function Dashboard() {
     if (pathname.startsWith("/app/thongke")) return "thongke";
     if (pathname.startsWith("/app/thuvien")) return "thuvien";
     if (pathname.startsWith("/app/datcau")) return "datcau";
+    if (pathname.startsWith("/app/kiem-tra")) return "kiemtra";
     return "dashboard";
   };
 
@@ -38,9 +42,11 @@ export default function Dashboard() {
 
   // Đồng bộ lại khi URL đổi từ bên ngoài (back/forward trình duyệt, hoặc
   // điều hướng trực tiếp), không chỉ lúc mount lần đầu.
-  useEffect(() => {
+  const [prevPath, setPrevPath] = useState(location.pathname);
+  if (prevPath !== location.pathname) {
+    setPrevPath(location.pathname);
     setActiveTab(getTabFromPath(location.pathname));
-  }, [location.pathname]);
+  }
   const [searchQuery, setSearchQuery] = useState("");
   const [minutes, setMinutes] = useState(0);
   const [dueCount, setDueCount] = useState(0);
@@ -52,66 +58,63 @@ export default function Dashboard() {
   const [showReview, setShowReview] = useState(false);
   const [selectedFolderId, setSelectedFolderId] = useState(null);
 
-useEffect(() => {
-  // Backend trả { count: X }, không phải { due_count: X }
-  reviewApi.dueCount()
-    .then((data) => setDueCount(data.count ?? data.due_count ?? 0))
-    .catch(() => setDueCount(0));
+  const [loadError, setLoadError] = useState("");
 
-  reviewApi.dueWords()
-    .then((data) => {
-      const list = (data.words || []).map(w => ({
-        id: w.id,
-        word: w.word,
-        phonetic: w.pronunciation || w.phonetic || '',
-        pos: w.word_type || w.pos || 'n',
-        meaning: w.meaning,
-        example: w.example,
-        example_meaning: w.example_meaning,
-        lv: w.level ?? w.lv ?? 1,
-        level: w.level ?? w.lv ?? 1,
-        next_review: w.next_review,
-      }));
-      setDueWords(list);
-    })
-    .catch(() => setDueWords([]));
+  // Nạp 4 số liệu song song. Dùng allSettled: 1 API lỗi không làm mất các số còn lại, và lỗi được HIỂN THỊ
+  // (trước đây `.catch(() => {})` nuốt hết -> DB lỗi thì người dùng chỉ thấy toàn số 0 mà không biết vì sao).
+  const loadData = useCallback(async () => {
+    const results = await Promise.allSettled([
+      reviewApi.dueCount(),
+      reviewApi.dueWords(),
+      learningApi.todayProgress(),
+      historyApi.stats(),
+    ]);
+    const [count, words, progress, st] = results;
 
-  // Backend trả { learned_today, daily_target, ... }
-  learningApi.todayProgress()
-    .then((data) => {
-      setLearnedToday(data.learned_today ?? data.learned ?? 0);
-      setLearnTarget(data.daily_target ?? data.target ?? 10);
-    })
-    .catch(() => {});
-
-  // Backend trả { total_words_learned, streak, ... }
-  historyApi.stats()
-    .then((data) =>
+    if (count.status === "fulfilled") setDueCount(count.value.count ?? count.value.due_count ?? 0);
+    if (words.status === "fulfilled") setDueWords((words.value.words || []).map(toUiWord));
+    if (progress.status === "fulfilled") {
+      setLearnedToday(progress.value.learned_today ?? progress.value.learned ?? 0);
+      setLearnTarget(progress.value.daily_target ?? progress.value.target ?? 10);
+    }
+    if (st.status === "fulfilled") {
       setStats({
-        totalLearned: data.total_words_learned ?? data.total_learned ?? 0,
-        streak: data.streak ?? 0,
-        accuracy: data.accuracy ?? 0,
-      })
-    )
-    .catch(() => {});
-}, []);
+        totalLearned: st.value.total_words_learned ?? st.value.total_learned ?? 0,
+        streak: st.value.streak ?? 0,
+        accuracy: st.value.accuracy ?? 0,
+      });
+      setMinutes(st.value.study_minutes_today ?? 0);     // số phút THẬT hôm nay (không đếm lại từ 0 mỗi lần mở trang)
+    }
+    const failed = results.find((r) => r.status === "rejected");
+    setLoadError(failed ? (failed.reason?.message || "Không tải được số liệu học tập.") : "");
+  }, []);
+
+  useEffect(() => { Promise.resolve().then(loadData); }, [loadData]);
 
   useEffect(() => {
     const id = setInterval(() => {
+      if (document.visibilityState !== "visible") return;   // không tính phút khi tab chạy nền
       setMinutes((m) => m + 1);
-      studyApi.heartbeat(1).catch(() => {});
+      studyApi.heartbeat(1).catch(() => {});                // mất 1 nhịp không quan trọng
     }, 60_000);
     return () => clearInterval(id);
   }, []);
 
   const handleLogout = async () => { await logout(); navigate("/login"); };
   const openLearn = (folderId) => { setSelectedFolderId(folderId); setShowLearn(true); setShowReview(false); };
-  const openReview = () => { setActiveTab("review"); };
-  const closeLearn = () => { setShowLearn(false); setShowReview(false); setSelectedFolderId(null); };
+  // Tab "Ôn tập" = màn giới thiệu + danh sách từ đến hạn; bấm "Ôn tập ngay" mới mở phiên ôn thật.
+  // (Trước đây cả 2 nút cùng gọi setActiveTab("review") nên không bao giờ vào được phiên ôn.)
+  const goReviewTab = () => { setActiveTab("review"); };
+  const startReview = () => { setShowReview(true); setShowLearn(false); };
+  const goPickFolder = () => { setShowLearn(false); setShowReview(false); setSelectedFolderId(null); setActiveTab("thuvien"); };
+  const closeLearn = () => {
+    setShowLearn(false); setShowReview(false); setSelectedFolderId(null);
+    loadData();                    // làm mới số từ cần ôn / tiến độ hôm nay / streak sau khi học xong
+  };
 
   const handleNavigate = (target) => {
-    if (target === "review") openReview();
-    else if (target === "learn") openLearn(null);
+    if (target === "review") goReviewTab();
+    else if (target === "learn") goPickFolder();      // cần chọn folder trước (openLearn(null) chỉ ra màn lỗi)
     else if (target === "practice") setActiveTab("datcau");
   };
 
@@ -138,17 +141,30 @@ useEffect(() => {
         </>
       )}
 
+      <SyncBanner />
+
       <main className="relative z-10 px-6 py-8" style={{ maxWidth: 960, margin: "0 auto" }}>
+        {loadError && !showLearn && !showReview && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16,
+                        padding: "10px 16px", borderRadius: 12, fontSize: 13, color: "#fecaca",
+                        background: "rgba(127,29,29,0.35)", border: "1px solid rgba(248,113,113,0.35)" }}>
+            <span>⚠️ {loadError}</span>
+            <button onClick={loadData} style={{ padding: "4px 14px", borderRadius: 8, border: "none", cursor: "pointer",
+                                                fontWeight: 700, background: "#f87171", color: "#450a0a" }}>
+              Thử lại
+            </button>
+          </div>
+        )}
         {isWordDetail && word ? (
-          <WordDetailPage word={word} />
+          <WordDetailPage key={word} word={word} />
         ) : (
           <>
             {activeTab === "dashboard" && !showLearn && !showReview && (
               <DashboardHome
                 username={user?.username || "Bạn"}
                 dueCount={dueCount}
-                onReview={openReview}
-                onGoLearn={() => setActiveTab("thuvien")}
+                onReview={goReviewTab}
+                onGoLearn={goPickFolder}
                 wordsLearnedToday={learnedToday}
                 learnTarget={learnTarget}
                 stats={stats}
@@ -157,14 +173,15 @@ useEffect(() => {
             )}
 
             {activeTab === "review" && !showLearn && !showReview && (
-              <ReviewLanding dueWords={dueWords} onReview={openReview} onGoLearn={() => setActiveTab("thuvien")} />
+              <ReviewLanding dueWords={dueWords} onReview={startReview} onGoLearn={goPickFolder} />
             )}
 
             {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}
 
-            {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={(folder) => openLearn(folder.id)} />}
+            {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={openLearn} />   /* TopicLibrary truyền ID folder (không phải object) */}
 
             {activeTab === "datcau" && !showLearn && !showReview && <SentencePracticeFull />}
+            {activeTab === "kiemtra" && !showLearn && !showReview && <PassTestPage />}
 
             {activeTab === "dictionary" && !showLearn && !showReview && (
               <DictionaryPage
@@ -183,7 +200,7 @@ useEffect(() => {
 
         {showReview && (
           <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
-            <ReviewPage onNavigateHome={closeLearn} onGoLearn={() => openLearn(null)} />
+            <ReviewPage onNavigateHome={closeLearn} onGoLearn={() => { closeLearn(); goPickFolder(); }} />
           </div>
         )}
 

@@ -11,6 +11,8 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
   const [newName, setNewName] = useState("");
   const [newColor, setNewColor] = useState(FOLDER_COLORS[0]);
   const [saved, setSaved] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
   const inputRef = useRef(null);
 
   useEffect(() => {
@@ -23,18 +25,35 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
     if (creating && inputRef.current) inputRef.current.focus();
   }, [creating]);
 
-  const handleSave = (folderId) => {
-    onSave(folderId, wordOrText);
-    setSaved(folderId);
-    setTimeout(onClose, 900);
+  const handleSave = async (folderId) => {
+    setSaving(true);
+    setError("");
+    try {
+      await onSave(folderId, wordOrText);
+      setSaved(folderId);
+      setTimeout(onClose, 900);
+    } catch (err) {
+      setError(err.message || "Không lưu được từ vào folder.");
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleCreate = () => {
-    if (!newName.trim()) return;
-    const id = onCreate(newName.trim(), newColor);
-    onSave(id, wordOrText);
-    setSaved(id);
-    setTimeout(onClose, 900);
+  const handleCreate = async () => {
+    if (!newName.trim() || saving) return;
+    setSaving(true);
+    setError("");
+    try {
+      const created = await onCreate(newName.trim(), newColor);
+      const id = typeof created === "object" ? created.id : created;
+      await onSave(id, wordOrText);
+      setSaved(id);
+      setTimeout(onClose, 900);
+    } catch (err) {
+      setError(err.message || "Không tạo/lưu được folder.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -64,7 +83,7 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "240px", overflowY: "auto" }}>
           {folders.map((f) => (
-            <button key={f.id} onClick={() => handleSave(f.id)} disabled={saved !== null} style={{
+            <button key={f.id} onClick={() => handleSave(f.id)} disabled={saved !== null || saving} style={{
               display: "flex", alignItems: "center", gap: "12px",
               padding: "12px 16px",
               background: saved === f.id ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.03)",
@@ -80,7 +99,9 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
           ))}
         </div>
 
-        <button onClick={() => setCreating((p) => !p)} style={{
+        {error && <p role="alert" style={{ color: "#f87171", fontSize: 12, marginTop: 10 }}>{error}</p>}
+
+        <button onClick={() => setCreating((p) => !p)} disabled={saving} style={{
           marginTop: "14px", width: "100%", padding: "10px 16px",
           background: "rgba(99,102,241,0.08)",
           border: "0.8px dashed rgba(99,102,241,0.4)",
@@ -119,7 +140,7 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
               border: "none", borderRadius: "10px",
               color: "#fff", fontSize: "14px", fontWeight: 600,
               fontFamily: "Outfit,sans-serif", cursor: "pointer",
-            }}>Tạo &amp; lưu</button>
+            }}>{saving ? "Đang lưu..." : "Tạo &amp; lưu"}</button>
           </div>
         )}
       </div>

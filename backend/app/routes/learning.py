@@ -33,11 +33,13 @@ def get_new_words(folder_id):
     if not words:
         return jsonify({
             'message': 'Bạn đã học hết từ mới trong folder này! Hãy chọn folder khác để tiếp tục học.',
+            'folder': folder.to_dict(),
             'words': [],
             'has_new_words': False
         }), 200
 
     return jsonify({
+        'folder': folder.to_dict(),         # FE không cần gọi thêm GET /folders chỉ để lấy tên/màu folder
         'words': [w.to_dict() for w in words],
         'has_new_words': True
     }), 200
@@ -58,6 +60,8 @@ def get_today_progress():
     return jsonify({
         'learned_today': learned_today,
         'daily_target': daily_target,
+        'learned': learned_today,          # alias cho FE cũ
+        'target': daily_target,            # alias cho FE cũ
         'is_completed': learned_today >= daily_target,
         'streak': user.streak
     }), 200

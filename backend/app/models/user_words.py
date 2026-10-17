@@ -116,7 +116,7 @@ class UserWord(db.Model):
             FolderWord.folder_id == folder_id,
             Word.deleted_at == None,
             cls.id == None  # chưa có bản ghi user_words nào -> chưa học
-        )
+        ).order_by(FolderWord.order_index)   # thứ tự ổn định theo folder (trước đây không ORDER BY nên LIMIT lấy ngẫu nhiên)
 
         if limit:
             query = query.limit(limit)

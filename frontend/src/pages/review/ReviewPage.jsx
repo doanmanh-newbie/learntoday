@@ -1,6 +1,7 @@
 // src/pages/review/ReviewPage.jsx
 import { useState, useEffect } from "react";
-import { reviewApi, wordsApi } from "../../api/client";
+import {reviewApi } from "../../api/client";
+import { toUiWord } from "../../api/adapters";
 import { LearningSession } from "../../features/learning/LearningSession";
 import {
   SRS_SECONDS,
@@ -56,6 +57,19 @@ function NoReviewScreen({ onNavigateHome, onGoLearn }) {
   );
 }
 
+// Khai báo NGOÀI component (khai báo trong render làm component bị tạo lại - mất state - mỗi lần render)
+function BackButton({ onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      display: "flex", alignItems: "center", gap: "6px",
+      padding: "8px 14px", borderRadius: "9px", fontSize: "13px", fontWeight: 600,
+      background: "rgba(255,255,255,0.06)", color: "#e8eaf6",
+      border: "0.8px solid rgba(255,255,255,0.12)",
+      cursor: "pointer", fontFamily: "Inter, sans-serif", marginBottom: "16px",
+    }}>← Về trang chính</button>
+  );
+}
+
 export default function ReviewPage({ onNavigateHome, onGoLearn }) {
   const [screen, setScreen] = useState("overview");
   const [reviewed, setReviewed] = useState(0);
@@ -66,30 +80,11 @@ export default function ReviewPage({ onNavigateHome, onGoLearn }) {
 
 useEffect(() => {
   let cancelled = false;
-  setLoading(true);
   reviewApi.dueWords()
     .then((data) => {
       if (cancelled) return;
       // Backend trả: { words: [...], has_due_words: true }
-      const list = (data.words || []).map(w => ({
-        id: w.id,
-        word: w.word,
-        phonetic: w.pronunciation || w.phonetic || '',
-        pronunciation: w.pronunciation || w.phonetic || '',
-        pos: w.word_type || w.pos || 'n',
-        word_type: w.word_type || w.pos || 'n',
-        meaning: w.meaning,
-        example: w.example,
-        example_meaning: w.example_meaning,
-        examples: w.examples || (w.example ? [{
-          en: w.example,
-          vi: w.example_meaning || '',
-        }] : []),
-        // Backend trả 'level', FE cũ dùng 'lv'
-        lv: w.level ?? w.lv ?? 1,
-        level: w.level ?? w.lv ?? 1,
-        next_review: w.next_review,
-      }));
+      const list = (data.words || []).map(toUiWord);
       setDueWords(list);
     })
     .catch((err) => {
@@ -100,7 +95,7 @@ useEffect(() => {
     });
   return () => { cancelled = true; };
 }, []);
-useEffect
+
   if (loading) return <LoadingState />;
 
   if (error) {
@@ -144,21 +139,11 @@ useEffect
     })
     .sort((a, b) => a.nextMs - b.nextMs);
 
-  const BackButton = () => (
-    <button onClick={onNavigateHome} style={{
-      display: "flex", alignItems: "center", gap: "6px",
-      padding: "8px 14px", borderRadius: "9px", fontSize: "13px", fontWeight: 600,
-      background: "rgba(255,255,255,0.06)", color: "#e8eaf6",
-      border: "0.8px solid rgba(255,255,255,0.12)",
-      cursor: "pointer", fontFamily: "Inter, sans-serif", marginBottom: "16px",
-    }}>← Về trang chính</button>
-  );
-
   if (screen === "session") {
     return (
       <div style={{ width: "100%", minHeight: "100vh", background: "#07091a" }}>
         <div style={{ maxWidth: "680px", margin: "0 auto", padding: "16px 24px 0" }}>
-          <BackButton />
+          <BackButton onClick={onNavigateHome} />
         </div>
         <LearningSession
           key="review-session"
@@ -184,7 +169,7 @@ useEffect
         filter: "blur(80px)", pointerEvents: "none" }} />
 
       <div style={{ maxWidth: "860px", margin: "0 auto", padding: "32px 24px 80px" }}>
-        <BackButton />
+        <BackButton onClick={onNavigateHome} />
 
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "28px" }}>
           <div>

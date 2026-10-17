@@ -1,0 +1,422 @@
+{
+ "cuisine": {
+  "word_type": "noun",
+  "meaning": "ẩm thực, phong cách nấu nướng đặc trưng",
+  "example": "Vietnamese cuisine is famous for its fresh herbs.",
+  "example_meaning": "Ẩm thực Việt Nam nổi tiếng với các loại rau thơm tươi."
+ },
+ "ingredient": {
+  "word_type": "noun",
+  "meaning": "nguyên liệu, thành phần",
+  "example": "Fish sauce is a key ingredient in many dishes.",
+  "example_meaning": "Nước mắm là nguyên liệu chính trong nhiều món ăn."
+ },
+ "recipe": {
+  "word_type": "noun",
+  "meaning": "công thức nấu ăn",
+  "example": "She shared her grandmother's recipe with us.",
+  "example_meaning": "Cô ấy chia sẻ công thức của bà mình với chúng tôi."
+ },
+ "simmer": {
+  "word_type": "verb",
+  "meaning": "ninh nhỏ lửa, đun liu riu",
+  "example": "Let the soup simmer for twenty minutes.",
+  "example_meaning": "Để món súp ninh nhỏ lửa trong hai mươi phút."
+ },
+ "savory": {
+  "word_type": "adjective",
+  "meaning": "mặn, đậm đà (không ngọt)",
+  "example": "I prefer savory snacks to sweet ones.",
+  "example_meaning": "Tôi thích đồ ăn vặt mặn hơn đồ ngọt."
+ },
+ "delicious": {
+  "word_type": "adjective",
+  "meaning": "ngon",
+  "example": "The grilled fish was absolutely delicious.",
+  "example_meaning": "Món cá nướng ngon tuyệt."
+ },
+ "beverage": {
+  "word_type": "noun",
+  "meaning": "đồ uống",
+  "example": "Hot beverages are served at the front desk.",
+  "example_meaning": "Đồ uống nóng được phục vụ tại quầy lễ tân."
+ },
+ "dessert": {
+  "word_type": "noun",
+  "meaning": "món tráng miệng",
+  "example": "We shared a mango dessert after dinner.",
+  "example_meaning": "Chúng tôi chia nhau món tráng miệng xoài sau bữa tối."
+ },
+ "appetite": {
+  "word_type": "noun",
+  "meaning": "sự thèm ăn, khẩu vị",
+  "example": "The long walk gave me a big appetite.",
+  "example_meaning": "Chuyến đi bộ dài khiến tôi ăn rất ngon miệng."
+ },
+ "algorithm": {
+  "word_type": "noun",
+  "meaning": "thuật toán",
+  "example": "The search engine uses a complex algorithm.",
+  "example_meaning": "Công cụ tìm kiếm dùng một thuật toán phức tạp."
+ },
+ "database": {
+  "word_type": "noun",
+  "meaning": "cơ sở dữ liệu",
+  "example": "All customer data is stored in a database.",
+  "example_meaning": "Mọi dữ liệu khách hàng được lưu trong một cơ sở dữ liệu."
+ },
+ "network": {
+  "word_type": "noun",
+  "meaning": "mạng (máy tính), mạng lưới",
+  "example": "The office network was down all morning.",
+  "example_meaning": "Mạng văn phòng bị sập cả buổi sáng."
+ },
+ "software": {
+  "word_type": "noun",
+  "meaning": "phần mềm",
+  "example": "You need to update the software regularly.",
+  "example_meaning": "Bạn cần cập nhật phần mềm thường xuyên."
+ },
+ "hardware": {
+  "word_type": "noun",
+  "meaning": "phần cứng",
+  "example": "The store sells computer hardware and accessories.",
+  "example_meaning": "Cửa hàng bán phần cứng máy tính và phụ kiện."
+ },
+ "interface": {
+  "word_type": "noun",
+  "meaning": "giao diện",
+  "example": "The app has a simple and friendly interface.",
+  "example_meaning": "Ứng dụng có giao diện đơn giản và thân thiện."
+ },
+ "cloud": {
+  "word_type": "noun",
+  "meaning": "đám mây; điện toán đám mây",
+  "example": "We store our files in the cloud.",
+  "example_meaning": "Chúng tôi lưu tệp trên đám mây."
+ },
+ "server": {
+  "word_type": "noun",
+  "meaning": "máy chủ",
+  "example": "The website crashed because the server was overloaded.",
+  "example_meaning": "Trang web sập vì máy chủ bị quá tải."
+ },
+ "protocol": {
+  "word_type": "noun",
+  "meaning": "giao thức",
+  "example": "Computers talk to each other using a standard protocol.",
+  "example_meaning": "Các máy tính giao tiếp với nhau qua một giao thức chuẩn."
+ },
+ "framework": {
+  "word_type": "noun",
+  "meaning": "khung phát triển; khuôn khổ",
+  "example": "Django is a popular framework for building websites.",
+  "example_meaning": "Django là một khung phát triển phổ biến để xây dựng website."
+ },
+ "application": {
+  "word_type": "noun",
+  "meaning": "ứng dụng; đơn xin",
+  "example": "I downloaded a new language-learning application.",
+  "example_meaning": "Tôi đã tải một ứng dụng học ngôn ngữ mới."
+ },
+ "itinerary": {
+  "word_type": "noun",
+  "meaning": "lịch trình chuyến đi",
+  "example": "Our itinerary includes three days in Da Nang.",
+  "example_meaning": "Lịch trình của chúng tôi gồm ba ngày ở Đà Nẵng."
+ },
+ "destination": {
+  "word_type": "noun",
+  "meaning": "điểm đến",
+  "example": "Ha Long Bay is a popular tourist destination.",
+  "example_meaning": "Vịnh Hạ Long là điểm đến du lịch nổi tiếng."
+ },
+ "accommodation": {
+  "word_type": "noun",
+  "meaning": "chỗ ở",
+  "example": "We booked accommodation near the beach.",
+  "example_meaning": "Chúng tôi đã đặt chỗ ở gần bãi biển."
+ },
+ "excursion": {
+  "word_type": "noun",
+  "meaning": "chuyến tham quan ngắn",
+  "example": "The hotel organizes a daily excursion to the old town.",
+  "example_meaning": "Khách sạn tổ chức chuyến tham quan phố cổ mỗi ngày."
+ },
+ "passport": {
+  "word_type": "noun",
+  "meaning": "hộ chiếu",
+  "example": "Don't forget to bring your passport to the airport.",
+  "example_meaning": "Đừng quên mang hộ chiếu ra sân bay."
+ },
+ "souvenir": {
+  "word_type": "noun",
+  "meaning": "quà lưu niệm",
+  "example": "I bought a small souvenir for my mother.",
+  "example_meaning": "Tôi mua một món quà lưu niệm nhỏ cho mẹ."
+ },
+ "departure": {
+  "word_type": "noun",
+  "meaning": "sự khởi hành",
+  "example": "The departure time is seven a.m.",
+  "example_meaning": "Giờ khởi hành là bảy giờ sáng."
+ },
+ "arrival": {
+  "word_type": "noun",
+  "meaning": "sự đến nơi",
+  "example": "Our arrival was delayed by heavy rain.",
+  "example_meaning": "Việc chúng tôi đến nơi bị chậm vì mưa lớn."
+ },
+ "luggage": {
+  "word_type": "noun",
+  "meaning": "hành lý",
+  "example": "Her luggage was lost during the flight.",
+  "example_meaning": "Hành lý của cô ấy bị thất lạc trong chuyến bay."
+ },
+ "boarding": {
+  "word_type": "noun",
+  "meaning": "việc lên tàu/máy bay",
+  "example": "Boarding starts at gate twelve in ten minutes.",
+  "example_meaning": "Việc lên máy bay bắt đầu ở cổng số 12 trong mười phút nữa."
+ },
+ "reservation": {
+  "word_type": "noun",
+  "meaning": "sự đặt chỗ trước",
+  "example": "I made a reservation for two at the restaurant.",
+  "example_meaning": "Tôi đã đặt bàn cho hai người ở nhà hàng."
+ },
+ "terminal": {
+  "word_type": "noun",
+  "meaning": "nhà ga (sân bay)",
+  "example": "Our flight leaves from Terminal 2.",
+  "example_meaning": "Chuyến bay của chúng tôi khởi hành từ nhà ga số 2."
+ },
+ "customs": {
+  "word_type": "noun",
+  "meaning": "hải quan",
+  "example": "We had to go through customs after landing.",
+  "example_meaning": "Chúng tôi phải qua hải quan sau khi hạ cánh."
+ },
+ "exacerbate": {
+  "word_type": "verb",
+  "meaning": "làm trầm trọng thêm",
+  "example": "Heavy traffic can exacerbate air pollution in big cities.",
+  "example_meaning": "Giao thông đông đúc có thể làm ô nhiễm không khí ở các thành phố lớn trầm trọng thêm."
+ },
+ "mitigate": {
+  "word_type": "verb",
+  "meaning": "giảm nhẹ",
+  "example": "Planting trees can mitigate the effects of climate change.",
+  "example_meaning": "Trồng cây có thể giảm nhẹ tác động của biến đổi khí hậu."
+ },
+ "substantiate": {
+  "word_type": "verb",
+  "meaning": "chứng minh bằng bằng chứng",
+  "example": "You must substantiate your claims with evidence.",
+  "example_meaning": "Bạn phải chứng minh các nhận định của mình bằng bằng chứng."
+ },
+ "alleviate": {
+  "word_type": "verb",
+  "meaning": "làm dịu, giảm bớt",
+  "example": "New roads were built to alleviate traffic congestion.",
+  "example_meaning": "Các con đường mới được xây để giảm bớt tình trạng kẹt xe."
+ },
+ "detrimental": {
+  "word_type": "adjective",
+  "meaning": "có hại",
+  "example": "Too much screen time is detrimental to children's health.",
+  "example_meaning": "Dùng màn hình quá nhiều có hại cho sức khỏe trẻ em."
+ },
+ "unprecedented": {
+  "word_type": "adjective",
+  "meaning": "chưa từng có",
+  "example": "The city faced an unprecedented flood last year.",
+  "example_meaning": "Thành phố đã đối mặt với trận lũ chưa từng có vào năm ngoái."
+ },
+ "sustainable": {
+  "word_type": "adjective",
+  "meaning": "bền vững",
+  "example": "We need sustainable sources of energy.",
+  "example_meaning": "Chúng ta cần các nguồn năng lượng bền vững."
+ },
+ "infrastructure": {
+  "word_type": "noun",
+  "meaning": "cơ sở hạ tầng",
+  "example": "The government is investing in transport infrastructure.",
+  "example_meaning": "Chính phủ đang đầu tư vào cơ sở hạ tầng giao thông."
+ },
+ "comprehensive": {
+  "word_type": "adjective",
+  "meaning": "toàn diện",
+  "example": "The report gives a comprehensive overview of the problem.",
+  "example_meaning": "Báo cáo đưa ra cái nhìn toàn diện về vấn đề."
+ },
+ "significant": {
+  "word_type": "adjective",
+  "meaning": "đáng kể, quan trọng",
+  "example": "There was a significant increase in sales this year.",
+  "example_meaning": "Doanh số năm nay tăng đáng kể."
+ },
+ "fundamental": {
+  "word_type": "adjective",
+  "meaning": "cơ bản, nền tảng",
+  "example": "Education is a fundamental human right.",
+  "example_meaning": "Giáo dục là quyền cơ bản của con người."
+ },
+ "phenomenon": {
+  "word_type": "noun",
+  "meaning": "hiện tượng",
+  "example": "Urbanization is a global phenomenon.",
+  "example_meaning": "Đô thị hóa là một hiện tượng toàn cầu."
+ },
+ "hypothesis": {
+  "word_type": "noun",
+  "meaning": "giả thuyết",
+  "example": "The scientist tested her hypothesis in the laboratory.",
+  "example_meaning": "Nhà khoa học kiểm chứng giả thuyết của mình trong phòng thí nghiệm."
+ },
+ "experiment": {
+  "word_type": "noun",
+  "meaning": "thí nghiệm",
+  "example": "The students carried out an experiment on plant growth.",
+  "example_meaning": "Các học sinh thực hiện một thí nghiệm về sự phát triển của cây."
+ },
+ "molecule": {
+  "word_type": "noun",
+  "meaning": "phân tử",
+  "example": "A water molecule has two hydrogen atoms and one oxygen atom.",
+  "example_meaning": "Một phân tử nước gồm hai nguyên tử hydro và một nguyên tử oxy."
+ },
+ "analysis": {
+  "word_type": "noun",
+  "meaning": "sự phân tích",
+  "example": "The analysis of the data took several weeks.",
+  "example_meaning": "Việc phân tích dữ liệu mất vài tuần."
+ },
+ "evolution": {
+  "word_type": "noun",
+  "meaning": "sự tiến hóa",
+  "example": "Darwin explained the evolution of species.",
+  "example_meaning": "Darwin giải thích sự tiến hóa của các loài."
+ },
+ "gravity": {
+  "word_type": "noun",
+  "meaning": "trọng lực",
+  "example": "Gravity keeps us on the ground.",
+  "example_meaning": "Trọng lực giữ chúng ta trên mặt đất."
+ },
+ "reaction": {
+  "word_type": "noun",
+  "meaning": "phản ứng",
+  "example": "Mixing the two liquids caused a chemical reaction.",
+  "example_meaning": "Việc trộn hai chất lỏng gây ra một phản ứng hóa học."
+ },
+ "theory": {
+  "word_type": "noun",
+  "meaning": "lý thuyết",
+  "example": "Einstein's theory changed modern physics.",
+  "example_meaning": "Lý thuyết của Einstein đã thay đổi vật lý hiện đại."
+ },
+ "chemistry": {
+  "word_type": "noun",
+  "meaning": "hóa học",
+  "example": "She studies chemistry at university.",
+  "example_meaning": "Cô ấy học hóa học ở đại học."
+ },
+ "physics": {
+  "word_type": "noun",
+  "meaning": "vật lý học",
+  "example": "Physics explains how objects move.",
+  "example_meaning": "Vật lý học giải thích cách các vật chuyển động."
+ },
+ "biology": {
+  "word_type": "noun",
+  "meaning": "sinh học",
+  "example": "Biology is the study of living things.",
+  "example_meaning": "Sinh học là môn nghiên cứu về sinh vật sống."
+ },
+ "laboratory": {
+  "word_type": "noun",
+  "meaning": "phòng thí nghiệm",
+  "example": "The laboratory is equipped with modern instruments.",
+  "example_meaning": "Phòng thí nghiệm được trang bị các dụng cụ hiện đại."
+ },
+ "microscope": {
+  "word_type": "noun",
+  "meaning": "kính hiển vi",
+  "example": "We looked at the cells under a microscope.",
+  "example_meaning": "Chúng tôi quan sát các tế bào dưới kính hiển vi."
+ },
+ "deadline": {
+  "word_type": "noun",
+  "meaning": "hạn chót",
+  "example": "The deadline for the project is next Friday.",
+  "example_meaning": "Hạn chót của dự án là thứ Sáu tuần sau."
+ },
+ "negotiate": {
+  "word_type": "verb",
+  "meaning": "đàm phán, thương lượng",
+  "example": "They negotiated a better price with the supplier.",
+  "example_meaning": "Họ thương lượng được mức giá tốt hơn với nhà cung cấp."
+ },
+ "revenue": {
+  "word_type": "noun",
+  "meaning": "doanh thu",
+  "example": "The company's revenue grew by ten percent.",
+  "example_meaning": "Doanh thu của công ty tăng mười phần trăm."
+ },
+ "investment": {
+  "word_type": "noun",
+  "meaning": "khoản đầu tư; sự đầu tư",
+  "example": "Education is a good investment for the future.",
+  "example_meaning": "Giáo dục là một khoản đầu tư tốt cho tương lai."
+ },
+ "strategy": {
+  "word_type": "noun",
+  "meaning": "chiến lược",
+  "example": "We need a new marketing strategy.",
+  "example_meaning": "Chúng ta cần một chiến lược tiếp thị mới."
+ },
+ "productivity": {
+  "word_type": "noun",
+  "meaning": "năng suất",
+  "example": "Good tools can improve productivity.",
+  "example_meaning": "Công cụ tốt có thể cải thiện năng suất."
+ },
+ "milestone": {
+  "word_type": "noun",
+  "meaning": "cột mốc",
+  "example": "Reaching one thousand customers was a major milestone.",
+  "example_meaning": "Đạt một nghìn khách hàng là một cột mốc quan trọng."
+ },
+ "stakeholder": {
+  "word_type": "noun",
+  "meaning": "bên liên quan",
+  "example": "Every stakeholder was invited to the meeting.",
+  "example_meaning": "Mọi bên liên quan đều được mời đến cuộc họp."
+ },
+ "profitable": {
+  "word_type": "adjective",
+  "meaning": "có lợi nhuận, sinh lời",
+  "example": "The new shop became profitable within a year.",
+  "example_meaning": "Cửa hàng mới có lãi chỉ sau một năm."
+ },
+ "entrepreneur": {
+  "word_type": "noun",
+  "meaning": "doanh nhân khởi nghiệp",
+  "example": "She is a young entrepreneur who started her own brand.",
+  "example_meaning": "Cô ấy là một nhà khởi nghiệp trẻ đã tự lập thương hiệu riêng."
+ },
+ "budget": {
+  "word_type": "noun",
+  "meaning": "ngân sách",
+  "example": "We have a limited budget for advertising.",
+  "example_meaning": "Chúng tôi có ngân sách hạn chế cho quảng cáo."
+ },
+ "contract": {
+  "word_type": "noun",
+  "meaning": "hợp đồng",
+  "example": "Please read the contract carefully before signing.",
+  "example_meaning": "Hãy đọc kỹ hợp đồng trước khi ký."
+ }
+}

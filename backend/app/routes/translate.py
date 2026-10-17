@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Word
 from app.utils.middleware import token_required
+from app.utils.sql import escape_like
 
 bp = Blueprint('translate', __name__, url_prefix='/api/translate')
 
@@ -75,7 +76,7 @@ def save_translated_word():
         return jsonify({'message': 'Vui lòng cung cấp word và meaning!'}), 400
 
     existing = Word.query.filter(
-        Word.word.ilike(word_text),
+        Word.word.ilike(escape_like(word_text), escape='\\'),
         Word.deleted_at == None
     ).first()
 

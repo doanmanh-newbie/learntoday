@@ -1,5 +1,6 @@
 # app/routes/words.py
-from flask import Blueprint, request, jsonify
+import requests
+from flask import Blueprint, request, jsonify, current_app
 from app.utils.middleware import token_required
 from app.services.study_service import (
     check_step_answer, complete_learn, complete_review, ServiceError
@@ -18,7 +19,7 @@ def check_answer(word_id):
     - quiz1/quiz2: { "step": "quiz1", "selected_word_id": "..." }
     - quiz3: { "step": "quiz3", "pairs": [ {"word_id": "...", "matched_meaning": "..."}, ... ] }
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
         return jsonify({'message': 'Vui lòng gửi dữ liệu JSON!'}), 400
 
@@ -57,7 +58,7 @@ def complete_review_route(word_id):
     { "wrong_count": 5, "choice": "quay_ve_lv1" | "lui_1_lv" | "bo_qua" }
       -> wrong_count >= 4: BẮT BUỘC có choice
     """
-    data = request.get_json()
+    data = request.get_json(silent=True)
     if not data:
         return jsonify({'message': 'Vui lòng gửi dữ liệu JSON!'}), 400
 
@@ -122,8 +123,6 @@ def lookup_word_route(word):
     Trả về: data từ đã parse
     """
     from app.services.dictionary_service import lookup_word
-    from flask import request
-    
     translate = request.args.get('translate', 'true').lower() == 'true'
     
     try:
@@ -138,8 +137,9 @@ def lookup_word_route(word):
             'found': True,
             'word': result,
         }), 200
-    except Exception as e:
-        return jsonify({'message': f'Lỗi: {str(e)}'}), 500
+    except requests.RequestException as e:
+        current_app.logger.warning('Dictionary API lỗi: %s', e)
+        return jsonify({'message': 'Dịch vụ từ điển bên ngoài đang không phản hồi, thử lại sau.'}), 502
 
 
 # ===== TRA CỨU NHIỀU NGHĨA (cho EditWordModal) =====
@@ -152,8 +152,6 @@ def word_suggestions_route(word):
     - pos=verb|noun|adj|... (filter theo loại từ, optional)
     """
     from app.services.dictionary_service import lookup_multiple_meanings
-    from flask import request
-    
     pos_filter = request.args.get('pos', '').strip()
     
     try:
@@ -168,5 +166,6 @@ def word_suggestions_route(word):
             'suggestions': results,
             'count': len(results),
         }), 200
-    except Exception as e:
-        return jsonify({'message': f'Lỗi: {str(e)}'}), 500
+    except requests.RequestException as e:
+        current_app.logger.warning('Dictionary API lỗi: %s', e)
+        return jsonify({'message': 'Dịch vụ từ điển bên ngoài đang không phản hồi, thử lại sau.'}), 502

@@ -53,7 +53,7 @@ def token_required(f):
         request.token = token
         
         # Ghi log (tùy chọn)
-        logger.info(f"✅ Token verified for user_id: {user_id}")
+        logger.debug("Token verified for user_id: %s", user_id)
         
         return f(*args, **kwargs)
     

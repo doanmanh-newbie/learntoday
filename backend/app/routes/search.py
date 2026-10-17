@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify
 from app import db
 from app.models import Word, SearchHistory, FolderWord
 from app.utils.middleware import token_required
+from app.utils.sql import like_pattern
 
 bp = Blueprint('search', __name__, url_prefix='/api/search')
 
@@ -21,16 +22,16 @@ def search_words():
     words = Word.query.filter(
         Word.deleted_at == None,
         db.or_(
-            Word.word.ilike(f'%{query_text}%'),
-            Word.meaning.ilike(f'%{query_text}%')
+            Word.word.ilike(like_pattern(query_text), escape='\\'),
+            Word.meaning.ilike(like_pattern(query_text), escape='\\')
         )
-    ).limit(limit).all()
+    ).order_by(db.func.length(Word.word)).limit(limit).all()
 
     # Lưu lịch sử tìm kiếm
     history = SearchHistory(
         id=str(uuid.uuid4()),
         user_id=request.user_id,
-        query=query_text,
+        query=query_text[:200],        # cột search_history.query chỉ dài 200 ký tự
     )
     db.session.add(history)
     db.session.commit()

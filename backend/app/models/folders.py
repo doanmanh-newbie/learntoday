@@ -16,6 +16,10 @@ class Folder(db.Model):
     is_default = db.Column(db.Boolean, default=False)
     deleted_at = db.Column(db.DateTime, nullable=True)
 
+    __table_args__ = (
+        db.Index('idx_folders_type_user', 'type', 'user_id'),
+    )
+
     def to_dict(self):
         return {
             'id': str(self.id),

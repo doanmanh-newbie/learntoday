@@ -3,41 +3,9 @@ import { useNavigate } from "react-router-dom";
 
 
 import { DICTIONARY } from "../../../data/dictionary";
+import SaveModal from "./SaveModal";   // modal dùng chung (DictionaryPage + WordDetailPage) - trước đây thiếu import -> crash khi bấm Lưu
+import { foldersApi, searchApi, translateApi, wordsApi } from "../../../api/client";
 
-
-const MOCK_TRANS = {
-  "hello": "Xin chào",
-  "thank you": "Cảm ơn bạn",
-  "good morning": "Chào buổi sáng",
-  "how are you?": "Bạn có khỏe không?",
-  "i love you": "Tôi yêu bạn",
-  "she managed to accomplish all her goals despite the obstacles.":
-    "Cô ấy đã hoàn thành tất cả mục tiêu dù gặp nhiều trở ngại.",
-  "the research showed a significant improvement in test scores.":
-    "Nghiên cứu cho thấy sự cải thiện đáng kể trong điểm kiểm tra.",
-  "perseverance is the key to success.":
-    "Sự kiên trì là chìa khóa dẫn đến thành công.",
-  "xin chào": "Hello",
-  "cảm ơn": "Thank you",
-};
-
-// ─── Các biến cấu hình màu ───
-
-const LEVEL_COLORS = {
-  B1: "#a5b4fc",
-  B2: "#818cf8",
-  C1: "#8b5cf6",
-  C2: "#f43f5e",
-};
-
-
-const INITIAL_FOLDERS = [
-  { id: 1, name: "Công việc", color: "#6366f1", words: [] },
-  { id: 2, name: "Học thuật", color: "#10b981", words: [] },
-  { id: 3, name: "Phẩm chất", color: "#f59e0b", words: [] },
-  { id: 4, name: "Công nghệ", color: "#8b5cf6", words: [] },
-  { id: 5, name: "Giao tiếp", color: "#06b6d4", words: [] },
-];
 
 // ─── Inject CSS Animations ───
 
@@ -79,15 +47,6 @@ function speak(text) {
   window.speechSynthesis.speak(utt);
 }
 
-function mockTranslate(text, srcLang) {
-  const key = text.trim().toLowerCase();
-  if (MOCK_TRANS[key]) return MOCK_TRANS[key];
-  return srcLang === "en"
-    ? `[Bản dịch VI: "${text.trim()}"]`
-    : `[EN translation: "${text.trim()}"]`;
-}
-
-
 // ─── Loading Dots ───
 
 function LoadingDots() {
@@ -106,32 +65,61 @@ function LoadingDots() {
 
 // ─── Tab 1: Tra từ ───
 
-function TraTuTab({ folders, onSaveFolders, initialQuery = "" }) {
+function TraTuTab({ initialQuery = "" }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery);
   const [suggestions, setSuggestions] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [popularWords, setPopularWords] = useState([]);
   const allKeys = Object.keys(DICTIONARY);
 
+  useEffect(() => {
+    Promise.allSettled([searchApi.history(), searchApi.popular()]).then(([historyResult, popularResult]) => {
+      if (historyResult.status === "fulfilled") {
+        setRecentSearches((historyResult.value.history || []).map(item => item.query).filter(Boolean).slice(0, 8));
+      }
+      if (popularResult.status === "fulfilled") {
+        setPopularWords((popularResult.value.words || []).map(item => item.word).filter(Boolean).slice(0, 8));
+      }
+    });
+  }, []);
+
   // ✅ Search → navigate sang WordDetailPage
-  const doSearch = (q) => {
+  const doSearch = async (q) => {
     const key = q.trim().toLowerCase();
     if (!key) return;
-    const entry = DICTIONARY[key];
-    if (entry) {
-      navigate(`/app/dictionary/${entry.word}`);
-    } else {
-      // Không tìm thấy → có thể show alert hoặc navigate tới not-found page
-      alert(`Không tìm thấy từ "${q}"`);
+    try {
+      const result = await searchApi.query(key);
+      const match = (result.results || []).find(item => item.word.toLowerCase() === key)
+        || result.results?.[0];
+      if (match) {
+        navigate(`/app/dictionary/${encodeURIComponent(match.word)}`);
+        return;
+      }
+      const lookup = await wordsApi.lookup(key);
+      if (lookup.found && lookup.word) {
+        navigate(`/app/dictionary/${encodeURIComponent(lookup.word.word)}`);
+        return;
+      }
+    } catch (err) {
+      if (DICTIONARY[key]) {
+        navigate(`/app/dictionary/${encodeURIComponent(DICTIONARY[key].word)}`);
+        return;
+      }
+      alert(err.message || `Không tìm thấy từ "${q}"`);
+      return;
     }
+    if (DICTIONARY[key]) navigate(`/app/dictionary/${encodeURIComponent(DICTIONARY[key].word)}`);
+    else alert(`Không tìm thấy từ "${q}"`);
   };
 
   useEffect(() => {
     if (initialQuery?.trim()) {
-      setQuery(initialQuery);
-      // Delay nhỏ để đảm bảo navigation sau khi mount
-      const t = setTimeout(() => doSearch(initialQuery), 0);
+      // Delay nhỏ để đảm bảo navigation sau khi mount (và không setState đồng bộ trong effect)
+      const t = setTimeout(() => { setQuery(initialQuery); doSearch(initialQuery); }, 0);
       return () => clearTimeout(t);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy lại khi initialQuery đổi; doSearch tạo mới mỗi lần render
   }, [initialQuery]);
 
   const handleInputChange = (value) => {
@@ -206,7 +194,7 @@ function TraTuTab({ folders, onSaveFolders, initialQuery = "" }) {
           Tra nhanh:
         </p>
         <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {allKeys.map((w) => (
+          {(popularWords.length ? popularWords : allKeys.slice(0, 12)).map((w) => (
             <button
               key={w}
               onClick={() => { setQuery(w); doSearch(w); }}
@@ -223,6 +211,19 @@ function TraTuTab({ folders, onSaveFolders, initialQuery = "" }) {
             </button>
           ))}
         </div>
+        {recentSearches.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <p style={{ fontFamily: "Inter,sans-serif", fontSize: 12, color: "#475569", marginBottom: 8 }}>Tìm gần đây:</p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+              {recentSearches.map((item, index) => (
+                <button key={`${item}-${index}`} onClick={() => { setQuery(item); doSearch(item); }}
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "5px 12px", color: "#94a3b8", cursor: "pointer" }}>
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ✅ KHÔNG render DictCard nữa. Chỉ navigate. */}
@@ -232,7 +233,7 @@ function TraTuTab({ folders, onSaveFolders, initialQuery = "" }) {
 
 // ─── Tab 2: Dịch văn bản ───
 
-function DichTab({ folders, onSaveFolders }) {
+function DichTab({ folders, onSaveWord, onCreateFolder }) {
   const [srcLang, setSrcLang] = useState("en");
   const [tgtLang, setTgtLang] = useState("vi");
   const [srcText, setSrcText] = useState("");
@@ -241,16 +242,21 @@ function DichTab({ folders, onSaveFolders }) {
   const [saveModal, setSaveModal] = useState(null); // "src" | "tgt" | null
   const timerRef = useRef(null);
 
-  const translate = useCallback((text, lang) => {
+  const translate = useCallback((text, lang, target = tgtLang) => {
     if (!text.trim()) { setTgtText(""); setLoading(false); return; }
     setLoading(true);
     clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(() => {
-      const res = mockTranslate(text, lang);
-      setTgtText(res);
-      setLoading(false);
-    }, 600);
-  }, []);
+    timerRef.current = setTimeout(async () => {
+      try {
+        const result = await translateApi.translate(text, lang, target);
+        setTgtText(result.translated || "");
+      } catch (err) {
+        setTgtText(err.message || "Không dịch được nội dung.");
+      } finally {
+        setLoading(false);
+      }
+    }, 500);
+  }, [tgtLang]);
 
   const handleSrcChange = (val) => {
     setSrcText(val);
@@ -266,24 +272,16 @@ function DichTab({ folders, onSaveFolders }) {
     setTgtLang(newTgt);
     setSrcText(newSrcText);
     setTgtText(newTgtText);
-    translate(newSrcText, newSrc);
+    translate(newSrcText, newSrc, newTgt);
   };
 
   const handleSave = (folderId, word) => {
-    onSaveFolders((prev) =>
-      prev.map((f) =>
-        f.id === folderId && !f.words.includes(word)
-          ? { ...f, words: [...f.words, word] }
-          : f
-      )
-    );
+    const sourceText = saveModal === "src" ? srcText : tgtText;
+    const meaningText = saveModal === "src" ? tgtText : srcText;
+    return onSaveWord(folderId, sourceText || word, meaningText || word);
   };
 
-  const handleCreate = (name, color) => {
-    const id = Date.now();
-    onSaveFolders((prev) => [...prev, { id, name, color, words: [] }]);
-    return id;
-  };
+  const handleCreate = (name) => onCreateFolder(name);
 
   const langLabel = { en: "🇺🇸 EN", vi: "🇻🇳 VI" };
 
@@ -441,7 +439,7 @@ function DichTab({ folders, onSaveFolders }) {
 
       {saveModal === "src" && srcText && (
         <SaveModal
-          wordOrText={srcText.slice(0, 60) + (srcText.length > 60 ? "…" : "")}
+          wordOrText={srcText}
           folders={folders}
           onSave={handleSave}
           onClose={() => setSaveModal(null)}
@@ -450,7 +448,7 @@ function DichTab({ folders, onSaveFolders }) {
       )}
       {saveModal === "tgt" && tgtText && (
         <SaveModal
-          wordOrText={tgtText.slice(0, 60) + (tgtText.length > 60 ? "…" : "")}
+          wordOrText={tgtText}
           folders={folders}
           onSave={handleSave}
           onClose={() => setSaveModal(null)}
@@ -570,10 +568,51 @@ function ThuMucTab({ folders, onRemoveWord }) {
 
 export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
   const [activeTab, setActiveTab] = useState(0);
-  const [folders, setFolders] = useState(INITIAL_FOLDERS);
+  const [folders, setFolders] = useState([]);
+  const [foldersError, setFoldersError] = useState("");
   const [externalQuery, setExternalQuery] = useState(initialQuery);
 
   useEffect(() => { injectStyles(); }, []);
+
+  const reloadFolders = useCallback(async () => {
+    const result = await foldersApi.list();
+    const personal = result.personal_folders || [];
+    const mapped = await Promise.all(personal.map(async folder => {
+      const data = await foldersApi.words(folder.id, { limit: 100 });
+      const rows = data.words || [];
+      return {
+        id: folder.id,
+        name: folder.name,
+        color: folder.color || "#6366f1",
+        words: rows.map(row => row.word),
+        wordIds: Object.fromEntries(rows.map(row => [row.word, row.id])),
+      };
+    }));
+    setFolders(mapped);
+    setFoldersError("");
+  }, []);
+
+  // Lỗi tải thư mục được HIỂN THỊ (trước đây `.catch(() => {})` nuốt mất -> DB lỗi thì tab Thư mục chỉ trống trơn)
+  const loadFolders = useCallback(
+    () => reloadFolders().catch((err) => setFoldersError(err.message || "Không tải được thư mục.")),
+    [reloadFolders]
+  );
+  useEffect(() => { Promise.resolve().then(loadFolders); }, [loadFolders]);
+
+  const createFolder = async (name) => {
+    const result = await foldersApi.create(name);
+    await reloadFolders();
+    return result.folder.id;
+  };
+
+  const saveWordToFolder = async (folderId, word, meaning) => {
+    if (!word?.trim() || word.trim().length > 100) {
+      throw new Error("Từ/cụm từ cần lưu phải có từ 1 đến 100 ký tự.");
+    }
+    const saved = await translateApi.save({ word: word.trim(), meaning: meaning?.trim() || word.trim() });
+    await foldersApi.addWord(folderId, saved.word.id);
+    await reloadFolders();
+  };
 
   useEffect(() => {
     if (initialQuery && initialQuery.trim()) {
@@ -585,19 +624,21 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
     }
   }, [initialQuery, onQueryUsed]);
 
-  const handleRemoveWord = (folderId, word) => {
-    setFolders((prev) =>
-      prev.map((f) =>
-        f.id === folderId
-          ? { ...f, words: f.words.filter((w) => w !== word) }
-          : f
-      )
-    );
+  const handleRemoveWord = async (folderId, word) => {
+    const folder = folders.find(item => item.id === folderId);
+    const wordId = folder?.wordIds?.[word];
+    if (!wordId) return;
+    try {
+      await foldersApi.removeWord(folderId, wordId);
+      await reloadFolders();
+    } catch (err) {
+      alert(err.message || "Không gỡ được từ khỏi folder.");
+    }
   };
 
   const tabs = [
-    { label: "🔍 Tra từ", component: <TraTuTab folders={folders} onSaveFolders={setFolders} initialQuery={externalQuery} /> },
-    { label: "🌐 Dịch văn bản", component: <DichTab folders={folders} onSaveFolders={setFolders} /> },
+    { label: "🔍 Tra từ", component: <TraTuTab initialQuery={externalQuery} /> },
+    { label: "🌐 Dịch văn bản", component: <DichTab folders={folders} onSaveWord={saveWordToFolder} onCreateFolder={createFolder} /> },
     { label: "📁 Thư mục", component: <ThuMucTab folders={folders} onRemoveWord={handleRemoveWord} /> },
   ];
     return (
@@ -668,6 +709,18 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
             </button>
           ))}
         </div>
+
+        {foldersError && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "16px",
+                        padding: "10px 16px", borderRadius: "12px", fontSize: "13px", color: "#fecaca",
+                        background: "rgba(127,29,29,0.35)", border: "0.8px solid rgba(248,113,113,0.35)" }}>
+            <span>⚠️ {foldersError}</span>
+            <button onClick={loadFolders} style={{ padding: "4px 14px", borderRadius: "8px", border: "none", cursor: "pointer",
+                                                   fontWeight: 700, background: "#f87171", color: "#450a0a" }}>
+              Thử lại
+            </button>
+          </div>
+        )}
 
         {/* Tab content */}
         <div key={activeTab} style={{ animation: "fadeSlideIn 0.28s ease" }}>

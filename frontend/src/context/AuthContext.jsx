@@ -1,11 +1,14 @@
 // src/context/AuthContext.jsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { authApi, setTokens, clearTokens, getAccessToken, getRefreshToken } from '../api/client';
 import { AuthContext } from './auth-context';
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(() => !!getAccessToken());
+  // Có token nhưng server/DB tạm thời không trả lời: KHÔNG đăng xuất, cho người dùng bấm "Thử lại".
+  // (Trước đây mọi lỗi - kể cả mất mạng hay Supabase đang bận - đều xóa token => bị đăng xuất oan.)
+  const [connectionError, setConnectionError] = useState(null);
   const mountedRef = useRef(true);
 
   useEffect(() => {
@@ -13,41 +16,51 @@ export function AuthProvider({ children }) {
     return () => { mountedRef.current = false; };
   }, []);
 
-  useEffect(() => {
-    const token = getAccessToken();
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    // Timeout 10s để tránh treo loading mãi
-    const timeoutId = setTimeout(() => {
-      if (mountedRef.current && loading) {
-        clearTokens();
-        setUser(null);
-        setLoading(false);
-      }
-    }, 10000);
-
-    authApi
+  const bootstrap = useCallback(() => {
+    return authApi
       .me()
       .then((data) => {
-        if (mountedRef.current) setUser(data.user);
+        if (!mountedRef.current) return;
+        setUser(data.user);
+        setConnectionError(null);
       })
-      .catch(() => {
-        if (mountedRef.current) clearTokens();
+      .catch((err) => {
+        if (!mountedRef.current) return;
+        if (err?.status === 401 || err?.code === 'SESSION_EXPIRED') {
+          clearTokens();                       // token thật sự hỏng/hết hạn
+          setConnectionError(null);
+        } else {
+          setConnectionError(err?.message || 'Không kết nối được máy chủ.');
+        }
       })
       .finally(() => {
-        clearTimeout(timeoutId);
         if (mountedRef.current) setLoading(false);
       });
+  }, []);
 
-    return () => clearTimeout(timeoutId);
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  // Khôi phục phiên khi mở app (nếu có token từ lần trước)
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    bootstrap();
+  }, [bootstrap]);
+
+  // client.js phát sự kiện này khi refresh token hỏng -> về trạng thái chưa đăng nhập (không reload trang)
+  useEffect(() => {
+    const onExpired = () => setUser(null);
+    window.addEventListener('auth:expired', onExpired);
+    return () => window.removeEventListener('auth:expired', onExpired);
+  }, []);
+
+  const retryConnection = useCallback(() => {
+    setLoading(true);
+    setConnectionError(null);
+    bootstrap();
+  }, [bootstrap]);
 
   function saveSession(data) {
     setTokens(data.access_token, data.refresh_token);
     setUser(data.user);
+    setConnectionError(null);
   }
 
   async function register({ username, email, password }) {
@@ -66,7 +79,7 @@ export function AuthProvider({ children }) {
     try {
       await authApi.logout(getRefreshToken());
     } catch {
-      // Bỏ qua lỗi logout
+      // Lỗi mạng khi đăng xuất: vẫn xóa phiên phía client
     }
     clearTokens();
     setUser(null);
@@ -75,6 +88,8 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     loading,
+    connectionError,
+    retryConnection,
     isAuthenticated: !!user,
     register,
     login,

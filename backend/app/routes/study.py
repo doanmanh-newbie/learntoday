@@ -6,6 +6,7 @@ from app import db
 from app.models import User, UserWord
 from app.models.learning_logs import VN_TZ
 from app.utils.middleware import token_required
+from app.services.study_time import add_study_minutes
 
 bp = Blueprint('study', __name__, url_prefix='/api/study')
 
@@ -20,34 +21,38 @@ def study_heartbeat():
     Ghi nhận thời gian học (phút). Client gọi định kỳ khi user đang trong app.
     Body: { "minutes": 1 }
     """
-    data = request.get_json() or {}
-    minutes = int(data.get('minutes', 1))
+    data = request.get_json(silent=True) or {}
+    try:
+        minutes = int(data.get('minutes', 1))
+    except (TypeError, ValueError):
+        return jsonify({'message': 'minutes phải là số nguyên!'}), 400
     if minutes < 1 or minutes > 30:
         return jsonify({'message': 'minutes phải từ 1 đến 30!'}), 400
 
-    user = User.query.get(request.user_id)
+    user = db.session.get(User, request.user_id)
     if not user:
         return jsonify({'message': 'Không tìm thấy user!'}), 404
 
-    user.total_study_minutes = (user.total_study_minutes or 0) + minutes
+    # STT 12: mục tiêu là >= 15 phút MỖI NGÀY. Trước đây so sánh với TỔNG cộng dồn cả đời nên
+    # huy hiệu bị cấp ngay sau 15 phút đầu tiên và "goal_met" luôn đúng mãi mãi.
+    today_minutes = add_study_minutes(user, minutes)
 
     new_badges = []
-    if user.total_study_minutes >= DAILY_STUDY_GOAL_MINUTES:
-        if 'study_15min' not in user._parse_badges():
-            user.add_badge('study_15min')
-            new_badges.append('study_15min')
+    if today_minutes >= DAILY_STUDY_GOAL_MINUTES and 'study_15min' not in user._parse_badges():
+        user.add_badge('study_15min')
+        new_badges.append('study_15min')
 
-    if (user.streak or 0) >= PERSISTENT_BADGE_DAYS:
-        if 'kien_tri' not in user._parse_badges():
-            user.add_badge('kien_tri')
-            new_badges.append('kien_tri')
+    if (user.streak or 0) >= PERSISTENT_BADGE_DAYS and 'kien_tri' not in user._parse_badges():
+        user.add_badge('kien_tri')
+        new_badges.append('kien_tri')
 
     db.session.commit()
 
     return jsonify({
         'total_study_minutes': user.total_study_minutes,
+        'study_minutes_today': today_minutes,
         'daily_goal_minutes': DAILY_STUDY_GOAL_MINUTES,
-        'goal_met': user.total_study_minutes >= DAILY_STUDY_GOAL_MINUTES,
+        'goal_met': today_minutes >= DAILY_STUDY_GOAL_MINUTES,
         'new_badges': new_badges,
     }), 200
 
