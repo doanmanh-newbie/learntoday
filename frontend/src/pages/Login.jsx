@@ -1,30 +1,39 @@
 // src/pages/Login.jsx
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
+import AuthLayout from '../components/auth/AuthLayout';
+import AuthField from '../components/auth/AuthField';
+import { IconAlert } from '../components/brand/icons';
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, user, loading } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // ProtectedRoute lưu trang người dùng định vào: đăng nhập xong quay lại đúng trang đó
+  const destination = location.state?.from?.pathname || '/app';
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
+  // Đã đăng nhập rồi thì không cần thấy form nữa
+  if (!loading && user) return <Navigate to={destination} replace />;
+
   async function handleSubmit(event) {
     event.preventDefault();
     setError('');
 
-    if (!email || !password) {
+    if (!email.trim() || !password) {
       setError('Vui lòng nhập email và mật khẩu!');
       return;
     }
 
     setSubmitting(true);
     try {
-      await login({ email, password });
-      navigate('/app');
+      await login({ email: email.trim(), password });
+      navigate(destination, { replace: true });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -33,61 +42,31 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
-      <div className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-8 shadow-sm">
-        <h1 className="mb-6 text-center text-2xl font-bold text-indigo-600">
-          Đăng nhập Learn Today
-        </h1>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="mb-1 block text-sm font-medium text-slate-700">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-              autoComplete="email"
-            />
+    <AuthLayout
+      title="Chào mừng trở lại"
+      subtitle="Đăng nhập để tiếp tục chuỗi học của bạn."
+      footer={<>Chưa có tài khoản? <Link to="/register" className="font-semibold text-brand-300 hover:text-brand-200">Đăng ký</Link></>}
+    >
+      <form onSubmit={handleSubmit} noValidate className="space-y-5">
+        {error && (
+          <div role="alert" className="flex items-start gap-2.5 rounded-xl border border-red-500/35 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <IconAlert size={18} className="mt-0.5 shrink-0" />
+            <span>{error}</span>
           </div>
-
-          <div>
-            <label htmlFor="password" className="mb-1 block text-sm font-medium text-slate-700">
-              Mật khẩu
-            </label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
-              autoComplete="current-password"
-            />
-          </div>
-
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
-          )}
-
-          <button
-            type="submit"
-            disabled={submitting}
-            className="w-full rounded-lg bg-indigo-600 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-slate-600">
-          Chưa có tài khoản?{' '}
-          <Link to="/register" className="font-semibold text-indigo-600 hover:underline">
-            Đăng ký ngay
-          </Link>
-        </p>
-      </div>
-    </div>
+        )}
+        <AuthField label="Email" type="email" value={email} onChange={setEmail} autoComplete="email" placeholder="ban@example.com" />
+        <AuthField label="Mật khẩu" type="password" value={password} onChange={setPassword} autoComplete="current-password" placeholder="Nhập mật khẩu" />
+        <div className="-mt-2 text-right">
+          <Link to="/forgot-password" className="text-sm font-medium text-brand-300 hover:text-brand-200">Quên mật khẩu?</Link>
+        </div>
+        <button
+          type="submit"
+          disabled={submitting}
+          className="w-full rounded-xl bg-brand-700 px-5 py-3 text-[15px] font-bold text-white shadow-[0_8px_24px_rgba(15,118,110,0.35)] transition hover:bg-brand-600 disabled:cursor-wait disabled:opacity-70"
+        >
+          {submitting ? 'Đang đăng nhập...' : 'Đăng nhập'}
+        </button>
+      </form>
+    </AuthLayout>
   );
 }

@@ -63,5 +63,5 @@ def get_today_progress():
         'learned': learned_today,          # alias cho FE cũ
         'target': daily_target,            # alias cho FE cũ
         'is_completed': learned_today >= daily_target,
-        'streak': user.streak
+        'streak': user.effective_streak()
     }), 200

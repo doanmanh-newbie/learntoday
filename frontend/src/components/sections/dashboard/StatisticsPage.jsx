@@ -11,71 +11,27 @@ import {
   Cell,
 } from "recharts";
 
-// ── Chart data ──────────────────────────────────────────────────────────────
-
-const weekData = [
-  { label: "T2", words: 12 },
-  { label: "T3", words: 18 },
-  { label: "T4", words: 8 },
-  { label: "T5", words: 22 },
-  { label: "T6", words: 15 },
-  { label: "T7", words: 29 },
-  { label: "CN", words: 4 },
-];
-
-const monthData = [
-  { label: "T1", words: 45 },
-  { label: "T2", words: 62 },
-  { label: "T3", words: 38 },
-  { label: "T4", words: 71 },
-  { label: "T5", words: 55 },
-  { label: "T6", words: 83 },
-  { label: "T7", words: 67 },
-  { label: "T8", words: 49 },
-  { label: "T9", words: 91 },
-  { label: "T10", words: 74 },
-  { label: "T11", words: 58 },
-  { label: "T12", words: 30 },
-];
+// ── Chart config (số liệu thật lấy từ API; KHÔNG có dữ liệu mẫu để người dùng không thấy biểu đồ giả) ──
 
 const levelChartData = [
-  { label: "Lv1", words: 52, color: "#10b981", glow: "rgba(16,185,129,0.55)" },
-  { label: "Lv2", words: 38, color: "#34d399", glow: "rgba(52,211,153,0.5)" },
-  { label: "Lv3", words: 61, color: "#a5b4fc", glow: "rgba(165,180,252,0.55)" },
-  { label: "Lv4", words: 27, color: "#8b5cf6", glow: "rgba(139,92,246,0.55)" },
-  { label: "Lv5", words: 14, color: "#f59e0b", glow: "rgba(245,158,11,0.5)" },
-  { label: "Lv6", words: 5,  color: "#f87171", glow: "rgba(248,113,113,0.5)" },
+  { label: "Lv1", words: 0, color: "#86a24d", glow: "rgba(134,162,77,0.55)" },
+  { label: "Lv2", words: 0, color: "#a3bd6a", glow: "rgba(134,162,77,0.5)" },
+  { label: "Lv3", words: 0, color: "#5eead4", glow: "rgba(94,234,212,0.55)" },
+  { label: "Lv4", words: 0, color: "#2dd4bf", glow: "rgba(45,212,191,0.55)" },
+  { label: "Lv5", words: 0, color: "#ef4444", glow: "rgba(239,68,68,0.5)" },
+  { label: "Lv6", words: 0,  color: "#f87171", glow: "rgba(248,113,113,0.5)" },
 ];
 
 // ── Level config ─────────────────────────────────────────────────────────────
 
 const LEVELS = {
-  Lv1: { color: "#10b981", bg: "rgba(16,185,129,0.12)",  border: "rgba(16,185,129,0.28)"  },
-  Lv2: { color: "#34d399", bg: "rgba(52,211,153,0.12)",  border: "rgba(52,211,153,0.28)"  },
-  Lv3: { color: "#a5b4fc", bg: "rgba(165,180,252,0.12)", border: "rgba(165,180,252,0.28)" },
-  Lv4: { color: "#8b5cf6", bg: "rgba(139,92,246,0.12)",  border: "rgba(139,92,246,0.28)"  },
-  Lv5: { color: "#f59e0b", bg: "rgba(245,158,11,0.12)",  border: "rgba(245,158,11,0.28)"  },
+  Lv1: { color: "#86a24d", bg: "rgba(134,162,77,0.12)",  border: "rgba(134,162,77,0.28)"  },
+  Lv2: { color: "#a3bd6a", bg: "rgba(134,162,77,0.12)",  border: "rgba(134,162,77,0.28)"  },
+  Lv3: { color: "#5eead4", bg: "rgba(94,234,212,0.12)", border: "rgba(94,234,212,0.28)" },
+  Lv4: { color: "#2dd4bf", bg: "rgba(45,212,191,0.12)",  border: "rgba(45,212,191,0.28)"  },
+  Lv5: { color: "#ef4444", bg: "rgba(239,68,68,0.12)",  border: "rgba(239,68,68,0.28)"  },
   Lv6: { color: "#f87171", bg: "rgba(248,113,113,0.12)", border: "rgba(248,113,113,0.28)" },
 };
-
-// ── Vocab data ────────────────────────────────────────────────────────────────
-
-const vocabData = [
-  { word: "accomplish",   meaning: "đạt được, hoàn thành",   folder: "Công việc",  level: "Lv3", learned: true  },
-  { word: "significant",  meaning: "đáng kể, quan trọng",    folder: "Học thuật",  level: "Lv4", learned: true  },
-  { word: "milestone",    meaning: "cột mốc quan trọng",     folder: "Công việc",  level: "Lv3", learned: true  },
-  { word: "perseverance", meaning: "sự kiên trì",            folder: "Phẩm chất",  level: "Lv5", learned: true  },
-  { word: "collaborate",  meaning: "cộng tác, hợp tác",      folder: "Công việc",  level: "Lv3", learned: false },
-  { word: "resilient",    meaning: "kiên cường, bền bỉ",     folder: "Phẩm chất",  level: "Lv4", learned: false },
-  { word: "innovative",   meaning: "sáng tạo, đổi mới",      folder: "Công nghệ",  level: "Lv4", learned: true  },
-  { word: "eloquent",     meaning: "hùng hồn, lưu loát",     folder: "Giao tiếp",  level: "Lv5", learned: false },
-  { word: "dedicate",     meaning: "cống hiến, dành tặng",   folder: "Phẩm chất",  level: "Lv2", learned: true  },
-  { word: "analyze",      meaning: "phân tích",              folder: "Học thuật",  level: "Lv3", learned: true  },
-  { word: "fluent",       meaning: "trôi chảy, thành thạo",  folder: "Giao tiếp",  level: "Lv2", learned: true  },
-  { word: "strategy",     meaning: "chiến lược",             folder: "Công việc",  level: "Lv3", learned: false },
-];
-
-const ALL_FOLDERS = [...new Set(vocabData.map(v => v.folder))];
 
 // ── Custom Tooltip ────────────────────────────────────────────────────────────
 
@@ -85,17 +41,17 @@ function CustomTooltip({ active, payload, label, isLevel }) {
   return (
     <div
       style={{
-        background: "rgba(15,17,40,0.96)",
-        border: `1px solid ${lv ? lv.border : "rgba(99,102,241,0.3)"}`,
+        background: "rgba(28,31,34,0.96)",
+        border: `1px solid ${lv ? lv.border : "rgba(20,184,166,0.3)"}`,
         backdropFilter: "blur(12px)",
         borderRadius: "12px",
         padding: "10px 16px",
       }}
     >
-      <p style={{ color: "#8892b0", fontSize: "11px", marginBottom: "4px", fontFamily: "Inter, sans-serif" }}>
+      <p style={{ color: "#a2acb3", fontSize: "11px", marginBottom: "4px", fontFamily: "Inter, sans-serif" }}>
         {label}
       </p>
-      <p style={{ color: lv ? lv.color : "#a5b4fc", fontWeight: 700, fontSize: "15px", fontFamily: "Outfit, sans-serif" }}>
+      <p style={{ color: lv ? lv.color : "#5eead4", fontWeight: 700, fontSize: "15px", fontFamily: "Outfit, sans-serif" }}>
         {payload[0].value} từ
       </p>
     </div>
@@ -148,9 +104,9 @@ function Pill({ active, onClick, children }) {
         fontSize: "12px",
         fontWeight: 500,
         fontFamily: "Inter, sans-serif",
-        background: active ? "rgba(99,102,241,0.2)"   : "rgba(255,255,255,0.05)",
-        color:      active ? "#a5b4fc"                 : "#5a6a8a",
-        border:     active ? "0.8px solid rgba(99,102,241,0.4)" : "0.8px solid rgba(255,255,255,0.07)",
+        background: active ? "rgba(20,184,166,0.2)"   : "rgba(255,255,255,0.05)",
+        color:      active ? "#5eead4"                 : "#a2acb3",
+        border:     active ? "0.8px solid rgba(20,184,166,0.4)" : "0.8px solid rgba(255,255,255,0.07)",
         transition: "all 0.2s ease",
         cursor: "pointer",
         whiteSpace: "nowrap",
@@ -168,11 +124,13 @@ export default function StatisticsPage() {
   const [chartView, setChartView] = useState("date"); // "date" | "level"
   const [period, setPeriod]       = useState("week");  // "week" | "month"
   const [hoveredBar, setHoveredBar] = useState(null);
-  const [chartWeek, setChartWeek] = useState(weekData);
-  const [chartMonth, setChartMonth] = useState(monthData);
-  const [chartLevels, setChartLevels] = useState(levelChartData);
-  const [vocabulary, setVocabulary] = useState(vocabData);
-  const [folderOptions, setFolderOptions] = useState(ALL_FOLDERS);
+  const [chartWeek, setChartWeek] = useState([]);
+  const [chartMonth, setChartMonth] = useState([]);
+  const [chartLevels, setChartLevels] = useState(levelChartData);      // số từ = 0 cho tới khi API trả về
+  const [vocabulary, setVocabulary] = useState([]);
+  const [folderOptions, setFolderOptions] = useState([]);
+  const [status, setStatus] = useState("loading");                     // loading | ready | error
+  const [attempt, setAttempt] = useState(0);
   const [stats, setStats] = useState({ total_words_learned: 0, streak: 0, total_study_minutes: 0 });
   const [daily, setDaily] = useState({ learned_today: 0, daily_target: 10 });
   const [totalAvailable, setTotalAvailable] = useState(0);
@@ -182,8 +140,11 @@ export default function StatisticsPage() {
     Promise.allSettled([
       historyApi.stats(), historyApi.words(1), historyApi.logs(),
       learningApi.todayProgress(), foldersApi.list(),
-    ]).then(([statsResult, wordsResult, logsResult, dailyResult, foldersResult]) => {
+    ]).then((results) => {
       if (cancelled) return;
+      const [statsResult, wordsResult, logsResult, dailyResult, foldersResult] = results;
+      // Tất cả đều lỗi (mất mạng/server sập) -> báo lỗi thật và cho thử lại, thay vì để trang trống như thể chưa học gì
+      setStatus(results.every((r) => r.status === "rejected") ? "error" : "ready");
       if (statsResult.status === "fulfilled") setStats(statsResult.value);
       if (dailyResult.status === "fulfilled") setDaily(dailyResult.value);
       if (wordsResult.status === "fulfilled") {
@@ -234,7 +195,7 @@ export default function StatisticsPage() {
       }
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [attempt]);
 
   // vocab list
   const [expanded,      setExpanded]      = useState(false);
@@ -256,17 +217,17 @@ export default function StatisticsPage() {
   });
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", background: "#07091a", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: "#0f1214", fontFamily: "Inter, sans-serif" }}>
 
       {/* Ambient glows */}
       <div style={{ position: "fixed", left: "-150px", top: "-200px", width: "600px", height: "600px",
-        borderRadius: "300px", background: "radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%)",
+        borderRadius: "300px", background: "radial-gradient(circle, rgba(20,184,166,0.12) 0%, transparent 70%)",
         filter: "blur(80px)", pointerEvents: "none" }} />
       <div style={{ position: "fixed", right: "-100px", top: "200px", width: "500px", height: "500px",
-        borderRadius: "250px", background: "radial-gradient(circle, rgba(139,92,246,0.1) 0%, transparent 70%)",
+        borderRadius: "250px", background: "radial-gradient(circle, rgba(45,212,191,0.1) 0%, transparent 70%)",
         filter: "blur(80px)", pointerEvents: "none" }} />
 
-      <div style={{ position: "relative", maxWidth: "960px", margin: "0 auto", padding: "32px 24px 80px" }}>
+      <div style={{ position: "relative", maxWidth: "1120px", margin: "0 auto", padding: "32px 24px 80px" }}>
 
         {/* ── Page header ── */}
         <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "32px" }}>
@@ -274,14 +235,14 @@ export default function StatisticsPage() {
             <h1
               style={{
                 fontFamily: "Outfit, sans-serif", fontSize: "28px", fontWeight: 800,
-                background: "linear-gradient(120deg, #e8eaf6 0%, #a5b4fc 40%, #e8eaf6 60%)",
+                background: "linear-gradient(120deg, #e9edef 0%, #5eead4 40%, #e9edef 60%)",
                 WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
                 marginBottom: "4px",
               }}
             >
               📊 Thống kê học tập
             </h1>
-            <p style={{ color: "#8892b0", fontSize: "14px" }}>Theo dõi tiến độ học tập của bạn</p>
+            <p style={{ color: "#a2acb3", fontSize: "14px" }}>Theo dõi tiến độ học tập của bạn</p>
           </div>
 
           {/* Period toggle — shown only in date mode */}
@@ -293,9 +254,9 @@ export default function StatisticsPage() {
                   style={{
                     padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: 500,
                     fontFamily: "Inter, sans-serif", cursor: "pointer", transition: "all 0.2s ease",
-                    background: period === v ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "transparent",
-                    color:      period === v ? "#fff" : "#8892b0",
-                    boxShadow:  period === v ? "0 0 16px rgba(99,102,241,0.4)" : "none",
+                    background: period === v ? "linear-gradient(135deg,#0f766e,#0e8077)" : "transparent",
+                    color:      period === v ? "#ffffff" : "#a2acb3",
+                    boxShadow:  period === v ? "0 0 16px rgba(20,184,166,0.4)" : "none",
                     border: "none",
                   }}
                 >{label}</button>
@@ -304,76 +265,90 @@ export default function StatisticsPage() {
           )}
         </div>
 
+        {status === "loading" && (
+          <p role="status" style={{ color: "#a2acb3", fontSize: "14px", marginBottom: "24px" }}>Đang tải số liệu học tập của bạn…</p>
+        )}
+        {status === "error" && (
+          <div role="alert" style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", marginBottom: "24px",
+            padding: "12px 16px", borderRadius: "12px", background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.35)", color: "#fca5a5", fontSize: "14px" }}>
+            <span>Không tải được số liệu thống kê. Kiểm tra kết nối mạng rồi thử lại.</span>
+            <button onClick={() => { setStatus("loading"); setAttempt((n) => n + 1); }}
+              style={{ padding: "6px 14px", borderRadius: "8px", border: "1px solid rgba(252,165,165,0.5)", background: "transparent", color: "#fca5a5", cursor: "pointer", fontWeight: 600 }}>
+              Thử lại
+            </button>
+          </div>
+        )}
+
         {/* ── 4 Stat Cards ── */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "16px", marginBottom: "24px" }}
           className="lg:grid-cols-4">
 
           {/* Card 1 */}
-          <StatCard glowColor="rgba(99,102,241,0.2)">
+          <StatCard glowColor="rgba(20,184,166,0.2)">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: "22px" }}>📖</span>
               <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "9999px",
-                background: "rgba(99,102,241,0.15)", color: "#a5b4fc" }}>{totalAvailable ? Math.min(100, Math.round((stats.total_words_learned || 0) * 100 / totalAvailable)) : 0}%</span>
+                background: "rgba(20,184,166,0.15)", color: "#5eead4" }}>{totalAvailable ? Math.min(100, Math.round((stats.total_words_learned || 0) * 100 / totalAvailable)) : 0}%</span>
             </div>
             <div>
-              <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
-                {stats.total_words_learned || 0}<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/{totalAvailable}</span>
+              <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e9edef" }}>
+                {stats.total_words_learned || 0}<span style={{ fontSize: "13px", color: "#a2acb3", fontWeight: 600 }}>/{totalAvailable}</span>
               </p>
-              <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>từ đã học</p>
+              <p style={{ fontSize: "11px", color: "#a2acb3", marginTop: "2px" }}>từ đã học</p>
             </div>
             <div style={{ width: "100%", height: "6px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
               <div style={{ width: `${totalAvailable ? Math.min(100, (stats.total_words_learned || 0) * 100 / totalAvailable) : 0}%`, height: "100%", borderRadius: "9999px",
-                background: "linear-gradient(90deg,#6366f1,#8b5cf6)", boxShadow: "0 0 8px rgba(139,92,246,0.5)", transition: "width 0.7s ease" }} />
+                background: "linear-gradient(90deg,#0f766e,#0e8077)", boxShadow: "0 0 8px rgba(45,212,191,0.5)", transition: "width 0.7s ease" }} />
             </div>
           </StatCard>
 
           {/* Card 2 */}
-          <StatCard glowColor="rgba(249,115,22,0.2)">
+          <StatCard glowColor="rgba(239,68,68,0.2)">
             <span style={{ fontSize: "22px" }}>🔥</span>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "26px", fontWeight: 800,
-                background: "linear-gradient(135deg,#fb923c,#f97316)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{stats.streak || 0}</p>
-              <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>ngày liên tiếp</p>
+                background: "linear-gradient(135deg,#dc2626,#b91c1c)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>{stats.streak || 0}</p>
+              <p style={{ fontSize: "11px", color: "#a2acb3", marginTop: "2px" }}>ngày liên tiếp</p>
             </div>
             <div style={{ display: "flex", gap: "4px", marginTop: "4px" }}>
               {Array.from({ length: 7 }).map((_, i) => (
                 <div key={i} style={{
                   flex: 1, height: "6px", borderRadius: "9999px",
-                  background: i < Math.min(stats.streak || 0, 7) ? "linear-gradient(90deg,#f97316,#fb923c)" : "rgba(255,255,255,0.07)",
-                  boxShadow: i < Math.min(stats.streak || 0, 7) ? "0 0 6px rgba(249,115,22,0.4)" : "none",
+                  background: i < Math.min(stats.streak || 0, 7) ? "linear-gradient(90deg,#dc2626,#b91c1c)" : "rgba(255,255,255,0.07)",
+                  boxShadow: i < Math.min(stats.streak || 0, 7) ? "0 0 6px rgba(239,68,68,0.4)" : "none",
                 }} />
               ))}
             </div>
           </StatCard>
 
           {/* Card 3 */}
-          <StatCard glowColor="rgba(250,204,21,0.15)">
+          <StatCard glowColor="rgba(239,68,68,0.15)">
             <span style={{ fontSize: "22px" }}>⏰</span>
             <div>
-              <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
+              <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e9edef" }}>
                 {Math.floor((stats.total_study_minutes || 0) / 60)}h <span style={{ fontSize: "16px" }}>{(stats.total_study_minutes || 0) % 60}p</span>
               </p>
-              <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>từ trước đến nay</p>
+              <p style={{ fontSize: "11px", color: "#a2acb3", marginTop: "2px" }}>từ trước đến nay</p>
             </div>
-            <p style={{ fontSize: "11px", fontWeight: 600, color: "#facc15" }}>↑ 3h 20p tuần này</p>
+            <p style={{ fontSize: "11px", fontWeight: 600, color: "#f87171" }}>↑ 3h 20p tuần này</p>
           </StatCard>
 
           {/* Card 4 */}
-          <StatCard glowColor="rgba(16,185,129,0.2)">
+          <StatCard glowColor="rgba(134,162,77,0.2)">
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontSize: "22px" }}>🎯</span>
               <span style={{ fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "9999px",
-                background: "rgba(16,185,129,0.15)", color: "#10b981" }}>{daily.daily_target ? Math.min(100, Math.round((daily.learned_today || 0) * 100 / daily.daily_target)) : 0}%</span>
+                background: "rgba(134,162,77,0.15)", color: "#86a24d" }}>{daily.daily_target ? Math.min(100, Math.round((daily.learned_today || 0) * 100 / daily.daily_target)) : 0}%</span>
             </div>
             <div>
-              <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
-                {daily.learned_today || 0}<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/{daily.daily_target || 10}</span>
+              <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e9edef" }}>
+                {daily.learned_today || 0}<span style={{ fontSize: "13px", color: "#a2acb3", fontWeight: 600 }}>/{daily.daily_target || 10}</span>
               </p>
-              <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>mục tiêu hôm nay</p>
+              <p style={{ fontSize: "11px", color: "#a2acb3", marginTop: "2px" }}>mục tiêu hôm nay</p>
             </div>
             <div style={{ width: "100%", height: "6px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)", overflow: "hidden" }}>
               <div style={{ width: `${daily.daily_target ? Math.min(100, (daily.learned_today || 0) * 100 / daily.daily_target) : 0}%`, height: "100%", borderRadius: "9999px",
-                background: "linear-gradient(90deg,#10b981,#059669)", boxShadow: "0 0 8px rgba(16,185,129,0.5)", transition: "width 0.7s ease" }} />
+                background: "linear-gradient(90deg,#6b8a3a,#556f2d)", boxShadow: "0 0 8px rgba(134,162,77,0.5)", transition: "width 0.7s ease" }} />
             </div>
           </StatCard>
         </div>
@@ -386,10 +361,10 @@ export default function StatisticsPage() {
           {/* Chart header row */}
           <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "20px", gap: "12px", flexWrap: "wrap" }}>
             <div>
-              <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "15px", fontWeight: 700, color: "#e8eaf6" }}>
+              <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "15px", fontWeight: 700, color: "#e9edef" }}>
                 Số từ đã học
               </h2>
-              <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>
+              <p style={{ fontSize: "11px", color: "#a2acb3", marginTop: "2px" }}>
                 {chartView === "level" ? "Phân loại theo cấp độ" : period === "week" ? "7 ngày qua" : "12 tháng qua"}
               </p>
             </div>
@@ -404,9 +379,9 @@ export default function StatisticsPage() {
                   style={{
                     padding: "5px 12px", borderRadius: "7px", fontSize: "12px", fontWeight: 500,
                     fontFamily: "Inter, sans-serif", cursor: "pointer", border: "none", transition: "all 0.2s ease",
-                    background: chartView === "date" ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "transparent",
-                    color: chartView === "date" ? "#fff" : "#8892b0",
-                    boxShadow: chartView === "date" ? "0 0 10px rgba(99,102,241,0.4)" : "none",
+                    background: chartView === "date" ? "linear-gradient(135deg,#0f766e,#0e8077)" : "transparent",
+                    color: chartView === "date" ? "#ffffff" : "#a2acb3",
+                    boxShadow: chartView === "date" ? "0 0 10px rgba(20,184,166,0.4)" : "none",
                   }}
                 >
                   📅 Theo ngày
@@ -416,9 +391,9 @@ export default function StatisticsPage() {
                   style={{
                     padding: "5px 12px", borderRadius: "7px", fontSize: "12px", fontWeight: 500,
                     fontFamily: "Inter, sans-serif", cursor: "pointer", border: "none", transition: "all 0.2s ease",
-                    background: chartView === "level" ? "linear-gradient(135deg,#6366f1,#8b5cf6)" : "transparent",
-                    color: chartView === "level" ? "#fff" : "#8892b0",
-                    boxShadow: chartView === "level" ? "0 0 10px rgba(99,102,241,0.4)" : "none",
+                    background: chartView === "level" ? "linear-gradient(135deg,#0f766e,#0e8077)" : "transparent",
+                    color: chartView === "level" ? "#ffffff" : "#a2acb3",
+                    boxShadow: chartView === "level" ? "0 0 10px rgba(20,184,166,0.4)" : "none",
                   }}
                 >
                   🎓 Theo cấp độ
@@ -428,8 +403,8 @@ export default function StatisticsPage() {
               {/* Legend dot */}
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <div style={{ width: "10px", height: "10px", borderRadius: "3px",
-                  background: "linear-gradient(135deg,#6366f1,#8b5cf6)" }} />
-                <span style={{ fontSize: "11px", color: "#8892b0" }}>Số từ</span>
+                  background: "linear-gradient(135deg,#0f766e,#0e8077)" }} />
+                <span style={{ fontSize: "11px", color: "#a2acb3" }}>Số từ</span>
               </div>
             </div>
           </div>
@@ -441,7 +416,7 @@ export default function StatisticsPage() {
                 <div key={d.label} style={{ display: "flex", alignItems: "center", gap: "5px" }}>
                   <div style={{ width: "8px", height: "8px", borderRadius: "2px", background: d.color,
                     boxShadow: `0 0 6px ${d.glow}` }} />
-                  <span style={{ fontSize: "11px", color: "#8892b0", fontFamily: "Inter, sans-serif" }}>{d.label}</span>
+                  <span style={{ fontSize: "11px", color: "#a2acb3", fontFamily: "Inter, sans-serif" }}>{d.label}</span>
                 </div>
               ))}
             </div>
@@ -455,12 +430,12 @@ export default function StatisticsPage() {
             >
               <defs>
                 <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#8b5cf6" />
-                  <stop offset="100%" stopColor="#6366f1" />
+                  <stop offset="0%" stopColor="#2dd4bf" />
+                  <stop offset="100%" stopColor="#14b8a6" />
                 </linearGradient>
                 <linearGradient id="barGradHover" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#a78bfa" />
-                  <stop offset="100%" stopColor="#818cf8" />
+                  <stop offset="0%" stopColor="#5eead4" />
+                  <stop offset="100%" stopColor="#2dd4bf" />
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} stroke="rgba(255,255,255,0.05)" />
@@ -468,21 +443,21 @@ export default function StatisticsPage() {
                 dataKey="label"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#5a6a8a", fontSize: 12, fontFamily: "Inter, sans-serif" }}
+                tick={{ fill: "#a2acb3", fontSize: 12, fontFamily: "Inter, sans-serif" }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#5a6a8a", fontSize: 11, fontFamily: "Inter, sans-serif" }}
+                tick={{ fill: "#a2acb3", fontSize: 11, fontFamily: "Inter, sans-serif" }}
               />
               <Tooltip
                 content={<CustomTooltip isLevel={chartView === "level"} />}
-                cursor={{ fill: "rgba(99,102,241,0.06)", radius: 8 }}
+                cursor={{ fill: "rgba(20,184,166,0.06)", radius: 8 }}
               />
               <Bar
                 dataKey="words"
                 radius={[6, 6, 0, 0]}
-                label={{ position: "top", fill: "#8892b0", fontSize: 11, fontFamily: "Inter, sans-serif", fontWeight: 600 }}
+                label={{ position: "top", fill: "#a2acb3", fontSize: 11, fontFamily: "Inter, sans-serif", fontWeight: 600 }}
                 onMouseEnter={(_, index) => setHoveredBar(index)}
                 onMouseLeave={() => setHoveredBar(null)}
               >
@@ -502,7 +477,7 @@ export default function StatisticsPage() {
                     <Cell
                       key={index}
                       fill={isHovered ? "url(#barGradHover)" : "url(#barGrad)"}
-                      style={{ filter: isHovered ? "drop-shadow(0 0 8px rgba(139,92,246,0.6))" : "none", transition: "filter 0.2s ease" }}
+                      style={{ filter: isHovered ? "drop-shadow(0 0 8px rgba(45,212,191,0.6))" : "none", transition: "filter 0.2s ease" }}
                     />
                   );
                 })}
@@ -521,10 +496,10 @@ export default function StatisticsPage() {
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
             padding: "16px 24px", borderBottom: "0.8px solid rgba(255,255,255,0.06)", flexWrap: "wrap", gap: "12px" }}>
             <div>
-              <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "15px", fontWeight: 700, color: "#e8eaf6" }}>
+              <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "15px", fontWeight: 700, color: "#e9edef" }}>
                 Danh sách từ vựng
               </h2>
-              <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>
+              <p style={{ fontSize: "11px", color: "#a2acb3", marginTop: "2px" }}>
                 {vocabulary.length} từ · {vocabulary.filter(v => v.learned).length} đã học
               </p>
             </div>
@@ -541,9 +516,9 @@ export default function StatisticsPage() {
                   style={{
                     padding: "5px 14px", borderRadius: "9999px", fontSize: "12px", fontWeight: 500,
                     fontFamily: "Inter, sans-serif", cursor: "pointer", transition: "all 0.2s ease",
-                    background: filterMode === mode ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.05)",
-                    color:      filterMode === mode ? "#a5b4fc" : "#5a6a8a",
-                    border:     filterMode === mode ? "0.8px solid rgba(99,102,241,0.4)" : "0.8px solid rgba(255,255,255,0.07)",
+                    background: filterMode === mode ? "rgba(20,184,166,0.2)" : "rgba(255,255,255,0.05)",
+                    color:      filterMode === mode ? "#5eead4" : "#a2acb3",
+                    border:     filterMode === mode ? "0.8px solid rgba(20,184,166,0.4)" : "0.8px solid rgba(255,255,255,0.07)",
                   }}
                 >{label}</button>
               ))}
@@ -555,7 +530,7 @@ export default function StatisticsPage() {
             <div style={{
               display: "flex", gap: "8px", padding: "10px 24px", flexWrap: "wrap",
               borderBottom: "0.8px solid rgba(255,255,255,0.05)",
-              background: "rgba(99,102,241,0.03)",
+              background: "rgba(20,184,166,0.03)",
             }}>
               <Pill active={activeFolder === null} onClick={() => setActiveFolder(null)}>Tất cả chủ đề</Pill>
               {folderOptions.map(f => (
@@ -569,7 +544,7 @@ export default function StatisticsPage() {
             <div style={{
               display: "flex", gap: "8px", padding: "10px 24px", flexWrap: "wrap",
               borderBottom: "0.8px solid rgba(255,255,255,0.05)",
-              background: "rgba(99,102,241,0.03)",
+              background: "rgba(20,184,166,0.03)",
             }}>
               <Pill active={activeLevel === null} onClick={() => setActiveLevel(null)}>Tất cả cấp</Pill>
               {["Lv1", "Lv2", "Lv3", "Lv4", "Lv5", "Lv6"].map(lv => {
@@ -582,7 +557,7 @@ export default function StatisticsPage() {
                       padding: "4px 12px", borderRadius: "9999px", fontSize: "12px", fontWeight: 600,
                       fontFamily: "Inter, sans-serif", cursor: "pointer", transition: "all 0.2s ease",
                       background: isActive ? cfg.bg : "rgba(255,255,255,0.05)",
-                      color:      isActive ? cfg.color : "#5a6a8a",
+                      color:      isActive ? cfg.color : "#a2acb3",
                       border:     isActive ? `0.8px solid ${cfg.border}` : "0.8px solid rgba(255,255,255,0.07)",
                       boxShadow:  isActive ? `0 0 8px ${cfg.border}` : "none",
                     }}
@@ -600,7 +575,7 @@ export default function StatisticsPage() {
             padding: "10px 24px",
             borderBottom: "0.8px solid rgba(255,255,255,0.04)",
             fontSize: "11px", fontWeight: 600, textTransform: "uppercase",
-            letterSpacing: "0.06em", color: "#5a6a8a",
+            letterSpacing: "0.06em", color: "#a2acb3",
           }}>
             <span />
             <span>Từ vựng</span>
@@ -612,7 +587,7 @@ export default function StatisticsPage() {
           {/* Rows */}
           <div>
             {filteredVocab.length === 0 ? (
-              <p style={{ padding: "24px", textAlign: "center", color: "#5a6a8a", fontSize: "13px" }}>
+              <p style={{ padding: "24px", textAlign: "center", color: "#a2acb3", fontSize: "13px" }}>
                 Không có từ nào phù hợp.
               </p>
             ) : (
@@ -632,7 +607,7 @@ export default function StatisticsPage() {
                       transition: "background 0.2s ease",
                       cursor: "pointer",
                     }}
-                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.05)"; }}
+                    onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,184,166,0.05)"; }}
                     onMouseLeave={e => { e.currentTarget.style.background = "transparent"; }}
                   >
                     {/* Status square */}
@@ -640,27 +615,27 @@ export default function StatisticsPage() {
                       width: "28px", height: "28px", borderRadius: "8px",
                       display: "flex", alignItems: "center", justifyContent: "center",
                       fontSize: "13px", transition: "all 0.2s ease",
-                      background: item.learned ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.05)",
-                      border:     item.learned ? "0.8px solid rgba(16,185,129,0.3)" : "0.8px solid rgba(255,255,255,0.1)",
-                      color:      item.learned ? "#10b981" : "#5a6a8a",
+                      background: item.learned ? "rgba(134,162,77,0.15)" : "rgba(255,255,255,0.05)",
+                      border:     item.learned ? "0.8px solid rgba(134,162,77,0.3)" : "0.8px solid rgba(255,255,255,0.1)",
+                      color:      item.learned ? "#86a24d" : "#a2acb3",
                     }}>
                       {item.learned ? "✓" : "○"}
                     </div>
 
                     {/* Word */}
-                    <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: "14px", color: "#c7d2fe" }}>
+                    <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 600, fontSize: "14px", color: "#99f6e4" }}>
                       {item.word}
                     </span>
 
                     {/* Meaning */}
-                    <span style={{ fontSize: "13px", color: "#8892b0" }}>{item.meaning}</span>
+                    <span style={{ fontSize: "13px", color: "#a2acb3" }}>{item.meaning}</span>
 
                     {/* Folder */}
                     <span style={{
                       fontSize: "11px", padding: "3px 10px", borderRadius: "9999px", fontWeight: 500,
                       whiteSpace: "nowrap",
-                      background: "rgba(99,102,241,0.1)", color: "#a5b4fc",
-                      border: "0.8px solid rgba(99,102,241,0.2)",
+                      background: "rgba(20,184,166,0.1)", color: "#5eead4",
+                      border: "0.8px solid rgba(20,184,166,0.2)",
                     }}>
                       {item.folder}
                     </span>
@@ -686,12 +661,12 @@ export default function StatisticsPage() {
               width: "100%", padding: "14px",
               display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
               fontSize: "13px", fontWeight: 500, fontFamily: "Inter, sans-serif",
-              color: "#8892b0", background: "transparent",
+              color: "#a2acb3", background: "transparent",
               cursor: "pointer", transition: "all 0.2s ease",
               border: "none", borderTop: "0.8px solid rgba(255,255,255,0.06)",
             }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(99,102,241,0.06)"; e.currentTarget.style.color = "#a5b4fc"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#8892b0"; }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(20,184,166,0.06)"; e.currentTarget.style.color = "#5eead4"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#a2acb3"; }}
           >
             <span>{expanded ? "Thu gọn" : `Xem thêm ${vocabulary.length - 5} từ`}</span>
             <span style={{ display: "inline-block", transform: expanded ? "rotate(180deg)" : "rotate(0deg)", transition: "transform 0.3s ease" }}>↓</span>

@@ -1,0 +1,9 @@
+# name: Sức khỏe & cơ thể
+# icon: 💪
+# color: #ef4444
+# description: Các bộ phận cơ thể, bệnh thường gặp và chăm sóc sức khỏe.
+head face eye ear nose mouth tooth tongue neck shoulder arm elbow hand finger thumb chest back
+stomach leg knee foot toe skin bone muscle heart lung brain blood health healthy sick ill disease
+illness fever cough cold headache toothache pain medicine pill tablet vitamin doctor nurse dentist
+hospital clinic pharmacy patient injury wound bandage cure treatment surgery allergy diet exercise
+rest sleep energy tired weak strong

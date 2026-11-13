@@ -1,104 +1,64 @@
-// ProblemSolution.jsx - Đã sửa hoàn chỉnh
+// Vì sao quên & cách Learn Today giải quyết. Đồ thị là hình minh hoạ NGUYÊN LÝ (không phải số liệu đo).
+import Section from './Section';
+import { IconAlert, IconRepeat, IconCheck } from '../../brand/icons';
 
-const problemPoints = [
-  "Học dồn dập 50 từ mới cùng lúc trước ngày thi",
-  "Quên tới 80% lượng từ vựng chỉ sau 48 giờ",
-  "Không có lộ trình ôn tập định kỳ, dễ nản chí",
-  "Học thụ động, thiếu cơ hội luyện viết, thực hành",
-];
-
-const solutionPoints = [
-  "Học thông minh hơn, không cần học nhiều hơn",
-  "Tự động nhắc nhở ôn tập vào đúng khung giờ vàng",
-  "Ghi nhớ từ vựng lâu hơn gấp 3 lần với ít nỗ lực hơn",
-  "Kết hợp đặt câu thực tế hỗ trợ sửa lỗi tức thì bằng AI",
-];
+function CurveIllustration() {
+  return (
+    <svg viewBox="0 0 420 220" className="w-full" role="img" aria-label="Minh hoạ: không ôn thì trí nhớ giảm nhanh, ôn đúng lúc thì trí nhớ được giữ cao">
+      {[40, 100, 160].map((y) => <line key={y} x1="30" x2="400" y1={y} y2={y} stroke="#2b3238" strokeWidth="1" />)}
+      <line x1="30" y1="190" x2="400" y2="190" stroke="#3d474e" strokeWidth="1.5" />
+      <line x1="30" y1="20" x2="30" y2="190" stroke="#3d474e" strokeWidth="1.5" />
+      {/* không ôn: giảm dần (đỏ) */}
+      <path d="M30 40 C 80 110, 130 150, 400 176" fill="none" stroke="#f87171" strokeWidth="3" strokeLinecap="round" />
+      {/* có ôn: răng cưa giữ cao (xanh ngọc) */}
+      <path d="M30 40 C 60 80, 80 90, 100 100 L100 42 C 135 82, 160 92, 190 104 L190 46 C 235 80, 270 88, 310 100 L310 50 C 350 78, 380 84, 400 88" fill="none" stroke="#2dd4bf" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+      {[100, 190, 310].map((x) => <circle key={x} cx={x} cy={44} r="5" fill="#a3bd6a" stroke="#161a1d" strokeWidth="2" />)}
+      <text x="36" y="14" fill="#848f97" fontSize="11">Trí nhớ</text>
+      <text x="360" y="208" fill="#848f97" fontSize="11">Thời gian</text>
+      <text x="212" y="160" fill="#f87171" fontSize="12" fontWeight="600">Không ôn lại</text>
+      <text x="236" y="66" fill="#5eead4" fontSize="12" fontWeight="600">Ôn đúng lúc (●)</text>
+    </svg>
+  );
+}
 
 export default function ForgettingProblemSolutionSection() {
-  const handleExploreClick = () => {
-    const target = document.getElementById("how-it-works");
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-  };
-
   return (
-    <section
-      className="relative flex w-full flex-col items-center gap-12 bg-white px-6 py-16 sm:px-10 lg:px-20 lg:py-24"
-      aria-labelledby="forgetting-problem-heading"
+    <Section
+      tone="surface"
+      eyebrow="Vấn đề"
+      title="Học xong là quên? Đó là chuyện bình thường."
+      subtitle="Não bộ quên nhanh những gì không được nhắc lại. Cách chữa không phải là học nhiều hơn, mà là ôn đúng thời điểm."
     >
-      <header className="relative flex w-full flex-[0_0_auto] flex-col items-center gap-6 self-stretch">
-        <div className="relative flex w-full flex-[0_0_auto] flex-col items-center gap-4 self-stretch">
-          <p className="relative mt-[-1.00px] self-stretch text-center font-bold text-sm leading-[normal] tracking-[0.21px] text-indigo-600 [font-family:'Rethink_Sans-Bold',Helvetica]">
-            VẤN ĐỀ &amp; GIẢI PHÁP
-          </p>
-          <h2
-            id="forgetting-problem-heading"
-            className="relative self-stretch text-center font-bold text-4xl leading-[43.2px] tracking-[0] text-slate-900 [font-family:'Lexend_Deca-Bold',Helvetica]"
-          >
-            Bạn từng học hàng trăm từ nhưng vài ngày sau quên sạch?
-          </h2>
-          <p className="relative self-stretch text-center font-normal text-lg leading-[28.8px] tracking-[0] text-slate-600 [font-family:'Rethink_Sans-Regular',Helvetica]">
-            Đó là vì bạn chưa ôn tập đúng thời điểm bộ não chuẩn bị quên. Learn
-            Today giải quyết triệt để vấn đề này.
-          </p>
-        </div>
-      </header>
-      <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-8 self-stretch md:flex-row">
-        <article className="relative flex flex-1 grow flex-col items-start gap-6 rounded-2xl border border-solid border-red-100 bg-[#fff5f5] p-8">
-          <div className="relative inline-flex flex-[0_0_auto] items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-[20px] bg-red-100">
-              <div className="relative h-5 w-5">
-                <img
-                  className="absolute left-[3.33%] top-[24.17%] h-[75.83%] w-[96.67%]"
-                  alt=""
-                  aria-hidden="true"
-                  src="https://c.animaapp.com/zdBS24aH/img/vector-17.svg"
-                />
-              </div>
-            </div>
-            <h3 className="relative w-fit font-bold text-xl leading-[normal] tracking-[0] text-red-800 [font-family:'Lexend_Deca-Bold',Helvetica]">
-              Học nhồi nhét truyền thống
-            </h3>
+      <div className="grid items-stretch gap-6 lg:grid-cols-2">
+        <article className="rounded-2xl border border-red-500/25 bg-bg p-7">
+          <div className="mb-4 flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-red-500/15 text-red-300"><IconAlert size={20} /></span>
+            <h3 className="font-display text-xl font-bold text-ink">Cách học thường gặp</h3>
           </div>
-          <ul className="relative self-stretch font-normal text-base leading-[25.6px] tracking-[0] text-red-900 [font-family:'Rethink_Sans-Regular',Helvetica]">
-            {problemPoints.map((point) => (
-              <li key={point}>• {point}</li>
-            ))}
+          <ul className="space-y-3 text-ink-muted">
+            <li className="flex gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />Học dồn một lần rồi ít khi mở lại.</li>
+            <li className="flex gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />Không biết từ nào sắp quên, từ nào đã chắc.</li>
+            <li className="flex gap-3"><span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-red-400" />Gặp lại từ cũ thì như từ mới hoàn toàn.</li>
           </ul>
         </article>
-        <article className="relative flex flex-1 grow flex-col items-start gap-6 rounded-2xl border border-solid border-indigo-100 bg-[#eef2f6] p-8">
-          <div className="relative inline-flex flex-[0_0_auto] items-center gap-3">
-            <div className="relative flex h-10 w-10 items-center justify-center rounded-[20px] bg-indigo-100">
-              <div className="relative h-5 w-5">
-                <img
-                  className="absolute left-[7.49%] top-[3.32%] h-[96.68%] w-[92.51%]"
-                  alt=""
-                  aria-hidden="true"
-                  src="https://c.animaapp.com/zdBS24aH/img/vector-19.svg"
-                />
-              </div>
-            </div>
-            <h3 className="relative w-fit font-bold text-xl leading-[normal] tracking-[0] text-indigo-900 [font-family:'Lexend_Deca-Bold',Helvetica]">
-              Học thông minh cùng Learn Today
-            </h3>
+
+        <article className="rounded-2xl border border-brand-500/30 bg-bg p-7">
+          <div className="mb-4 flex items-center gap-3">
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/15 text-brand-300"><IconRepeat size={20} /></span>
+            <h3 className="font-display text-xl font-bold text-ink">Cách Learn Today làm</h3>
           </div>
-          <ul className="relative self-stretch font-normal text-base leading-[25.6px] tracking-[0] text-slate-900 [font-family:'Rethink_Sans-Regular',Helvetica]">
-            {solutionPoints.map((point) => (
-              <li key={point}>• {point}</li>
-            ))}
+          <ul className="space-y-3 text-ink-muted">
+            <li className="flex gap-3"><IconCheck size={18} className="mt-1 shrink-0 text-moss-400" />Mỗi từ có cấp độ riêng, lên cấp khi bạn nhớ đúng.</li>
+            <li className="flex gap-3"><IconCheck size={18} className="mt-1 shrink-0 text-moss-400" />Hệ thống tự tính ngày ôn kế tiếp cho từng từ.</li>
+            <li className="flex gap-3"><IconCheck size={18} className="mt-1 shrink-0 text-moss-400" />Sai nhiều lần? Bạn chọn lùi cấp, quay về cấp 1 hoặc bỏ qua.</li>
           </ul>
         </article>
       </div>
-      <button
-        type="button"
-        onClick={handleExploreClick}
-        className="relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-6 py-3 transition-colors hover:bg-indigo-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600 focus-visible:ring-offset-2"
-      >
-        <span className="relative mt-[-1.00px] w-fit font-semibold text-[15px] leading-[normal] tracking-[0] text-white [font-family:'Rethink_Sans-SemiBold',Helvetica]">
-          Khám phá cách học
-        </span>
-      </button>
-    </section>
+
+      <div className="mx-auto mt-10 max-w-xl rounded-2xl border border-line bg-bg p-5">
+        <CurveIllustration />
+        <p className="mt-2 text-center text-xs text-ink-subtle">Hình minh hoạ nguyên lý ôn tập ngắt quãng</p>
+      </div>
+    </Section>
   );
 }

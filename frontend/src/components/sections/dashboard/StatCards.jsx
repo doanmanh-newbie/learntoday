@@ -149,7 +149,7 @@ function Pill({ active, onClick, children }) {
         fontWeight: 500,
         fontFamily: "Inter, sans-serif",
         background: active ? "rgba(99,102,241,0.2)"   : "rgba(255,255,255,0.05)",
-        color:      active ? "#a5b4fc"                 : "#5a6a8a",
+        color:      active ? "#a5b4fc"                 : "#8190b3",
         border:     active ? "0.8px solid rgba(99,102,241,0.4)" : "0.8px solid rgba(255,255,255,0.07)",
         transition: "all 0.2s ease",
         cursor: "pointer",
@@ -250,7 +250,7 @@ export default function StatisticsPage() {
             </div>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
-                186<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/247</span>
+                186<span style={{ fontSize: "13px", color: "#8190b3", fontWeight: 600 }}>/247</span>
               </p>
               <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>từ đã học</p>
             </div>
@@ -300,7 +300,7 @@ export default function StatisticsPage() {
             </div>
             <div>
               <p style={{ fontFamily: "Outfit, sans-serif", fontSize: "22px", fontWeight: 800, color: "#e8eaf6" }}>
-                4<span style={{ fontSize: "13px", color: "#5a6a8a", fontWeight: 600 }}>/10</span>
+                4<span style={{ fontSize: "13px", color: "#8190b3", fontWeight: 600 }}>/10</span>
               </p>
               <p style={{ fontSize: "11px", color: "#8892b0", marginTop: "2px" }}>mục tiêu hôm nay</p>
             </div>
@@ -322,7 +322,7 @@ export default function StatisticsPage() {
               <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "15px", fontWeight: 700, color: "#e8eaf6" }}>
                 Số từ đã học
               </h2>
-              <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>
+              <p style={{ fontSize: "11px", color: "#8190b3", marginTop: "2px" }}>
                 {chartView === "level" ? "Phân loại theo cấp độ" : period === "week" ? "7 ngày qua" : "12 tháng qua"}
               </p>
             </div>
@@ -401,12 +401,12 @@ export default function StatisticsPage() {
                 dataKey="label"
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#5a6a8a", fontSize: 12, fontFamily: "Inter, sans-serif" }}
+                tick={{ fill: "#8190b3", fontSize: 12, fontFamily: "Inter, sans-serif" }}
               />
               <YAxis
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: "#5a6a8a", fontSize: 11, fontFamily: "Inter, sans-serif" }}
+                tick={{ fill: "#8190b3", fontSize: 11, fontFamily: "Inter, sans-serif" }}
               />
               <Tooltip
                 content={<CustomTooltip isLevel={chartView === "level"} />}
@@ -457,7 +457,7 @@ export default function StatisticsPage() {
               <h2 style={{ fontFamily: "Outfit, sans-serif", fontSize: "15px", fontWeight: 700, color: "#e8eaf6" }}>
                 Danh sách từ vựng
               </h2>
-              <p style={{ fontSize: "11px", color: "#5a6a8a", marginTop: "2px" }}>
+              <p style={{ fontSize: "11px", color: "#8190b3", marginTop: "2px" }}>
                 {vocabData.length} từ · {vocabData.filter(v => v.learned).length} đã học
               </p>
             </div>
@@ -475,7 +475,7 @@ export default function StatisticsPage() {
                     padding: "5px 14px", borderRadius: "9999px", fontSize: "12px", fontWeight: 500,
                     fontFamily: "Inter, sans-serif", cursor: "pointer", transition: "all 0.2s ease",
                     background: filterMode === mode ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.05)",
-                    color:      filterMode === mode ? "#a5b4fc" : "#5a6a8a",
+                    color:      filterMode === mode ? "#a5b4fc" : "#8190b3",
                     border:     filterMode === mode ? "0.8px solid rgba(99,102,241,0.4)" : "0.8px solid rgba(255,255,255,0.07)",
                   }}
                 >{label}</button>
@@ -515,7 +515,7 @@ export default function StatisticsPage() {
                       padding: "4px 12px", borderRadius: "9999px", fontSize: "12px", fontWeight: 600,
                       fontFamily: "Inter, sans-serif", cursor: "pointer", transition: "all 0.2s ease",
                       background: isActive ? cfg.bg : "rgba(255,255,255,0.05)",
-                      color:      isActive ? cfg.color : "#5a6a8a",
+                      color:      isActive ? cfg.color : "#8190b3",
                       border:     isActive ? `0.8px solid ${cfg.border}` : "0.8px solid rgba(255,255,255,0.07)",
                       boxShadow:  isActive ? `0 0 8px ${cfg.border}` : "none",
                     }}
@@ -533,7 +533,7 @@ export default function StatisticsPage() {
             padding: "10px 24px",
             borderBottom: "0.8px solid rgba(255,255,255,0.04)",
             fontSize: "11px", fontWeight: 600, textTransform: "uppercase",
-            letterSpacing: "0.06em", color: "#5a6a8a",
+            letterSpacing: "0.06em", color: "#8190b3",
           }}>
             <span />
             <span>Từ vựng</span>
@@ -545,7 +545,7 @@ export default function StatisticsPage() {
           {/* Rows */}
           <div>
             {filteredVocab.length === 0 ? (
-              <p style={{ padding: "24px", textAlign: "center", color: "#5a6a8a", fontSize: "13px" }}>
+              <p style={{ padding: "24px", textAlign: "center", color: "#8190b3", fontSize: "13px" }}>
                 Không có từ nào phù hợp.
               </p>
             ) : (
@@ -575,7 +575,7 @@ export default function StatisticsPage() {
                       fontSize: "13px", transition: "all 0.2s ease",
                       background: item.learned ? "rgba(16,185,129,0.15)" : "rgba(255,255,255,0.05)",
                       border:     item.learned ? "0.8px solid rgba(16,185,129,0.3)" : "0.8px solid rgba(255,255,255,0.1)",
-                      color:      item.learned ? "#10b981" : "#5a6a8a",
+                      color:      item.learned ? "#10b981" : "#8190b3",
                     }}>
                       {item.learned ? "✓" : "○"}
                     </div>

@@ -23,6 +23,7 @@ def upgrade():
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.add_column(sa.Column('study_minutes_today', sa.Integer(), server_default='0', nullable=True))
         batch_op.add_column(sa.Column('study_minutes_date', sa.Date(), nullable=True))
+        batch_op.add_column(sa.Column('last_reminder_date', sa.Date(), nullable=True))
 
     with op.batch_alter_table('words', schema=None) as batch_op:
         batch_op.add_column(sa.Column('meaning_en', sa.Text(), nullable=True))
@@ -67,5 +68,6 @@ def downgrade():
         batch_op.drop_index('idx_words_word')
         batch_op.drop_column('meaning_en')
     with op.batch_alter_table('users', schema=None) as batch_op:
+        batch_op.drop_column('last_reminder_date')
         batch_op.drop_column('study_minutes_date')
         batch_op.drop_column('study_minutes_today')

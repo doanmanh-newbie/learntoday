@@ -39,7 +39,8 @@ class AuthFlow(ApiTestCase):
         r = self.client.post('/api/auth/login', json={'email': 'KOTA@example.com', 'password': 'secret123'})
         self.assertEqual(r.status_code, 200)
 
-        rt = r.get_json()['refresh_token']
+        self.assertNotIn('refresh_token', r.get_json())                    # refresh token nằm trong cookie HttpOnly, không trong JSON
+        rt = self.refresh_cookie(r)
         r2 = self.client.post('/api/auth/refresh-token', json={'refresh_token': rt})
         self.assertEqual(r2.status_code, 200)
         self.assertIn('access_token', r2.get_json())
@@ -62,18 +63,30 @@ class AuthFlow(ApiTestCase):
         for _ in range(5):
             r = self.client.post('/api/auth/login', json={'email': 'kota@example.com', 'password': 'secret123'})
             self.assertEqual(r.status_code, 200, r.get_json())
-            tokens.add(r.get_json()['refresh_token'])
+            tokens.add(self.refresh_cookie(r))
         self.assertEqual(len(tokens), 5)
 
     def test_refresh_token_cannot_be_used_as_access_token(self):
-        _, data = self.register()
-        r = self.client.get('/api/auth/me', headers={'Authorization': f"Bearer {data['refresh_token']}"})
+        self.register()
+        r = self.client.get('/api/auth/me', headers={'Authorization': f"Bearer {self.refresh_cookie(self.last_response)}"})
         self.assertEqual(r.status_code, 401)
 
     def test_duplicate_register(self):
         self.register()
-        r = self.client.post('/api/auth/register', json={'username': 'x', 'email': 'KOTA@example.com', 'password': 'p'})
+        r = self.client.post('/api/auth/register', json={'username': 'x', 'email': 'KOTA@example.com', 'password': 'password123'})
         self.assertEqual(r.status_code, 400)
+        self.assertIn('Email', r.get_json()['message'])
+
+    def test_weak_password_rejected_on_register_and_reset(self):
+        r = self.client.post('/api/auth/register', json={'username': 'x', 'email': 'x@example.com', 'password': 'short'})
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('8', r.get_json()['message'])
+        self.register()
+        self.app.debug = True
+        token = self.client.post('/api/auth/forgot-password', json={'email': 'kota@example.com'}).get_json()['reset_token']
+        self.app.debug = False
+        weak = self.client.post('/api/auth/reset-password', json={'reset_token': token, 'new_password': '1234567'})
+        self.assertEqual(weak.status_code, 400)
 
 
 class FoldersAndLearning(ApiTestCase):
@@ -188,20 +201,29 @@ class FoldersAndLearning(ApiTestCase):
 
 class StudyTime(ApiTestCase):
     def test_daily_minutes_goal_not_lifetime(self):
+        from app.models import User
+        from datetime import timedelta as td
         headers, _ = self.register()
-        r = self.client.post('/api/study/heartbeat', json={'minutes': 10}, headers=headers).get_json()
-        self.assertFalse(r['goal_met'])
-        r = self.client.post('/api/study/heartbeat', json={'minutes': 5}, headers=headers).get_json()
+
+        def beat():
+            # Server tự đo thời gian: lùi mốc lần cộng trước 61 giây để giả lập "đã qua 1 phút thật"
+            u = User.query.first()
+            if u.last_heartbeat_at:
+                u.last_heartbeat_at = u.last_heartbeat_at - td(seconds=61)
+                self.db.session.commit()
+            return self.client.post('/api/study/heartbeat', json={'minutes': 30}, headers=headers).get_json()   # minutes bị bỏ qua
+
+        for _ in range(14):
+            self.assertFalse(beat()['goal_met'])
+        r = beat()
         self.assertTrue(r['goal_met'])
         self.assertEqual(r['study_minutes_today'], 15)
 
         # sang ngày mới -> bộ đếm ngày reset, tổng cộng dồn giữ nguyên
-        from app.models import User
-        from datetime import timedelta as td
         u = User.query.first()
         u.study_minutes_date = u.study_minutes_date - td(days=1)
         self.db.session.commit()
-        r = self.client.post('/api/study/heartbeat', json={'minutes': 1}, headers=headers).get_json()
+        r = beat()
         self.assertEqual((r['study_minutes_today'], r['total_study_minutes'], r['goal_met']), (1, 16, False))
 
     def test_heartbeat_bad_input(self):
@@ -241,3 +263,163 @@ class Seeding(ApiTestCase):
         seed.seed_words_and_folders()
         self.assertEqual(Word.query.filter_by(word='physics').one().meaning, 'vật lý học')
         self.assertEqual(Word.query.filter_by(word='physics').count(), 1)
+
+
+class ProfileSettings(ApiTestCase):
+    def test_update_settings_flow_into_daily_target(self):
+        headers, _ = self.register()
+        r = self.client.put('/api/profile', headers=headers, json={
+            'daily_goal': 20, 'review_limit': 15, 'email_reminder': False, 'reminder_time': 12, 'tts_voice': 'en-GB'})
+        self.assertEqual(r.status_code, 200, r.get_json())
+        u = r.get_json()['user']
+        self.assertEqual((u['daily_goal'], u['review_limit'], u['tts_voice'], u['reminder_time']),
+                         (20, 15, 'en-GB', '12:00:00'))
+        prog = self.client.get('/api/learning/progress/today', headers=headers).get_json()
+        self.assertEqual(prog['daily_target'], 20)               # mục tiêu ngày ở Dashboard lấy từ cài đặt
+
+    def test_bad_input_is_400_not_500(self):
+        headers, _ = self.register()
+        for body in ({'daily_goal': 'abc'}, {'daily_goal': 7}, {'review_limit': None}, {'reminder_time': 'xx:yy'},
+                     {'reminder_time': '25:00'}, {'reminder_time': 3}, {'tts_voice': 'vi-VN'}, {'username': '  '},
+                     {'email_reminder': 'yes'}):
+            r = self.client.put('/api/profile', headers=headers, json=body)
+            self.assertEqual(r.status_code, 400, (body, r.get_json()))
+
+    def test_username_unique_case_insensitive(self):
+        headers, _ = self.register()
+        self.register(username='Other', email='o@example.com')
+        r = self.client.put('/api/profile', headers=headers, json={'username': 'OTHER'})
+        self.assertEqual(r.status_code, 400)
+
+    def test_folder_words_pagination_and_filters(self):
+        from app.models import Folder, Word, FolderWord
+        headers, _ = self.register()
+        self.db.session.add(Folder(id='big', name='Lớn', type='system', word_count=45))
+        for i in range(45):
+            self.db.session.add(Word(id=f'b{i}', word=f'term{i:02d}', meaning='nghĩa', word_type='noun' if i % 3 else 'verb'))
+            self.db.session.add(FolderWord(id=f'bf{i}', folder_id='big', word_id=f'b{i}', order_index=i))
+        self.db.session.commit()
+        p1 = self.client.get('/api/folders/big/words?page=1&limit=20', headers=headers).get_json()
+        p3 = self.client.get('/api/folders/big/words?page=3&limit=20', headers=headers).get_json()
+        self.assertEqual((len(p1['words']), p1['pagination']['has_more'], p1['pagination']['total']), (20, True, 45))
+        self.assertEqual((len(p3['words']), p3['pagination']['has_more']), (5, False))
+        verbs = self.client.get('/api/folders/big/words?word_type=verb&limit=100', headers=headers).get_json()
+        self.assertEqual(verbs['pagination']['total'], 15)
+        hit = self.client.get('/api/folders/big/words?search=term07', headers=headers).get_json()
+        self.assertEqual([w['word'] for w in hit['words']], ['term07'])
+
+    def test_folder_words_status_filter(self):
+        headers, _ = self.register()
+        self.seed_folder()
+        self.client.post('/api/words/w0/complete-learn', headers=headers)
+        learned = self.client.get('/api/folders/f1/words?status=learned', headers=headers).get_json()
+        new = self.client.get('/api/folders/f1/words?status=new', headers=headers).get_json()
+        self.assertEqual([w['word'] for w in learned['words']], ['itinerary'])
+        self.assertEqual(sorted(w['word'] for w in new['words']), ['luggage', 'passport'])
+
+
+class PasswordReset(ApiTestCase):
+    def test_forgot_password_never_leaks_token_or_account_existence(self):
+        self.register()
+        known = self.client.post('/api/auth/forgot-password', json={'email': 'kota@example.com'})
+        unknown = self.client.post('/api/auth/forgot-password', json={'email': 'nobody@example.com'})
+        self.assertEqual(known.status_code, 200)
+        self.assertNotIn('reset_token', known.get_json())               # không còn tặng token cho người gọi
+        self.assertEqual(known.get_json(), unknown.get_json())           # không dò được email nào có tài khoản
+
+    def test_reset_token_only_in_debug_and_still_works(self):
+        headers, _ = self.register()
+        self.app.debug = True
+        token = self.client.post('/api/auth/forgot-password', json={'email': 'kota@example.com'}).get_json()['reset_token']
+        self.app.debug = False
+        r = self.client.post('/api/auth/reset-password', json={'reset_token': token, 'new_password': 'newpass123'})
+        self.assertEqual(r.status_code, 200)
+        ok = self.client.post('/api/auth/login', json={'email': 'kota@example.com', 'password': 'newpass123'})
+        self.assertEqual(ok.status_code, 200)
+        old_refresh = self.client.post('/api/auth/refresh-token', json={'refresh_token': 'x'})
+        self.assertEqual(old_refresh.status_code, 401)
+
+
+class EmailReminders(ApiTestCase):
+    SMTP_ENV = {'SMTP_HOST': 'smtp.test', 'SMTP_USER': 'u@test', 'SMTP_PASS': 'p', 'SMTP_PORT': '587'}
+
+    def _due_user(self, hour=20):
+        """User bật nhắc nhở, giờ nhận = hour, có 1 từ đến hạn."""
+        from datetime import time
+        from app.models import User, UserWord, Word
+        headers, _ = self.register()
+        self.db.session.add(Word(id='r1', word='deadline', meaning='hạn chót'))
+        self.db.session.commit()
+        self.client.post('/api/words/r1/complete-learn', headers=headers)
+        UserWord.query.update({'next_review': datetime.utcnow() - timedelta(hours=1)})
+        user = User.query.first()
+        user.email_reminder, user.reminder_time = True, time(hour)
+        self.db.session.commit()
+        return headers, user
+
+    def test_send_test_does_not_claim_success_without_smtp(self):
+        import os
+        from unittest import mock
+        headers, _ = self.register()
+        with mock.patch.dict(os.environ, {}, clear=False):
+            for k in self.SMTP_ENV:
+                os.environ.pop(k, None)
+            body = self.client.post('/api/study/reminders/send-test', headers=headers).get_json()
+        self.assertFalse(body['sent'])
+        self.assertIn('email_preview', body)
+
+    def test_send_test_really_sends_via_smtp(self):
+        import os
+        from unittest import mock
+        headers, _ = self.register()
+        with mock.patch.dict(os.environ, self.SMTP_ENV), mock.patch('app.services.email_service.smtplib.SMTP') as smtp:
+            body = self.client.post('/api/study/reminders/send-test', headers=headers).get_json()
+        self.assertTrue(body['sent'])
+        server = smtp.return_value
+        server.starttls.assert_called_once()
+        server.login.assert_called_once_with('u@test', 'p')
+        self.assertEqual(server.send_message.call_args[0][0]['To'], 'kota@example.com')
+
+    def test_smtp_failure_is_502_not_fake_success(self):
+        import os, smtplib
+        from unittest import mock
+        headers, _ = self.register()
+        with mock.patch.dict(os.environ, self.SMTP_ENV), \
+             mock.patch('app.services.email_service.smtplib.SMTP', side_effect=smtplib.SMTPAuthenticationError(535, b'bad')):
+            r = self.client.post('/api/study/reminders/send-test', headers=headers)
+        self.assertEqual(r.status_code, 502)
+        self.assertFalse(r.get_json()['sent'])
+
+    def test_batch_sends_only_at_chosen_hour_once_per_day(self):
+        import os
+        from datetime import datetime as dt
+        from unittest import mock
+        from app.models.learning_logs import VN_TZ
+        from app.services.reminder_service import send_due_reminders
+        self._due_user(hour=20)
+        with mock.patch.dict(os.environ, self.SMTP_ENV), mock.patch('app.services.email_service.smtplib.SMTP') as smtp:
+            wrong_hour = send_due_reminders(dt(2026, 10, 18, 8, 5, tzinfo=VN_TZ))
+            right_hour = send_due_reminders(dt(2026, 10, 18, 20, 5, tzinfo=VN_TZ))
+            again = send_due_reminders(dt(2026, 10, 18, 20, 40, tzinfo=VN_TZ))      # chạy lại cùng giờ
+            next_day = send_due_reminders(dt(2026, 10, 19, 20, 5, tzinfo=VN_TZ))
+        self.assertEqual((wrong_hour['sent'], right_hour['sent'], again['sent'], next_day['sent']), (0, 1, 0, 1))
+        self.assertEqual(smtp.return_value.send_message.call_count, 2)
+
+    def test_batch_skips_users_without_due_words_or_opted_out(self):
+        import os
+        from datetime import datetime as dt
+        from unittest import mock
+        from app.models import User, UserWord
+        from app.models.learning_logs import VN_TZ
+        from app.services.reminder_service import send_due_reminders
+        _, user = self._due_user(hour=20)
+        with mock.patch.dict(os.environ, self.SMTP_ENV), mock.patch('app.services.email_service.smtplib.SMTP') as smtp:
+            UserWord.query.update({'next_review': datetime.utcnow() + timedelta(days=1)})   # chưa đến hạn
+            self.db.session.commit()
+            none_due = send_due_reminders(dt(2026, 10, 18, 20, 5, tzinfo=VN_TZ))
+            UserWord.query.update({'next_review': datetime.utcnow() - timedelta(hours=1)})
+            User.query.update({'email_reminder': False})                                    # đã tắt nhắc nhở
+            self.db.session.commit()
+            opted_out = send_due_reminders(dt(2026, 10, 18, 20, 5, tzinfo=VN_TZ))
+        self.assertEqual((none_due['sent'], none_due['skipped_no_due'], opted_out['sent']), (0, 1, 0))
+        smtp.return_value.send_message.assert_not_called()

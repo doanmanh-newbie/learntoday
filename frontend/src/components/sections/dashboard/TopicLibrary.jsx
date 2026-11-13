@@ -1,6 +1,9 @@
 // src/components/sections/dashboard/TopicLibrary.jsx
 import { useState, useEffect, useCallback } from "react";
-import { foldersApi } from "../../../api/client";
+import { foldersApi, FOLDERS_CACHE_KEY } from "../../../api/client";
+import { swr, peek } from "../../../api/cache";
+import { useNavigate } from "react-router-dom";
+import { PHRASE_GROUPS, PHRASE_ALL_ID } from "../../../features/phrases/phrasesData";
 
 // ── Map ảnh theo tên folder (backend chưa có field image) ─────────────
 const FOLDER_IMAGES = {
@@ -19,58 +22,37 @@ const FOLDER_IMAGES = {
 
 const DEFAULT_IMG = 'https://images.unsplash.com/photo-1499750310107-5fef28a66643?w=600&h=400&fit=crop&auto=format';
 
-// ── Phrases folders (giữ mock vì chưa có backend) ─────────────────────
-const PHRASE_FOLDERS = [
-  {
-    id: "pf1", name: "Cụm từ Công việc",
-    desc: "Collocations & phrases thông dụng trong môi trường văn phòng",
-    count: 64, color: "#6366f1", glow: "rgba(99,102,241,0.25)",
-    border: "rgba(99,102,241,0.2)", bg: "rgba(99,102,241,0.06)",
-    phrases: ["take the lead", "meet a deadline", "on the same page", "touch base"],
-  },
-  {
-    id: "pf2", name: "Thành ngữ thông dụng",
-    desc: "Idioms hay gặp trong văn nói và văn viết tiếng Anh",
-    count: 48, color: "#f59e0b", glow: "rgba(245,158,11,0.25)",
-    border: "rgba(245,158,11,0.2)", bg: "rgba(245,158,11,0.06)",
-    phrases: ["hit the nail on the head", "under the weather", "bite the bullet", "break a leg"],
-  },
-  {
-    id: "pf3", name: "Cụm động từ (Phrasal Verbs)",
-    desc: "Các phrasal verb quan trọng nhất cho giao tiếp hàng ngày",
-    count: 80, color: "#10b981", glow: "rgba(16,185,129,0.25)",
-    border: "rgba(16,185,129,0.2)", bg: "rgba(16,185,129,0.06)",
-    phrases: ["give up", "look into", "carry on", "run out of"],
-  },
-  {
-    id: "pf4", name: "Cụm từ Du lịch",
-    desc: "Hội thoại và từ vựng thiết yếu khi đi du lịch nước ngoài",
-    count: 52, color: "#34d399", glow: "rgba(52,211,153,0.25)",
-    border: "rgba(52,211,153,0.2)", bg: "rgba(52,211,153,0.06)",
-    phrases: ["check in / check out", "round trip", "local cuisine", "off the beaten track"],
-  },
-];
+// ── Folder cụm từ: dữ liệu thật ở features/phrases/phrasesData.js ───────────
+const hexToRgba = (hex, a) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`;
+};
+const PHRASE_FOLDERS = PHRASE_GROUPS.map((g) => ({
+  id: g.id, name: g.name, desc: g.desc, count: g.phrases.length, color: g.color,
+  glow: hexToRgba(g.color, 0.25), border: hexToRgba(g.color, 0.2), bg: hexToRgba(g.color, 0.06),
+  phrases: g.phrases.slice(0, 4).map((p) => p.phrase),
+}));
 
 // Trạng thái hiển thị theo % tiến độ THẬT của folder. KHÔNG hiển thị "Level" ở cấp folder:
 // SRS Level chỉ có nghĩa với TỪNG TỪ (STT 8) - 1 folder có từ ở nhiều level khác nhau.
 // (Badge 'Lv3' cứng này đã tái phát nhiều lần qua các bản src.zip.)
 const STATUS_CFG = {
-  done:    { label: "✓ Hoàn thành", color: "#10b981", bg: "rgba(16,185,129,0.15)", border: "rgba(16,185,129,0.3)" },
-  started: { label: "▶ Đang học",   color: "#a5b4fc", bg: "rgba(165,180,252,0.15)", border: "rgba(165,180,252,0.3)" },
-  new:     { label: "Chưa học",     color: "#8892b0", bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.1)" },
+  done:    { label: "✓ Hoàn thành", color: "#86a24d", bg: "rgba(134,162,77,0.15)", border: "rgba(134,162,77,0.3)" },
+  started: { label: "▶ Đang học",   color: "#5eead4", bg: "rgba(94,234,212,0.15)", border: "rgba(94,234,212,0.3)" },
+  new:     { label: "Chưa học",     color: "#a2acb3", bg: "rgba(255,255,255,0.06)", border: "rgba(255,255,255,0.1)" },
 };
 
 // ── Loading ────────────────────────────────────────────────────────────
 function LoadingState() {
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16, background: '#07091a' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: 16, background: '#0f1214' }}>
       <div style={{
         width: 48, height: 48, borderRadius: '50%',
-        border: '3px solid rgba(99,102,241,0.2)',
-        borderTopColor: '#6366f1',
+        border: '3px solid rgba(20,184,166,0.2)',
+        borderTopColor: '#14b8a6',
         animation: 'spin 1s linear infinite',
       }} />
-      <p style={{ color: '#8892b0', fontSize: 14 }}>Đang tải chủ đề...</p>
+      <p style={{ color: '#a2acb3', fontSize: 14 }}>Đang tải chủ đề...</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -78,13 +60,13 @@ function LoadingState() {
 
 function ErrorState({ message, onRetry }) {
   return (
-    <div style={{ textAlign: 'center', padding: '60px 24px', background: '#07091a', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+    <div style={{ textAlign: 'center', padding: '60px 24px', background: '#0f1214', minHeight: '60vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
       <div style={{ fontSize: 48, marginBottom: 16 }}>⚠️</div>
       <p style={{ color: '#f87171', fontSize: 16, fontWeight: 700, marginBottom: 8 }}>Không tải được chủ đề</p>
-      <p style={{ color: '#8892b0', fontSize: 14, marginBottom: 24 }}>{message}</p>
+      <p style={{ color: '#a2acb3', fontSize: 14, marginBottom: 24 }}>{message}</p>
       <button onClick={onRetry} style={{
         padding: '10px 24px', borderRadius: 10, fontSize: 14, fontWeight: 700,
-        background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff',
+        background: 'linear-gradient(135deg,#0f766e,#0e8077)', color: '#ffffff',
         border: 'none', cursor: 'pointer', fontFamily: 'Outfit, sans-serif',
       }}>Thử lại</button>
     </div>
@@ -110,12 +92,14 @@ function TopicCard({ topic, big = false, onSelectFolder }) {
         boxShadow: hovered ? "0 16px 40px rgba(0,0,0,0.5)" : "0 4px 16px rgba(0,0,0,0.3)",
         transition: "all 0.35s ease",
         transform: hovered ? "translateY(-4px)" : "translateY(0)",
-        background: "#0d0f24",
+        background: "#161a1d",
       }}
     >
       <img
         src={topic.img}
         alt={topic.name}
+        loading="lazy"
+        decoding="async"
         onError={(e) => { e.target.src = DEFAULT_IMG; }}
         style={{
           position: "absolute", inset: 0, width: "100%", height: "100%",
@@ -128,7 +112,7 @@ function TopicCard({ topic, big = false, onSelectFolder }) {
 
       <div style={{
         position: "absolute", inset: 0,
-        background: "linear-gradient(to top, rgba(7,9,26,0.97) 0%, rgba(7,9,26,0.55) 55%, rgba(7,9,26,0.2) 100%)",
+        background: "linear-gradient(to top, rgba(17,19,20,0.97) 0%, rgba(17,19,20,0.55) 55%, rgba(17,19,20,0.2) 100%)",
       }} />
 
       <div style={{
@@ -143,23 +127,23 @@ function TopicCard({ topic, big = false, onSelectFolder }) {
       <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, padding: "16px" }}>
         <p style={{
           fontFamily: "Outfit, sans-serif", fontWeight: 800,
-          fontSize: big ? "22px" : "17px", color: "#e8eaf6", marginBottom: "2px",
+          fontSize: big ? "22px" : "17px", color: "#e9edef", marginBottom: "2px",
           lineHeight: 1.2,
           textShadow: "0 2px 8px rgba(0,0,0,0.8)",
         }}>
           {topic.name}
         </p>
-        <p style={{ fontSize: "11px", color: "#8892b0", marginBottom: "10px", fontFamily: "Inter, sans-serif" }}>
+        <p style={{ fontSize: "11px", color: "#a2acb3", marginBottom: "10px", fontFamily: "Inter, sans-serif" }}>
           {topic.totalWords} từ
         </p>
 
         {topic.progress > 0 && (
           <div style={{ marginBottom: "10px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-              <span style={{ fontSize: "10px", color: "#5a6a8a", fontFamily: "Inter, sans-serif" }}>
+              <span style={{ fontSize: "10px", color: "#a2acb3", fontFamily: "Inter, sans-serif" }}>
                 {topic.learnedWords}/{topic.totalWords} từ đã học
               </span>
-              <span style={{ fontSize: "10px", fontWeight: 600, color: done ? "#10b981" : "#a5b4fc", fontFamily: "Inter, sans-serif" }}>
+              <span style={{ fontSize: "10px", fontWeight: 600, color: done ? "#86a24d" : "#5eead4", fontFamily: "Inter, sans-serif" }}>
                 {topic.progress}%
               </span>
             </div>
@@ -167,9 +151,9 @@ function TopicCard({ topic, big = false, onSelectFolder }) {
               <div style={{
                 width: `${topic.progress}%`, height: "100%", borderRadius: "9999px",
                 background: done
-                  ? "linear-gradient(90deg,#10b981,#059669)"
-                  : "linear-gradient(90deg,#6366f1,#8b5cf6)",
-                boxShadow: done ? "0 0 6px rgba(16,185,129,0.5)" : "0 0 6px rgba(139,92,246,0.5)",
+                  ? "linear-gradient(90deg,#6b8a3a,#556f2d)"
+                  : "linear-gradient(90deg,#0f766e,#0e8077)",
+                boxShadow: done ? "0 0 6px rgba(134,162,77,0.5)" : "0 0 6px rgba(45,212,191,0.5)",
                 transition: "width 0.6s ease",
               }} />
             </div>
@@ -181,11 +165,11 @@ function TopicCard({ topic, big = false, onSelectFolder }) {
           padding: "7px 14px", borderRadius: "9px", fontSize: "12px", fontWeight: 600,
           fontFamily: "Inter, sans-serif",
           background: hovered
-            ? done ? "rgba(16,185,129,0.25)" : "rgba(99,102,241,0.3)"
+            ? done ? "rgba(134,162,77,0.25)" : "rgba(20,184,166,0.3)"
             : "rgba(255,255,255,0.1)",
-          color: done ? "#10b981" : "#a5b4fc",
+          color: done ? "#86a24d" : "#5eead4",
           border: hovered
-            ? done ? "0.8px solid rgba(16,185,129,0.4)" : "0.8px solid rgba(99,102,241,0.4)"
+            ? done ? "0.8px solid rgba(134,162,77,0.4)" : "0.8px solid rgba(20,184,166,0.4)"
             : "0.8px solid rgba(255,255,255,0.15)",
           backdropFilter: "blur(8px)",
           transition: "all 0.25s ease",
@@ -200,8 +184,15 @@ function TopicCard({ topic, big = false, onSelectFolder }) {
 // ── Phrase Folder Card ─────────────────────────────────────────────────
 function PhraseFolderCard({ folder }) {
   const [hovered, setHovered] = useState(false);
+  const navigate = useNavigate();
+  const open = () => navigate(`/app/thuvien/phrase-${folder.id}`);
   return (
     <div
+      role="link"
+      tabIndex={0}
+      aria-label={`Mở ${folder.name}`}
+      onClick={open}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
@@ -215,10 +206,10 @@ function PhraseFolderCard({ folder }) {
     >
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", marginBottom: "10px" }}>
         <div>
-          <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "15px", color: "#e8eaf6", marginBottom: "4px" }}>
+          <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "15px", color: "#e9edef", marginBottom: "4px" }}>
             {folder.name}
           </p>
-          <p style={{ fontSize: "11px", color: "#8892b0", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>
+          <p style={{ fontSize: "11px", color: "#a2acb3", fontFamily: "Inter, sans-serif", lineHeight: 1.5 }}>
             {folder.desc}
           </p>
         </div>
@@ -243,8 +234,8 @@ function PhraseFolderCard({ folder }) {
             "{p}"
           </span>
         ))}
-        <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "6px", color: "#5a6a8a" }}>
-          +{folder.count - 4} nữa…
+        <span style={{ fontSize: "11px", padding: "4px 10px", borderRadius: "6px", color: "#a2acb3" }}>
+          +{Math.max(0, folder.count - 4)} nữa…
         </span>
       </div>
 
@@ -253,8 +244,8 @@ function PhraseFolderCard({ folder }) {
         borderTop: `0.8px solid ${folder.border}`,
         display: "flex", alignItems: "center", justifyContent: "space-between",
       }}>
-        <span style={{ fontSize: "11px", color: "#5a6a8a", fontFamily: "Inter, sans-serif" }}>
-          Học qua flashcard · Quiz · Viết câu
+        <span style={{ fontSize: "11px", color: "#a2acb3", fontFamily: "Inter, sans-serif" }}>
+          Học qua thẻ nhanh · Trắc nghiệm
         </span>
         <span style={{
           fontSize: "12px", fontWeight: 600, color: folder.color,
@@ -280,25 +271,25 @@ function PersonalFolderCard({ folder, onSelectFolder }) {
       onClick={() => onSelectFolder?.(folder.id)}
       style={{
         borderRadius: "14px", padding: "18px",
-        background: hovered ? "rgba(99,102,241,0.08)" : "rgba(255,255,255,0.03)",
-        border: hovered ? "0.8px solid rgba(99,102,241,0.3)" : "0.8px solid rgba(255,255,255,0.08)",
+        background: hovered ? "rgba(20,184,166,0.08)" : "rgba(255,255,255,0.03)",
+        border: hovered ? "0.8px solid rgba(20,184,166,0.3)" : "0.8px solid rgba(255,255,255,0.08)",
         cursor: "pointer", transition: "all 0.25s ease",
         transform: hovered ? "translateY(-2px)" : "translateY(0)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "10px" }}>
         <span style={{ fontSize: "20px" }}>{folder.icon || "📁"}</span>
-        <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "14px", color: "#e8eaf6" }}>
+        <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "14px", color: "#e9edef" }}>
           {folder.name}
         </span>
       </div>
-      <div style={{ fontSize: "11px", color: "#8892b0", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>
+      <div style={{ fontSize: "11px", color: "#a2acb3", marginBottom: "8px", fontFamily: "Inter, sans-serif" }}>
         {folder.learnedWords}/{folder.totalWords} từ đã học
       </div>
       <div style={{ height: "4px", borderRadius: "9999px", background: "rgba(255,255,255,0.08)", overflow: "hidden" }}>
         <div style={{
           width: `${percent}%`, height: "100%", borderRadius: "9999px",
-          background: percent === 100 ? "linear-gradient(90deg,#10b981,#059669)" : "linear-gradient(90deg,#6366f1,#8b5cf6)",
+          background: percent === 100 ? "linear-gradient(90deg,#6b8a3a,#556f2d)" : "linear-gradient(90deg,#0f766e,#0e8077)",
         }} />
       </div>
     </div>
@@ -314,7 +305,7 @@ function CreateFolderCard({ onCreate }) {
         borderRadius: "14px", padding: "18px",
         background: "transparent",
         border: "1.5px dashed rgba(255,255,255,0.15)",
-        cursor: "pointer", color: "#8892b0",
+        cursor: "pointer", color: "#a2acb3",
         display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
         gap: "6px", minHeight: "88px", width: "100%",
         fontFamily: "Inter, sans-serif", fontSize: "13px", fontWeight: 600,
@@ -328,6 +319,7 @@ function CreateFolderCard({ onCreate }) {
 
 // ── Main Page ──────────────────────────────────────────────────────────
 export default function TopicLibraryPage({ onSelectFolder }) {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [progressFilter, setProgressFilter] = useState("all");
 
@@ -336,35 +328,37 @@ export default function TopicLibraryPage({ onSelectFolder }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const applyData = useCallback((data) => {
+    // Backend đã trả sẵn total_words / learned_words / progress cho từng folder trong CÙNG response.
+    const mapFolder = (f) => ({
+      id: f.id,
+      name: f.name,
+      nameEn: f.description || f.name,
+      img: f.image || FOLDER_IMAGES[f.name] || DEFAULT_IMG,
+      totalWords: f.total_words ?? f.word_count ?? 0,
+      learnedWords: f.learned_words ?? 0,
+      featured: false,
+      progress: f.progress ?? 0,
+    });
+    const system = (data.system_folders || []).map(mapFolder);
+    const personal = (data.personal_folders || []).map((f) => ({ ...mapFolder(f), icon: f.icon || '📁' }));
+    system.slice(0, 3).forEach((f, i) => { system[i].featured = true; });
+    setSystemFolders(system);
+    setPersonalFolders(personal);
+    setLoading(false);
+  }, []);
+
+  // Có dữ liệu cũ trong cache -> hiện NGAY (không màn hình chờ), rồi làm tươi ở nền.
   const loadFolders = useCallback(async () => {
-    setLoading(true);
     setError("");
+    if (!peek(FOLDERS_CACHE_KEY)) setLoading(true);
     try {
-      const data = await foldersApi.list();
-      // Backend đã trả sẵn total_words / learned_words / progress cho từng folder trong CÙNG response
-      // (trước đây gọi thêm GET /folders/<id>/progress cho TỪNG folder: 1 + N request, mỗi cái nhiều
-      // truy vấn DB tới server ở xa -> trang Thư viện tải rất chậm).
-      const mapFolder = (f) => ({
-        id: f.id,
-        name: f.name,
-        nameEn: f.description || f.name,
-        img: f.image || FOLDER_IMAGES[f.name] || DEFAULT_IMG,
-        totalWords: f.total_words ?? f.word_count ?? 0,
-        learnedWords: f.learned_words ?? 0,
-        featured: false,
-        progress: f.progress ?? 0,
-      });
-      const system = (data.system_folders || []).map(mapFolder);
-      const personal = (data.personal_folders || []).map((f) => ({ ...mapFolder(f), icon: f.icon || '📁' }));
-      system.slice(0, 3).forEach((f, i) => { system[i].featured = true; });
-      setSystemFolders(system);
-      setPersonalFolders(personal);
+      await swr(FOLDERS_CACHE_KEY, () => foldersApi.list(), (data) => applyData(data));
     } catch (err) {
       setError(err.message || "Có lỗi xảy ra");
-    } finally {
       setLoading(false);
     }
-  }, []);
+  }, [applyData]);
 
   useEffect(() => { Promise.resolve().then(loadFolders); }, [loadFolders]);
 
@@ -395,26 +389,26 @@ export default function TopicLibraryPage({ onSelectFolder }) {
   const featured = systemFolders.filter(t => t.featured);
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", background: "#07091a", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: "#0f1214", fontFamily: "Inter, sans-serif" }}>
       <div style={{ position: "fixed", right: "-80px", top: "100px", width: "500px", height: "500px",
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(99,102,241,0.1) 0%, transparent 70%)",
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(20,184,166,0.1) 0%, transparent 70%)",
         filter: "blur(80px)", pointerEvents: "none" }} />
       <div style={{ position: "fixed", left: "-100px", bottom: "100px", width: "400px", height: "400px",
-        borderRadius: "50%", background: "radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 70%)",
+        borderRadius: "50%", background: "radial-gradient(circle, rgba(45,212,191,0.08) 0%, transparent 70%)",
         filter: "blur(80px)", pointerEvents: "none" }} />
 
-      <div style={{ maxWidth: "960px", margin: "0 auto", padding: "32px 24px 80px", position: "relative" }}>
+      <div style={{ maxWidth: "1120px", margin: "0 auto", padding: "32px 24px 80px", position: "relative" }}>
 
         {/* Header */}
         <div style={{ marginBottom: "28px" }}>
           <h1 style={{
             fontFamily: "Outfit, sans-serif", fontSize: "28px", fontWeight: 800,
-            background: "linear-gradient(120deg,#e8eaf6 0%,#a5b4fc 40%,#e8eaf6 60%)",
+            background: "linear-gradient(120deg,#e9edef 0%,#5eead4 40%,#e9edef 60%)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", marginBottom: "4px",
           }}>
             📚 Thư viện chủ đề
           </h1>
-          <p style={{ color: "#8892b0", fontSize: "14px" }}>
+          <p style={{ color: "#a2acb3", fontSize: "14px" }}>
             Khám phá {systemFolders.length + personalFolders.length} bộ từ vựng theo chủ đề
           </p>
         </div>
@@ -423,7 +417,7 @@ export default function TopicLibraryPage({ onSelectFolder }) {
         <div style={{ display: "flex", gap: "12px", marginBottom: "24px", flexWrap: "wrap", alignItems: "center" }}>
           <div style={{ position: "relative", flex: "1", minWidth: "200px", maxWidth: "320px" }}>
             <span style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)",
-              fontSize: "14px", color: "#5a6a8a" }}>🔍</span>
+              fontSize: "14px", color: "#a2acb3" }}>🔍</span>
             <input
               value={search}
               onChange={e => setSearch(e.target.value)}
@@ -432,7 +426,7 @@ export default function TopicLibraryPage({ onSelectFolder }) {
                 width: "100%", paddingLeft: "36px", paddingRight: "12px",
                 paddingTop: "9px", paddingBottom: "9px",
                 background: "rgba(255,255,255,0.05)", border: "0.8px solid rgba(255,255,255,0.09)",
-                borderRadius: "10px", fontSize: "13px", color: "#e8eaf6",
+                borderRadius: "10px", fontSize: "13px", color: "#e9edef",
                 fontFamily: "Inter, sans-serif", outline: "none", boxSizing: "border-box",
               }}
             />
@@ -443,9 +437,9 @@ export default function TopicLibraryPage({ onSelectFolder }) {
               <button key={v} onClick={() => setProgressFilter(v)} style={{
                 padding: "6px 12px", borderRadius: "9999px", fontSize: "11px", fontWeight: 500,
                 fontFamily: "Inter, sans-serif", cursor: "pointer", transition: "all 0.2s ease",
-                background: progressFilter === v ? "rgba(99,102,241,0.2)" : "rgba(255,255,255,0.04)",
-                color: progressFilter === v ? "#a5b4fc" : "#5a6a8a",
-                border: progressFilter === v ? "0.8px solid rgba(99,102,241,0.35)" : "0.8px solid rgba(255,255,255,0.06)",
+                background: progressFilter === v ? "rgba(20,184,166,0.2)" : "rgba(255,255,255,0.04)",
+                color: progressFilter === v ? "#5eead4" : "#a2acb3",
+                border: progressFilter === v ? "0.8px solid rgba(20,184,166,0.35)" : "0.8px solid rgba(255,255,255,0.06)",
               }}>{label}</button>
             ))}
           </div>
@@ -454,7 +448,7 @@ export default function TopicLibraryPage({ onSelectFolder }) {
         {/* Personal folders */}
         <div style={{ marginBottom: "36px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e8eaf6" }}>
+            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e9edef" }}>
               📁 Folder của bạn
             </span>
             <div style={{ flex: 1, height: "0.8px", background: "rgba(255,255,255,0.06)" }} />
@@ -471,7 +465,7 @@ export default function TopicLibraryPage({ onSelectFolder }) {
         {featured.length > 0 && search === "" && progressFilter === "all" && (
           <div style={{ marginBottom: "36px" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-              <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e8eaf6" }}>
+              <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e9edef" }}>
                 ⭐ Nổi bật
               </span>
               <div style={{ flex: 1, height: "0.8px", background: "rgba(255,255,255,0.06)" }} />
@@ -485,18 +479,18 @@ export default function TopicLibraryPage({ onSelectFolder }) {
         {/* All topics */}
         <div style={{ marginBottom: "40px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e8eaf6" }}>
+            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e9edef" }}>
               🗂 Tất cả chủ đề
             </span>
             <span style={{
               fontSize: "11px", fontWeight: 600, padding: "2px 8px", borderRadius: "9999px",
-              background: "rgba(99,102,241,0.15)", color: "#a5b4fc",
+              background: "rgba(20,184,166,0.15)", color: "#5eead4",
             }}>{filtered.length}</span>
             <div style={{ flex: 1, height: "0.8px", background: "rgba(255,255,255,0.06)" }} />
           </div>
 
           {filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "48px 0", color: "#5a6a8a", fontSize: "14px" }}>
+            <div style={{ textAlign: "center", padding: "48px 0", color: "#a2acb3", fontSize: "14px" }}>
               <div style={{ fontSize: "40px", marginBottom: "12px" }}>🔎</div>
               Không tìm thấy chủ đề phù hợp.
             </div>
@@ -510,18 +504,18 @@ export default function TopicLibraryPage({ onSelectFolder }) {
         {/* Phrase folders */}
         <div>
           <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "14px" }}>
-            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e8eaf6" }}>
+            <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700, fontSize: "16px", color: "#e9edef" }}>
               💬 Folder cụm từ
             </span>
             <div style={{ flex: 1, height: "0.8px", background: "rgba(255,255,255,0.06)" }} />
-            <button style={{
-              fontSize: "12px", fontWeight: 500, color: "#a5b4fc", fontFamily: "Inter, sans-serif",
-              background: "none", border: "none", cursor: "pointer",
+            <button type="button" onClick={() => navigate(`/app/thuvien/phrase-${PHRASE_ALL_ID}`)} style={{
+              fontSize: "12px", fontWeight: 600, color: "#5eead4", fontFamily: "Inter, sans-serif",
+              background: "none", border: "none", cursor: "pointer", padding: "4px 8px",
             }}>
               Xem tất cả →
             </button>
           </div>
-          <p style={{ fontSize: "12px", color: "#5a6a8a", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
+          <p style={{ fontSize: "12px", color: "#a2acb3", marginBottom: "16px", fontFamily: "Inter, sans-serif" }}>
             Collocations, idioms và phrasal verbs được tổng hợp theo chủ đề
           </p>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: "14px" }}>

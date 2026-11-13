@@ -2,8 +2,8 @@
 import { useState, useEffect, useRef } from "react";
 
 const FOLDER_COLORS = [
-  "#6366f1", "#10b981", "#f59e0b", "#8b5cf6",
-  "#06b6d4", "#f43f5e", "#fb923c", "#34d399",
+  "#14b8a6", "#86a24d", "#ef4444", "#2dd4bf",
+  "#14b8a6", "#ef4444", "#f87171", "#a3bd6a",
 ];
 
 export default function SaveModal({ wordOrText, folders, onSave, onClose, onCreate }) {
@@ -59,26 +59,26 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
   return (
     <div onClick={onClose} style={{
       position: "fixed", inset: 0, zIndex: 1000,
-      background: "rgba(7,9,26,0.75)", backdropFilter: "blur(8px)",
+      background: "rgba(17,19,20,0.75)", backdropFilter: "blur(8px)",
       display: "flex", alignItems: "center", justifyContent: "center",
       animation: "overlayIn 0.18s ease",
     }}>
       <div onClick={(e) => e.stopPropagation()} style={{
-        width: "min(420px, 92vw)", background: "#0e1130",
+        width: "min(420px, 92vw)", background: "#161a1d",
         border: "0.8px solid rgba(255,255,255,0.1)",
         borderRadius: "20px", padding: "28px",
         animation: "modalIn 0.22s ease",
         boxShadow: "0 24px 60px rgba(0,0,0,0.5)",
       }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px" }}>
-          <p style={{ fontFamily: "Outfit,sans-serif", fontSize: "18px", fontWeight: 700, color: "#f8faff", margin: 0 }}>
+          <p style={{ fontFamily: "Outfit,sans-serif", fontSize: "18px", fontWeight: 700, color: "#f4f6f7", margin: 0 }}>
             💾 Lưu vào thư mục
           </p>
-          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#94a3b8", fontSize: "20px", lineHeight: 1, padding: "2px 6px" }}>✕</button>
+          <button onClick={onClose} style={{ background: "none", border: "none", cursor: "pointer", color: "#a2acb3", fontSize: "20px", lineHeight: 1, padding: "2px 6px" }}>✕</button>
         </div>
 
-        <p style={{ fontSize: "12px", color: "#64748b", marginBottom: "12px", fontFamily: "Inter,sans-serif" }}>
-          Lưu: <span style={{ color: "#a5b4fc", fontStyle: "italic" }}>"{wordOrText}"</span>
+        <p style={{ fontSize: "12px", color: "#848f97", marginBottom: "12px", fontFamily: "Inter,sans-serif" }}>
+          Lưu: <span style={{ color: "#5eead4", fontStyle: "italic" }}>"{wordOrText}"</span>
         </p>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "240px", overflowY: "auto" }}>
@@ -86,14 +86,14 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
             <button key={f.id} onClick={() => handleSave(f.id)} disabled={saved !== null || saving} style={{
               display: "flex", alignItems: "center", gap: "12px",
               padding: "12px 16px",
-              background: saved === f.id ? "rgba(99,102,241,0.15)" : "rgba(255,255,255,0.03)",
-              border: saved === f.id ? "0.8px solid #6366f1" : "0.8px solid rgba(255,255,255,0.07)",
+              background: saved === f.id ? "rgba(20,184,166,0.15)" : "rgba(255,255,255,0.03)",
+              border: saved === f.id ? "0.8px solid #14b8a6" : "0.8px solid rgba(255,255,255,0.07)",
               borderRadius: "12px", cursor: saved !== null ? "default" : "pointer",
               transition: "all 0.15s",
             }}>
               <span style={{ width: "10px", height: "10px", borderRadius: "50%", background: f.color, flexShrink: 0 }} />
-              <span style={{ flex: 1, fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#e2e8f0", textAlign: "left" }}>{f.name}</span>
-              <span style={{ fontSize: "12px", color: "#475569" }}>{f.words.length} từ</span>
+              <span style={{ flex: 1, fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#dde2e5", textAlign: "left" }}>{f.name}</span>
+              <span style={{ fontSize: "12px", color: "#6b747c" }}>{f.words.length} từ</span>
               {saved === f.id && <span style={{ fontSize: "16px" }}>✅</span>}
             </button>
           ))}
@@ -103,10 +103,10 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
 
         <button onClick={() => setCreating((p) => !p)} disabled={saving} style={{
           marginTop: "14px", width: "100%", padding: "10px 16px",
-          background: "rgba(99,102,241,0.08)",
-          border: "0.8px dashed rgba(99,102,241,0.4)",
+          background: "rgba(20,184,166,0.08)",
+          border: "0.8px dashed rgba(20,184,166,0.4)",
           borderRadius: "12px", cursor: "pointer",
-          fontFamily: "Inter,sans-serif", fontSize: "13px", color: "#a5b4fc",
+          fontFamily: "Inter,sans-serif", fontSize: "13px", color: "#5eead4",
         }}>
           {creating ? "▾ Ẩn" : "＋ Tạo thư mục mới"}
         </button>
@@ -119,7 +119,7 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
               style={{
                 width: "100%", background: "rgba(255,255,255,0.06)",
                 border: "0.8px solid rgba(255,255,255,0.1)", borderRadius: "10px",
-                padding: "10px 14px", color: "#f8faff", fontSize: "14px",
+                padding: "10px 14px", color: "#f4f6f7", fontSize: "14px",
                 fontFamily: "Inter,sans-serif", outline: "none",
                 boxSizing: "border-box", marginBottom: "12px",
               }} />
@@ -127,7 +127,7 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
               {FOLDER_COLORS.map((c) => (
                 <button key={c} onClick={() => setNewColor(c)} style={{
                   width: "26px", height: "26px", borderRadius: "50%",
-                  background: c, border: newColor === c ? "2.5px solid #fff" : "2.5px solid transparent",
+                  background: c, border: newColor === c ? "2.5px solid #ffffff" : "2.5px solid transparent",
                   cursor: "pointer", flexShrink: 0, padding: 0,
                   transition: "transform 0.12s",
                   transform: newColor === c ? "scale(1.15)" : "scale(1)",
@@ -136,9 +136,9 @@ export default function SaveModal({ wordOrText, folders, onSave, onClose, onCrea
             </div>
             <button onClick={handleCreate} style={{
               width: "100%", padding: "10px",
-              background: "linear-gradient(135deg,#6366f1,#818cf8)",
+              background: "linear-gradient(135deg,#0f766e,#0e8077)",
               border: "none", borderRadius: "10px",
-              color: "#fff", fontSize: "14px", fontWeight: 600,
+              color: "#ffffff", fontSize: "14px", fontWeight: 600,
               fontFamily: "Outfit,sans-serif", cursor: "pointer",
             }}>{saving ? "Đang lưu..." : "Tạo &amp; lưu"}</button>
           </div>

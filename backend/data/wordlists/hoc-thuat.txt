@@ -1,0 +1,16 @@
+# name: Từ vựng học thuật
+# icon: 🔬
+# color: #0ea5e9
+# description: Từ thường gặp trong bài đọc học thuật và bài viết nghiên cứu.
+analyze approach area assess assume authority available benefit concept consistent constitute
+context create data define derive distribute economy environment establish estimate evidence export
+factor finance formula function identify income indicate individual interpret involve issue labor
+legal major method occur percent period policy principle proceed process require research respond
+role section sector significant similar source specific structure theory vary achieve acquire adapt
+adequate adjust aspect assist attitude capacity category challenge complex conclude conduct
+consequence contribute convert criteria currency distinct dominate element emerge enhance ensure
+equivalent evaluate evolve exclude explicit feature flexible focus framework generate globe impact
+implement imply impose incorporate initial innovate insight integrate intense maintain monitor norm
+objective obtain outcome parameter participate perceive phase potential predict primary priority
+promote reinforce restrict reveal sequence simulate sufficient sustain tradition transform trend
+undergo utilize

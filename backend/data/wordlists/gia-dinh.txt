@@ -1,0 +1,9 @@
+# name: Gia đình
+# icon: 👨‍👩‍👧‍👦
+# color: #14b8a6
+# description: Các thành viên trong gia đình, hôn nhân và các mối quan hệ.
+parent mother father mom dad son daughter brother sister grandmother grandfather grandparents
+grandson granddaughter uncle aunt cousin nephew niece husband wife spouse baby child children kid
+teenager adult relative family sibling twin stepfather stepmother orphan widow bride groom marriage
+wedding divorce engaged single married birthday anniversary generation ancestor descendant adopt
+raise household neighbor friend guardian infant toddler elder couple bachelor

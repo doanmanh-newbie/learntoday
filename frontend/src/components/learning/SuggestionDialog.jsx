@@ -22,7 +22,7 @@ export default function SuggestionDialog({ word, onChoose }) {
     >
       <div
         style={{
-          background: '#1a1d2e',
+          background: '#1d2226',
           borderRadius: '20px',
           padding: '32px',
           maxWidth: '420px',
@@ -45,7 +45,7 @@ export default function SuggestionDialog({ word, onChoose }) {
             >
               Sai 4 lần với từ này!
             </p>
-            <p style={{ fontSize: '13px', color: '#8892b0' }}>Bạn muốn làm gì với từ này?</p>
+            <p style={{ fontSize: '13px', color: '#a2acb3' }}>Bạn muốn làm gì với từ này?</p>
           </div>
         </div>
 
@@ -63,16 +63,16 @@ export default function SuggestionDialog({ word, onChoose }) {
             style={{
               fontSize: '22px',
               fontWeight: 800,
-              color: '#e8eaf6',
+              color: '#e9edef',
               fontFamily: 'Outfit, sans-serif'
             }}
           >
             {word.word}
           </p>
-          <p style={{ color: '#8892b0', fontSize: '14px' }}>{word.meaning}</p>
+          <p style={{ color: '#a2acb3', fontSize: '14px' }}>{word.meaning}</p>
           <p
             style={{
-              color: '#fbbf24',
+              color: '#f87171',
               fontSize: '13px',
               marginTop: '4px',
               fontFamily: 'Outfit, sans-serif'
@@ -127,9 +127,9 @@ export default function SuggestionDialog({ word, onChoose }) {
             style={{
               padding: '14px 16px',
               borderRadius: '12px',
-              background: 'rgba(245,158,11,0.12)',
-              border: '1px solid rgba(245,158,11,0.3)',
-              color: '#fbbf24',
+              background: 'rgba(239,68,68,0.12)',
+              border: '1px solid rgba(239,68,68,0.3)',
+              color: '#f87171',
               cursor: 'pointer',
               textAlign: 'left',
               fontWeight: 600,
@@ -140,11 +140,11 @@ export default function SuggestionDialog({ word, onChoose }) {
               gap: '12px'
             }}
             onMouseEnter={e => {
-              e.currentTarget.style.background = 'rgba(245,158,11,0.2)';
+              e.currentTarget.style.background = 'rgba(239,68,68,0.2)';
               e.currentTarget.style.transform = 'scale(1.02)';
             }}
             onMouseLeave={e => {
-              e.currentTarget.style.background = 'rgba(245,158,11,0.12)';
+              e.currentTarget.style.background = 'rgba(239,68,68,0.12)';
               e.currentTarget.style.transform = 'scale(1)';
             }}
           >
@@ -165,7 +165,7 @@ export default function SuggestionDialog({ word, onChoose }) {
               borderRadius: '12px',
               background: 'rgba(255,255,255,0.04)',
               border: '1px solid rgba(255,255,255,0.1)',
-              color: '#8892b0',
+              color: '#a2acb3',
               cursor: 'pointer',
               textAlign: 'left',
               fontWeight: 600,

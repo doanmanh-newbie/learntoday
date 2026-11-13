@@ -23,6 +23,9 @@ class User(db.Model):
     # STT 12: phút học TRONG NGÀY (giờ VN). Tự reset khi sang ngày mới (xem routes/study.py)
     study_minutes_today = db.Column(db.Integer, default=0, server_default='0')
     study_minutes_date = db.Column(db.Date, nullable=True)
+    # Lần gần nhất server CỘNG phút học (UTC). Phút học do SERVER tự đo theo giờ thật, không tin số phút client gửi lên.
+    last_heartbeat_at = db.Column(db.DateTime, nullable=True)
+    last_reminder_date = db.Column(db.Date, nullable=True)   # ngày đã gửi email nhắc gần nhất (chống gửi trùng)
     tts_voice = db.Column(db.String(10), default='en-US')  # STT 15: en-US | en-GB
     badges = db.Column(db.Text, default='[]')  # JSON danh sách huy hiệu
 
@@ -35,7 +38,7 @@ class User(db.Model):
             'username': self.username,
             'email': self.email,
             'level': self.level,
-            'streak': self.streak,
+            'streak': self.effective_streak(),
             'role': self.role,
             'daily_goal': self.daily_goal,
             'review_limit': self.review_limit,
@@ -48,6 +51,13 @@ class User(db.Model):
             'last_goal_date': self.last_goal_date.isoformat() if self.last_goal_date else None,
             'badges': self._parse_badges(),
         }
+
+    def effective_streak(self):
+        """Chuỗi ngày còn hiệu lực (0 nếu đã bỏ lỡ từ hôm kia trở đi), thay vì số cũ còn lưu trong cột streak."""
+        from datetime import datetime
+        from app.models.learning_logs import VN_TZ
+        from app.utils.streak import effective_streak
+        return effective_streak(self.streak, self.last_goal_date, datetime.now(VN_TZ).date())
 
     def _parse_badges(self):
         import json

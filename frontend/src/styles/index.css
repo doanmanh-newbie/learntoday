@@ -55,8 +55,8 @@ body {
 }
 
 .nav-tab.active {
-    color: #c7d2fe;
-    background: rgba(99, 102, 241, 0.14);
+    color: var(--color-brand-300);
+    background: rgba(20, 184, 166, 0.14);
 }
 
 .nav-tab svg {

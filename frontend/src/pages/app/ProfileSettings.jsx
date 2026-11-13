@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { profileApi, studyApi } from "../../api/client";
 
-const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#e8eaf6" };
+const inputStyle = { width: "100%", padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.12)", color: "#e9edef" };
 
 export default function ProfileSettings() {
   const [form, setForm] = useState(null);
@@ -46,12 +46,12 @@ export default function ProfileSettings() {
     } finally { setSaving(false); }
   };
 
-  if (loading) return <div style={{ padding: 32, color: "#94a3b8" }}>Đang tải cài đặt...</div>;
+  if (loading) return <div style={{ padding: 32, color: "#a2acb3" }}>Đang tải cài đặt...</div>;
   if (!form) return <div style={{ padding: 32, color: "#f87171" }}>{error}</div>;
 
-  return <main style={{ maxWidth: 760, margin: "0 auto", padding: "32px 24px 80px", color: "#e8eaf6" }}>
+  return <main style={{ maxWidth: 760, margin: "0 auto", padding: "32px 24px 80px", color: "#e9edef" }}>
     <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8 }}>Hồ sơ và cài đặt</h1>
-    <p style={{ color: "#8892b0", marginBottom: 24 }}>Các thay đổi được lưu vào tài khoản của bạn.</p>
+    <p style={{ color: "#a2acb3", marginBottom: 24 }}>Các thay đổi được lưu vào tài khoản của bạn.</p>
     <form onSubmit={save} style={{ display: "grid", gap: 18, padding: 24, background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 16 }}>
       <label>Tên hiển thị<input style={inputStyle} value={form.username} onChange={e => update("username", e.target.value)} /></label>
       <label>Mục tiêu học mới mỗi ngày<select style={inputStyle} value={form.daily_goal} onChange={e => update("daily_goal", Number(e.target.value))}>{[5,10,15,20,30].map(v => <option key={v} value={v}>{v} từ</option>)}</select></label>
@@ -60,10 +60,10 @@ export default function ProfileSettings() {
       <label>Giọng đọc<select style={inputStyle} value={form.tts_voice} onChange={e => update("tts_voice", e.target.value)}><option value="en-US">English (US)</option><option value="en-GB">English (UK)</option></select></label>
       <label>Giờ nhắc ôn<select style={inputStyle} value={form.reminder_time} onChange={e => update("reminder_time", Number(e.target.value))}>{[8,12,20].map(v => <option key={v} value={v}>{String(v).padStart(2,"0")}:00</option>)}</select></label>
       <label style={{ display: "flex", alignItems: "center", gap: 10 }}><input type="checkbox" checked={!!form.email_reminder} onChange={e => update("email_reminder", e.target.checked)} /> Nhận email nhắc ôn tập</label>
-      {reminder && <p style={{ color: "#94a3b8", margin: 0 }}>Hiện có {reminder.due_review_count || 0} từ đến hạn ôn tập.</p>}
+      {reminder && <p style={{ color: "#a2acb3", margin: 0 }}>Hiện có {reminder.due_review_count || 0} từ đến hạn ôn tập.</p>}
       {error && <p role="alert" style={{ color: "#f87171", margin: 0 }}>{error}</p>}
-      {message && <p role="status" style={{ color: "#34d399", margin: 0 }}>{message}</p>}
-      <button disabled={saving} style={{ justifySelf: "start", padding: "10px 18px", border: 0, borderRadius: 10, background: "linear-gradient(135deg,#6366f1,#8b5cf6)", color: "white", fontWeight: 700, cursor: "pointer" }}>{saving ? "Đang lưu..." : "Lưu cài đặt"}</button>
+      {message && <p role="status" style={{ color: "#a3bd6a", margin: 0 }}>{message}</p>}
+      <button disabled={saving} style={{ justifySelf: "start", padding: "10px 18px", border: 0, borderRadius: 10, background: "linear-gradient(135deg,#0f766e,#0e8077)", color: "white", fontWeight: 700, cursor: "pointer" }}>{saving ? "Đang lưu..." : "Lưu cài đặt"}</button>
     </form>
   </main>;
 }

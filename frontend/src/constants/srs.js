@@ -1,13 +1,14 @@
 // src/constants/srs.js
+// NGUỒN DUY NHẤT của lịch ôn ở frontend. Phải khớp backend/app/utils/srs.py (backend/tests/test_srs.py kiểm tra hai bên khớp nhau).
 
 export const SRS_SECONDS = {
   0: 0,
   1: 20 * 60,        // 20 phút
   2: 10 * 3600,      // 10 giờ
   3: 24 * 3600,      // 1 ngày
-  4: 24 * 3600,      // 1 ngày
-  5: 3 * 86400,      // 3 ngày
-  6: 5 * 86400       // 5 ngày
+  4: 3 * 86400,      // 3 ngày
+  5: 7 * 86400,      // 7 ngày
+  6: 21 * 86400      // 21 ngày
 };
 
 export const SRS_LABELS = {
@@ -24,9 +25,9 @@ export const SRS_INTERVAL_LABEL = {
   1: '20 phút',
   2: '10 giờ',
   3: '1 ngày',
-  4: '1 ngày',
-  5: '3 ngày',
-  6: '5 ngày'
+  4: '3 ngày',
+  5: '7 ngày',
+  6: '21 ngày'
 };
 
 export const SRS_TRANSITION = {
@@ -39,23 +40,23 @@ export const SRS_TRANSITION = {
 };
 
 export const LV_COLORS = {
-  0: '#8892b0',
-  1: '#10b981',
-  2: '#06b6d4',
-  3: '#a5b4fc',
-  4: '#fbbf24',
-  5: '#f97316',
-  6: '#f43f5e'
+  0: '#a2acb3',
+  1: '#86a24d',
+  2: '#14b8a6',
+  3: '#5eead4',
+  4: '#f87171',
+  5: '#ef4444',
+  6: '#ef4444'
 };
 
 export const LV_BG = {
   0: 'rgba(255,255,255,0.08)',
-  1: 'rgba(16,185,129,0.12)',
-  2: 'rgba(99,102,241,0.15)',
-  3: 'rgba(245,158,11,0.15)',
+  1: 'rgba(134,162,77,0.12)',
+  2: 'rgba(20,184,166,0.15)',
+  3: 'rgba(239,68,68,0.15)',
   4: 'rgba(248,113,113,0.12)',
-  5: 'rgba(139,92,246,0.15)',
-  6: 'rgba(6,182,212,0.12)'
+  5: 'rgba(45,212,191,0.15)',
+  6: 'rgba(20,184,166,0.12)'
 };
 
 export const LV_CFG = {

@@ -7,7 +7,7 @@ export const FOLDER_DATA = [
   {
     id: 1, name: "Gia đình", tag: "Family",
     image: "https://images.unsplash.com/photo-1511895426328-dc8714191011?w=700&h=420&fit=crop&auto=format",
-    color: "#f97316",
+    color: "#ef4444",
     words: [
       { id: 101, word: "nurture", phonetic: "/ˈnɜːrtʃər/", pos: "v", meaning: "nuôi dưỡng, vun đắp",
         examples: [
@@ -54,7 +54,7 @@ export const FOLDER_DATA = [
   {
     id: 2, name: "Du lịch", tag: "Travel",
     image: "https://images.unsplash.com/photo-1488646953014-85cb44e25828?w=700&h=420&fit=crop&auto=format",
-    color: "#06b6d4",
+    color: "#14b8a6",
     words: [
       { id: 201, word: "itinerary", phonetic: "/aɪˈtɪnəreri/", pos: "n", meaning: "lịch trình hành trình",
         examples: [
@@ -96,7 +96,7 @@ export const FOLDER_DATA = [
   {
     id: 3, name: "Công việc", tag: "Work",
     image: "https://images.unsplash.com/photo-1497366216548-37526070297c?w=700&h=420&fit=crop&auto=format",
-    color: "#8b5cf6",
+    color: "#2dd4bf",
     words: [
       { id: 301, word: "deadline", phonetic: "/ˈdedlaɪn/", pos: "n", meaning: "thời hạn chót",
         examples: [
@@ -123,7 +123,7 @@ export const FOLDER_DATA = [
   {
     id: 4, name: "Ẩm thực", tag: "Food",
     image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=700&h=420&fit=crop&auto=format",
-    color: "#f59e0b",
+    color: "#ef4444",
     words: [
       { id: 401, word: "cuisine", phonetic: "/kwɪˈziːn/", pos: "n", meaning: "ẩm thực, phong cách nấu ăn",
         examples: [{ en: "Vietnamese ___ is famous worldwide.", vi: "Ẩm thực Việt Nam nổi tiếng trên toàn thế giới." }], lv: 1 },
@@ -136,7 +136,7 @@ export const FOLDER_DATA = [
   {
     id: 5, name: "IELTS", tag: "Academic",
     image: "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=700&h=420&fit=crop&auto=format",
-    color: "#6366f1",
+    color: "#14b8a6",
     words: [
       { id: 501, word: "exacerbate", phonetic: "/ɪɡˈzæsərbeɪt/", pos: "v", meaning: "làm trầm trọng hơn",
         examples: [

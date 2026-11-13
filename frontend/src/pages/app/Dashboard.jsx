@@ -8,15 +8,20 @@ import ReviewLanding from "../../components/sections/dashboard/ReviewLanding.jsx
 import SentencePracticeFull from "../../components/sections/dashboard/SentencePracticeFull.jsx";
 import TopicLibrary from "../../components/sections/dashboard/TopicLibrary.jsx";
 import StatisticsPage from "../../components/sections/dashboard/StatisticsPage.jsx";
-import LearnPage from "../learn/LearnPage.jsx";
 import DictionaryPage from "../../components/sections/dashboard/DictionaryPage";
-import ReviewPage from "../review/ReviewPage.jsx";
 import WordDetailPage from "../WordDetailPage";
+import PhraseFolderPage from "../../features/phrases/PhraseFolderPage.jsx";
+import { phraseIdFromFolderId } from "../../features/phrases/phrasesData";
 import PassTestPage from "./PassTestPage";
+import PracticePage from "../../features/practice/PracticePage.jsx";
+import { modeFromPath } from "../../features/practice/modes";
+import FolderWordsPage from "./FolderWordsPage";
+import SettingsPage from "./SettingsPage";
 import { useAuth } from "../../hooks/useAuth";
 import { reviewApi, learningApi, historyApi, studyApi } from "../../api/client";
 import { toUiWord } from "../../api/adapters";
 import SyncBanner from "../../components/SyncBanner.jsx";
+import { whenOutboxIdle, getSyncSnapshot, subscribeSync } from "../../api/outbox";
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -26,6 +31,10 @@ export default function Dashboard() {
   const isWordDetail = location.pathname.startsWith("/app/dictionary/");
   const word = isWordDetail ? decodeURIComponent(location.pathname.split("/").pop()) : null;
 
+  // /app/thuvien/<folderId> = màn danh sách từ của 1 folder (STT 3 phần B)
+  const folderMatch = location.pathname.match(/^\/app\/thuvien\/([^/]+)\/?$/);
+  const folderId = folderMatch ? decodeURIComponent(folderMatch[1]) : null;
+
   // Suy ra tab ban đầu từ URL, để F5 tại /app/dictionary không bị lệch
   // về "Trang chủ" trong khi thanh địa chỉ vẫn ghi /app/dictionary.
   const getTabFromPath = (pathname) => {
@@ -33,8 +42,10 @@ export default function Dashboard() {
     if (pathname.startsWith("/app/on-tap")) return "review";
     if (pathname.startsWith("/app/thongke")) return "thongke";
     if (pathname.startsWith("/app/thuvien")) return "thuvien";
+    if (pathname.startsWith("/app/luyen-tap")) return "luyentap";
     if (pathname.startsWith("/app/datcau")) return "datcau";
     if (pathname.startsWith("/app/kiem-tra")) return "kiemtra";
+    if (pathname.startsWith("/app/cai-dat")) return "caidat";
     return "dashboard";
   };
 
@@ -54,15 +65,14 @@ export default function Dashboard() {
   const [learnedToday, setLearnedToday] = useState(0);
   const [learnTarget, setLearnTarget] = useState(10);
   const [stats, setStats] = useState({ totalLearned: 0, streak: 0, accuracy: 0 });
-  const [showLearn, setShowLearn] = useState(false);
-  const [showReview, setShowReview] = useState(false);
-  const [selectedFolderId, setSelectedFolderId] = useState(null);
 
   const [loadError, setLoadError] = useState("");
 
   // Nạp 4 số liệu song song. Dùng allSettled: 1 API lỗi không làm mất các số còn lại, và lỗi được HIỂN THỊ
   // (trước đây `.catch(() => {})` nuốt hết -> DB lỗi thì người dùng chỉ thấy toàn số 0 mà không biết vì sao).
   const loadData = useCallback(async () => {
+    // Vừa học/ôn xong: chờ tiến độ gửi lên server rồi mới đọc số liệu, kẻo trang chủ hiện số cũ (0/10)
+    if (getSyncSnapshot().pending > 0) await whenOutboxIdle(5000);
     const results = await Promise.allSettled([
       reviewApi.dueCount(),
       reviewApi.dueWords(),
@@ -91,6 +101,16 @@ export default function Dashboard() {
 
   useEffect(() => { Promise.resolve().then(loadData); }, [loadData]);
 
+  // Hàng đợi vừa gửi xong (kể cả sau khi hết thời gian chờ ở trên): nạp lại để số liệu luôn mới nhất
+  useEffect(() => {
+    let prev = getSyncSnapshot().pending;
+    return subscribeSync(() => {
+      const now = getSyncSnapshot().pending;
+      if (prev > 0 && now === 0) loadData();
+      prev = now;
+    });
+  }, [loadData]);
+
   useEffect(() => {
     const id = setInterval(() => {
       if (document.visibilityState !== "visible") return;   // không tính phút khi tab chạy nền
@@ -101,50 +121,38 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = async () => { await logout(); navigate("/login"); };
-  const openLearn = (folderId) => { setSelectedFolderId(folderId); setShowLearn(true); setShowReview(false); };
-  // Tab "Ôn tập" = màn giới thiệu + danh sách từ đến hạn; bấm "Ôn tập ngay" mới mở phiên ôn thật.
-  // (Trước đây cả 2 nút cùng gọi setActiveTab("review") nên không bao giờ vào được phiên ôn.)
-  const goReviewTab = () => { setActiveTab("review"); };
-  const startReview = () => { setShowReview(true); setShowLearn(false); };
-  const goPickFolder = () => { setShowLearn(false); setShowReview(false); setSelectedFolderId(null); setActiveTab("thuvien"); };
-  const closeLearn = () => {
-    setShowLearn(false); setShowReview(false); setSelectedFolderId(null);
-    loadData();                    // làm mới số từ cần ôn / tiến độ hôm nay / streak sau khi học xong
-  };
-
-  const handleNavigate = (target) => {
-    if (target === "review") goReviewTab();
-    else if (target === "learn") goPickFolder();      // cần chọn folder trước (openLearn(null) chỉ ra màn lỗi)
-    else if (target === "practice") setActiveTab("datcau");
-  };
+  // Học / ôn tập là ROUTE thật (có URL riêng): F5 không mất chỗ, nút Back của trình duyệt hoạt động đúng,
+  // và Dashboard tự nạp lại số liệu khi quay về (trước đây là lớp phủ + state nên số liệu bị cũ).
+  const openFolder = (id) => navigate(`/app/thuvien/${id}`);        // xem danh sách từ của folder
+  const startLearn = (id) => navigate(`/app/learn/${id}`);          // "Bắt đầu học"
+  const startReview = () => navigate("/app/review");                // "Ôn tập ngay" -> phiên ôn thật
+  const goPickFolder = () => navigate("/app/thuvien");
+  const openPractice = (mode) => navigate(mode ? `/app/luyen-tap/${mode}` : "/app/luyen-tap");
+  const practiceMode = modeFromPath(location.pathname);
 
   // ✅ Khi search từ Header: chuyển sang tab Từ điển + truyền query
   const handleHeaderSearch = (value) => {
     if (value && value.trim()) {
       setSearchQuery(value);
-      setActiveTab("dictionary");
+      navigate("/app/dictionary");
     }
   };
 
   return (
     <div className="app-shell relative min-h-screen w-full overflow-x-hidden">
-      {!showLearn && !showReview && (
-        <>
-          <Header
-            minutes={minutes}
-            streak={stats.streak}
-            username={user?.username || 'Bạn'}
-            onLogout={handleLogout}
-            onSearch={handleHeaderSearch}
-          />
-          <Nav activeTab={activeTab} setActiveTab={setActiveTab} />
-        </>
-      )}
+      <Header
+        minutes={minutes}
+        streak={stats.streak}
+        username={user?.username || 'Bạn'}
+        onLogout={handleLogout}
+        onSearch={handleHeaderSearch}
+      />
+      <Nav activeTab={activeTab} setActiveTab={setActiveTab} />
 
       <SyncBanner />
 
-      <main className="relative z-10 px-6 py-8" style={{ maxWidth: 960, margin: "0 auto" }}>
-        {loadError && !showLearn && !showReview && (
+      <main className="relative z-10 px-6 py-8" style={{ maxWidth: 1200, margin: "0 auto" }}>
+        {loadError && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16,
                         padding: "10px 16px", borderRadius: 12, fontSize: 13, color: "#fecaca",
                         background: "rgba(127,29,29,0.35)", border: "1px solid rgba(248,113,113,0.35)" }}>
@@ -159,49 +167,46 @@ export default function Dashboard() {
           <WordDetailPage key={word} word={word} />
         ) : (
           <>
-            {activeTab === "dashboard" && !showLearn && !showReview && (
+            {activeTab === "dashboard" && (
               <DashboardHome
                 username={user?.username || "Bạn"}
                 dueCount={dueCount}
-                onReview={goReviewTab}
-                onGoLearn={goPickFolder}
                 wordsLearnedToday={learnedToday}
                 learnTarget={learnTarget}
                 stats={stats}
-                onNavigate={handleNavigate}
+                minutes={minutes}
+                onStartReview={startReview}
+                onGoLearn={goPickFolder}
+                onOpenPractice={openPractice}
               />
             )}
 
-            {activeTab === "review" && !showLearn && !showReview && (
+            {activeTab === "review" && (
               <ReviewLanding dueWords={dueWords} onReview={startReview} onGoLearn={goPickFolder} />
             )}
 
-            {activeTab === "thongke" && !showLearn && !showReview && <StatisticsPage />}
+            {activeTab === "thongke" && <StatisticsPage />}
 
-            {activeTab === "thuvien" && !showLearn && !showReview && <TopicLibrary onSelectFolder={openLearn} />   /* TopicLibrary truyền ID folder (không phải object) */}
+            {activeTab === "thuvien" && (
+              phraseIdFromFolderId(folderId)
+                ? <PhraseFolderPage groupId={phraseIdFromFolderId(folderId)} onBack={goPickFolder} />
+                : folderId
+                ? <FolderWordsPage key={folderId} folderId={folderId} onBack={goPickFolder} onStart={startLearn} />
+                : <TopicLibrary onSelectFolder={openFolder} />   /* TopicLibrary truyền ID folder (không phải object) */
+            )}
 
-            {activeTab === "datcau" && !showLearn && !showReview && <SentencePracticeFull />}
-            {activeTab === "kiemtra" && !showLearn && !showReview && <PassTestPage />}
+            {activeTab === "luyentap" && <PracticePage mode={practiceMode} />}
+            {activeTab === "datcau" && <SentencePracticeFull />}
+            {activeTab === "kiemtra" && <PassTestPage />}
+            {activeTab === "caidat" && <SettingsPage />}
 
-            {activeTab === "dictionary" && !showLearn && !showReview && (
+            {activeTab === "dictionary" && (
               <DictionaryPage
                 initialQuery={searchQuery}
                 onQueryUsed={() => setSearchQuery("")}
               />
             )}
           </>
-        )}
-
-        {showLearn && (
-          <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
-            <LearnPage mode="learn" folderId={selectedFolderId} onNavigateHome={closeLearn} />
-          </div>
-        )}
-
-        {showReview && (
-          <div className="fixed inset-0 z-50 bg-[#07091a] overflow-y-auto">
-            <ReviewPage onNavigateHome={closeLearn} onGoLearn={() => { closeLearn(); goPickFolder(); }} />
-          </div>
         )}
 
         <div style={{ height: 40 }} />

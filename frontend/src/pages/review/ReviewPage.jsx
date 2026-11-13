@@ -1,5 +1,6 @@
 // src/pages/review/ReviewPage.jsx
 import { useState, useEffect } from "react";
+import { whenOutboxIdle } from "../../api/outbox";
 import {reviewApi } from "../../api/client";
 import { toUiWord } from "../../api/adapters";
 import { LearningSession } from "../../features/learning/LearningSession";
@@ -16,10 +17,10 @@ function LoadingState() {
     <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", flexDirection: "column", gap: "16px" }}>
       <div style={{
         width: "48px", height: "48px", borderRadius: "50%",
-        border: "3px solid rgba(245,158,11,0.2)", borderTopColor: "#f59e0b",
+        border: "3px solid rgba(239,68,68,0.2)", borderTopColor: "#ef4444",
         animation: "spin 1s linear infinite",
       }} />
-      <p style={{ color: "#8892b0", fontSize: "14px" }}>Đang tải...</p>
+      <p style={{ color: "#a2acb3", fontSize: "14px" }}>Đang tải...</p>
       <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
     </div>
   );
@@ -33,24 +34,24 @@ function NoReviewScreen({ onNavigateHome, onGoLearn }) {
     }}>
       <div style={{ fontSize: '64px', marginBottom: '20px' }}>🎉</div>
       <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: '28px', fontWeight: 800,
-        color: '#e8eaf6', marginBottom: '8px' }}>Chúc mừng!</h2>
-      <p style={{ fontSize: '16px', color: '#8892b0', marginBottom: '24px' }}>
+        color: '#e9edef', marginBottom: '8px' }}>Chúc mừng!</h2>
+      <p style={{ fontSize: '16px', color: '#a2acb3', marginBottom: '24px' }}>
         Hôm nay bạn không có từ nào cần ôn tập!
       </p>
-      <p style={{ fontSize: '14px', color: '#5a6a8a', marginBottom: '32px' }}>
+      <p style={{ fontSize: '14px', color: '#a2acb3', marginBottom: '32px' }}>
         Hãy học từ mới để duy trì đà nhé!
       </p>
       <div style={{ display: 'flex', gap: '12px' }}>
         <button onClick={onGoLearn} style={{
           padding: '12px 28px', borderRadius: '12px', fontSize: '15px', fontWeight: 700,
           fontFamily: 'Outfit, sans-serif', border: 'none', cursor: 'pointer',
-          background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', color: '#fff',
-          boxShadow: '0 0 24px rgba(99,102,241,0.4)'
+          background: 'linear-gradient(135deg,#0f766e,#0e8077)', color: '#ffffff',
+          boxShadow: '0 0 24px rgba(20,184,166,0.4)'
         }}>📖 Học từ mới</button>
         <button onClick={onNavigateHome} style={{
           padding: '12px 28px', borderRadius: '12px', fontSize: '15px', fontWeight: 700,
           fontFamily: 'Outfit, sans-serif', border: '1px solid rgba(255,255,255,0.1)',
-          cursor: 'pointer', background: 'transparent', color: '#8892b0'
+          cursor: 'pointer', background: 'transparent', color: '#a2acb3'
         }}>🏠 Về trang chính</button>
       </div>
     </div>
@@ -63,7 +64,7 @@ function BackButton({ onClick }) {
     <button onClick={onClick} style={{
       display: "flex", alignItems: "center", gap: "6px",
       padding: "8px 14px", borderRadius: "9px", fontSize: "13px", fontWeight: 600,
-      background: "rgba(255,255,255,0.06)", color: "#e8eaf6",
+      background: "rgba(255,255,255,0.06)", color: "#e9edef",
       border: "0.8px solid rgba(255,255,255,0.12)",
       cursor: "pointer", fontFamily: "Inter, sans-serif", marginBottom: "16px",
     }}>← Về trang chính</button>
@@ -80,7 +81,8 @@ export default function ReviewPage({ onNavigateHome, onGoLearn }) {
 
 useEffect(() => {
   let cancelled = false;
-  reviewApi.dueWords()
+  whenOutboxIdle()
+    .then(() => reviewApi.dueWords())
     .then((data) => {
       if (cancelled) return;
       // Backend trả: { words: [...], has_due_words: true }
@@ -103,10 +105,10 @@ useEffect(() => {
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "60vh", textAlign: "center", padding: "24px" }}>
         <div style={{ fontSize: "48px", marginBottom: "16px" }}>⚠️</div>
         <p style={{ color: "#f87171", fontSize: "16px", fontWeight: 700, marginBottom: "8px" }}>Có lỗi xảy ra</p>
-        <p style={{ color: "#8892b0", fontSize: "14px", marginBottom: "24px" }}>{error}</p>
+        <p style={{ color: "#a2acb3", fontSize: "14px", marginBottom: "24px" }}>{error}</p>
         <button onClick={() => window.location.reload()} style={{
           padding: "10px 24px", borderRadius: "10px", fontSize: "14px", fontWeight: 700,
-          background: "linear-gradient(135deg,#f59e0b,#d97706)", color: "#fff",
+          background: "linear-gradient(135deg,#dc2626,#b91c1c)", color: "#ffffff",
           border: "none", cursor: "pointer", fontFamily: "Outfit, sans-serif",
         }}>Thử lại</button>
       </div>
@@ -120,7 +122,7 @@ useEffect(() => {
   const virtualFolder = {
     id: 0,
     name: "Ôn tập",
-    color: "#f59e0b",
+    color: "#ef4444",
     image: "",
     words: dueWords
   };
@@ -141,7 +143,7 @@ useEffect(() => {
 
   if (screen === "session") {
     return (
-      <div style={{ width: "100%", minHeight: "100vh", background: "#07091a" }}>
+      <div style={{ width: "100%", minHeight: "100vh", background: "#0f1214" }}>
         <div style={{ maxWidth: "680px", margin: "0 auto", padding: "16px 24px 0" }}>
           <BackButton onClick={onNavigateHome} />
         </div>
@@ -156,16 +158,16 @@ useEffect(() => {
         />
         <style>{`
           @keyframes fadeSlideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-          input::placeholder { color:#3d4a66; }
+          input::placeholder { color:#4a545b; }
         `}</style>
       </div>
     );
   }
 
   return (
-    <div style={{ width: "100%", minHeight: "100vh", background: "#07091a", fontFamily: "Inter, sans-serif" }}>
+    <div style={{ width: "100%", minHeight: "100vh", background: "#0f1214", fontFamily: "Inter, sans-serif" }}>
       <div style={{ position: "fixed", right: "-80px", top: "60px", width: "480px", height: "480px",
-        borderRadius: "50%", background: "radial-gradient(circle,rgba(245,158,11,0.06) 0%,transparent 70%)",
+        borderRadius: "50%", background: "radial-gradient(circle,rgba(239,68,68,0.06) 0%,transparent 70%)",
         filter: "blur(80px)", pointerEvents: "none" }} />
 
       <div style={{ maxWidth: "860px", margin: "0 auto", padding: "32px 24px 80px" }}>
@@ -175,39 +177,39 @@ useEffect(() => {
           <div>
             <h1 style={{
               fontFamily: "Outfit, sans-serif", fontSize: "26px", fontWeight: 800, marginBottom: "6px",
-              background: "linear-gradient(120deg,#e8eaf6 0%,#fbbf24 50%,#e8eaf6 100%)",
+              background: "linear-gradient(120deg,#e9edef 0%,#f87171 50%,#e9edef 100%)",
               WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
             }}>🔁 Ôn tập hôm nay</h1>
-            <p style={{ fontSize: "14px", color: "#5a6a8a" }}>Ôn lại từ đã học để củng cố và tăng cấp độ ghi nhớ</p>
+            <p style={{ fontSize: "14px", color: "#a2acb3" }}>Ôn lại từ đã học để củng cố và tăng cấp độ ghi nhớ</p>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
             <div style={{ textAlign: "right" }}>
               <p style={{ fontFamily: "Outfit, sans-serif", fontWeight: 800, fontSize: "48px",
-                color: "#fbbf24", lineHeight: 1, marginBottom: "2px" }}>{dueWords.length}</p>
-              <p style={{ fontSize: "12px", color: "#8892b0" }}>từ cần ôn</p>
+                color: "#f87171", lineHeight: 1, marginBottom: "2px" }}>{dueWords.length}</p>
+              <p style={{ fontSize: "12px", color: "#a2acb3" }}>từ cần ôn</p>
             </div>
             <button onClick={() => setScreen("session")} style={{
               padding: "13px 28px", borderRadius: "12px", fontSize: "15px", fontWeight: 800,
               fontFamily: "Outfit, sans-serif", border: "none", cursor: "pointer",
-              background: "linear-gradient(135deg,#f59e0b,#d97706)",
-              color: "#fff", boxShadow: "0 0 24px rgba(245,158,11,0.4)",
+              background: "linear-gradient(135deg,#dc2626,#b91c1c)",
+              color: "#ffffff", boxShadow: "0 0 24px rgba(239,68,68,0.4)",
             }}>Bắt đầu ôn →</button>
           </div>
         </div>
 
         {reviewed > 0 && (
           <div style={{ marginBottom: "24px", padding: "16px 20px", borderRadius: "14px",
-            background: "rgba(245,158,11,0.06)", border: "0.8px solid rgba(245,158,11,0.15)" }}>
+            background: "rgba(239,68,68,0.06)", border: "0.8px solid rgba(239,68,68,0.15)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-              <span style={{ fontSize: "13px", color: "#8892b0" }}>Tiến độ hôm nay</span>
-              <span style={{ fontSize: "13px", fontWeight: 700, color: "#fbbf24" }}>{reviewed} / {dueWords.length}</span>
+              <span style={{ fontSize: "13px", color: "#a2acb3" }}>Tiến độ hôm nay</span>
+              <span style={{ fontSize: "13px", fontWeight: 700, color: "#f87171" }}>{reviewed} / {dueWords.length}</span>
             </div>
             <div style={{ height: "5px", borderRadius: "9999px", background: "rgba(255,255,255,0.07)" }}>
               <div style={{
                 width: `${Math.min((reviewed / dueWords.length) * 100, 100)}%`,
                 height: "100%", borderRadius: "9999px",
-                background: "linear-gradient(90deg,#f59e0b,#10b981)", transition: "width 0.5s ease",
+                background: "linear-gradient(90deg,#ef4444,#86a24d)", transition: "width 0.5s ease",
               }} />
             </div>
           </div>
@@ -215,7 +217,7 @@ useEffect(() => {
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
           <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
+            <p style={{ fontSize: "11px", fontWeight: 700, color: "#a2acb3",
               textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "12px" }}>
               Danh sách từ ({dueWords.length})
             </p>
@@ -232,10 +234,10 @@ useEffect(() => {
                     <div>
                       <div style={{ display: "flex", alignItems: "baseline", gap: "7px", flexWrap: "wrap" }}>
                         <span style={{ fontFamily: "Outfit, sans-serif", fontWeight: 700,
-                          fontSize: "15px", color: "#e8eaf6" }}>{w.word}</span>
-                        <span style={{ fontSize: "11px", color: "#5a6a8a" }}>{w.pronunciation || w.phonetic}</span>
+                          fontSize: "15px", color: "#e9edef" }}>{w.word}</span>
+                        <span style={{ fontSize: "11px", color: "#a2acb3" }}>{w.pronunciation || w.phonetic}</span>
                       </div>
-                      <p style={{ fontSize: "12px", color: "#8892b0", marginTop: "2px" }}>{w.meaning}</p>
+                      <p style={{ fontSize: "12px", color: "#a2acb3", marginTop: "2px" }}>{w.meaning}</p>
                     </div>
                     <span style={{
                       fontSize: "10px", fontWeight: 700, padding: "3px 9px", borderRadius: "6px", flexShrink: 0, marginLeft: "10px",
@@ -249,25 +251,25 @@ useEffect(() => {
           </div>
 
           <div>
-            <p style={{ fontSize: "11px", fontWeight: 700, color: "#5a6a8a",
+            <p style={{ fontSize: "11px", fontWeight: 700, color: "#a2acb3",
               textTransform: "uppercase", letterSpacing: "0.07em", marginBottom: "12px" }}>
               Lịch ôn tập sắp tới
             </p>
 
             <div style={{
               padding: "16px 18px", borderRadius: "14px", marginBottom: "10px",
-              background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)",
+              background: "rgba(239,68,68,0.1)", border: "1px solid rgba(239,68,68,0.3)",
             }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "6px" }}>
-                <span style={{ fontSize: "13px", fontWeight: 800, color: "#fbbf24",
+                <span style={{ fontSize: "13px", fontWeight: 800, color: "#f87171",
                   fontFamily: "Outfit, sans-serif" }}>⏰ Cần ôn ngay</span>
-                <span style={{ fontSize: "22px", fontWeight: 800, color: "#fbbf24",
+                <span style={{ fontSize: "22px", fontWeight: 800, color: "#f87171",
                   fontFamily: "Outfit, sans-serif" }}>{dueWords.length}</span>
               </div>
-              <p style={{ fontSize: "11px", color: "#92400e" }}>Tất cả các level đã đến hạn</p>
+              <p style={{ fontSize: "11px", color: "#7f1d1d" }}>Tất cả các level đã đến hạn</p>
             </div>
 
-            <p style={{ fontSize: "11px", color: "#5a6a8a", marginBottom: "8px" }}>
+            <p style={{ fontSize: "11px", color: "#a2acb3", marginBottom: "8px" }}>
               Sau khi ôn xong hôm nay:
             </p>
 
@@ -289,7 +291,7 @@ useEffect(() => {
                       background: "rgba(255,255,255,0.03)", border: "0.8px solid rgba(255,255,255,0.07)",
                     }}>
                       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "4px" }}>
-                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#e8eaf6",
+                        <span style={{ fontSize: "13px", fontWeight: 700, color: "#e9edef",
                           fontFamily: "Outfit, sans-serif" }}>{SRS_TRANSITION[lv]}</span>
                         <span style={{
                           fontSize: "10px", fontWeight: 700, padding: "2px 8px", borderRadius: "6px",
@@ -298,9 +300,9 @@ useEffect(() => {
                         }}>{count} từ</span>
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                        <span style={{ fontSize: "11px", color: "#5a6a8a" }}>+{SRS_INTERVAL_LABEL[lv]}</span>
-                        <span style={{ fontSize: "10px", color: "#3d4a66" }}>·</span>
-                        <span style={{ fontSize: "11px", color: "#8892b0" }}>{formatNextReview(nextMs)}</span>
+                        <span style={{ fontSize: "11px", color: "#a2acb3" }}>+{SRS_INTERVAL_LABEL[lv]}</span>
+                        <span style={{ fontSize: "10px", color: "#4a545b" }}>·</span>
+                        <span style={{ fontSize: "11px", color: "#a2acb3" }}>{formatNextReview(nextMs)}</span>
                       </div>
                     </div>
                   </div>
@@ -313,7 +315,7 @@ useEffect(() => {
 
       <style>{`
         @keyframes fadeSlideIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
-        input::placeholder { color:#3d4a66; }
+        input::placeholder { color:#4a545b; }
       `}</style>
     </div>
   );

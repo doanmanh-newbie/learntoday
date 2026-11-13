@@ -1,0 +1,8 @@
+# name: Mua sắm & tiền bạc
+# icon: 🛒
+# color: #f59e0b
+# description: Cửa hàng, giá cả, thanh toán và quần áo.
+shop store market supermarket mall customer cashier price cost cheap expensive discount sale bargain
+receipt cash coin bill change credit bank account money pay spend save borrow lend owe afford wallet
+purse bag basket cart size fit try buy sell order deliver refund exchange brand quality fashion
+shirt dress jacket coat trousers jeans skirt shoes socks hat scarf glove jewelry ring necklace

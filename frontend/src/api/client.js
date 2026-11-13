@@ -1,5 +1,12 @@
+import { invalidate } from './cache';
 // src/api/client.js - MỘT lớp gọi API duy nhất cho toàn app.
-const API_BASE = (import.meta.env?.VITE_API_URL || 'http://127.0.0.1:5000').replace(/\/+$/, '');
+// Địa chỉ backend. Mặc định http://127.0.0.1:5000 (chỉ chạy được trên chính máy đang chạy backend).
+// Mặc định gọi API CÙNG địa chỉ với trang web (đường dẫn tương đối /api/...): khi chạy `npm run dev`, Vite chuyển tiếp /api
+// sang backend (xem vite.config.js), nên không dính CORS và cookie đăng nhập (Refresh Token HttpOnly) luôn được gửi.
+// Triển khai thật mà backend nằm ở tên miền khác: đặt VITE_API_URL=https://api.ten-mien-cua-ban.com. Lưu ý: cookie đăng nhập
+// chỉ hoạt động ổn khi frontend và API CÙNG "site" (vd app.example.com + api.example.com) - xem backend/docs/BAO_MAT.md.
+const ENV_API_URL = import.meta.env?.VITE_API_URL;
+const API_BASE = (ENV_API_URL === undefined || ENV_API_URL === null ? '' : ENV_API_URL).replace(/\/+$/, '');
 const REQUEST_TIMEOUT_MS = 20000;
 
 // Các endpoint xác thực: 401 ở đây nghĩa là "sai thông tin" chứ KHÔNG phải "token hết hạn",
@@ -10,8 +17,27 @@ const AUTH_PATHS = [
   '/api/auth/forgot-password', '/api/auth/reset-password',
 ];
 
-let accessToken = localStorage.getItem('access_token');
-let refreshToken = localStorage.getItem('refresh_token');
+// BẢO MẬT: Refresh Token (sống 7 ngày) nằm trong cookie HttpOnly do server đặt - JavaScript, kể cả mã độc XSS, không đọc được.
+// Access Token (1 giờ) chỉ giữ trong BỘ NHỚ, không ghi vào localStorage. Trong localStorage chỉ có cờ `has_session`
+// ("có thể đã đăng nhập") để khi tải lại trang biết cần xin Access Token mới bằng cookie.
+const SESSION_HINT_KEY = 'has_session';
+let accessToken = null;
+
+try {                                                  // dọn token kiểu cũ còn sót từ phiên bản trước
+  localStorage.removeItem('access_token');
+  localStorage.removeItem('refresh_token');
+} catch { /* localStorage bị chặn */ }
+
+function writeSessionHint(on) {
+  try {
+    if (on) localStorage.setItem(SESSION_HINT_KEY, '1');
+    else localStorage.removeItem(SESSION_HINT_KEY);
+  } catch { /* localStorage bị chặn: chỉ mất khả năng khôi phục phiên sau khi tải lại trang */ }
+}
+
+function readSessionHint() {
+  try { return localStorage.getItem(SESSION_HINT_KEY) === '1'; } catch { return false; }
+}
 
 /** Lỗi gọi API có đủ thông tin để UI phân biệt: mất mạng / quá chậm / DB sập / lỗi nhập liệu. */
 export class ApiError extends Error {
@@ -28,25 +54,25 @@ export class ApiError extends Error {
   }
 }
 
-export function setTokens(access, refresh) {
-  accessToken = access;
-  refreshToken = refresh;
-  if (access) localStorage.setItem('access_token', access);
-  else localStorage.removeItem('access_token');
-  if (refresh) localStorage.setItem('refresh_token', refresh);
-  else localStorage.removeItem('refresh_token');
+export function setAccessToken(access) {
+  accessToken = access || null;
+  writeSessionHint(!!access);
+  // outbox.js lắng nghe để gửi nốt tiến độ học còn kẹt ngay khi phiên được khôi phục
+  if (access && typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('auth:session'));
 }
 
-export function clearTokens() {
-  setTokens(null, null);
+export function clearSession() {
+  accessToken = null;
+  writeSessionHint(false);
 }
 
 export function getAccessToken() {
-  return accessToken || localStorage.getItem('access_token');
+  return accessToken;
 }
 
-export function getRefreshToken() {
-  return refreshToken || localStorage.getItem('refresh_token');
+/** Có thể đang đăng nhập (đã có Access Token, hoặc lần trước đã đăng nhập và cookie còn). */
+export function hasSession() {
+  return !!accessToken || readSessionHint();
 }
 
 function messageForStatus(status) {
@@ -61,7 +87,7 @@ async function fetchWithTimeout(url, options, timeoutMs) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
-    return await fetch(url, { ...options, signal: controller.signal });
+    return await fetch(url, { credentials: 'include', ...options, signal: controller.signal });   // include: gửi cookie Refresh Token
   } catch (e) {
     if (e.name === 'AbortError') {
       throw new ApiError('Máy chủ phản hồi quá lâu, vui lòng thử lại.', { code: 'TIMEOUT' });
@@ -80,18 +106,18 @@ let refreshPromise = null;
 function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = (async () => {
-      const rt = getRefreshToken();
-      if (!rt) return 'invalid';
+      if (!hasSession()) return 'invalid';
       try {
+        // Refresh Token nằm trong cookie HttpOnly nên trình duyệt tự đính kèm; header X-Requested-With chống CSRF
         const res = await fetchWithTimeout(`${API_BASE}/api/auth/refresh-token`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ refresh_token: rt }),
+          headers: { 'Content-Type': 'application/json', 'X-Requested-With': 'fetch' },
+          body: '{}',
         }, REQUEST_TIMEOUT_MS);
         if (res.status >= 500) return 'error';
         if (!res.ok) return 'invalid';
         const data = await res.json();
-        setTokens(data.access_token, rt);
+        setAccessToken(data.access_token);
         return 'ok';
       } catch {
         return 'error';
@@ -102,7 +128,7 @@ function refreshAccessToken() {
 }
 
 function notifySessionExpired() {
-  clearTokens();
+  clearSession();
   // AuthContext lắng nghe sự kiện này -> user = null -> ProtectedRoute tự chuyển sang /login
   // (không tải lại trang, và không đá người đang xem trang chủ công khai).
   window.dispatchEvent(new CustomEvent('auth:expired'));
@@ -118,7 +144,7 @@ export async function apiRequest(path, options = {}) {
 
   const res = await fetchWithTimeout(`${API_BASE}${path}`, { ...fetchOptions, headers }, timeout);
 
-  if (res.status === 401 && !isAuthPath && !_retry && getRefreshToken()) {
+  if (res.status === 401 && !isAuthPath && !_retry && hasSession()) {
     const outcome = await refreshAccessToken();
     if (outcome === 'ok') return apiRequest(path, { ...options, _retry: true });
     if (outcome === 'invalid') {
@@ -143,25 +169,31 @@ export const authApi = {
     apiRequest('/api/auth/login', { method: 'POST', body: JSON.stringify({ email, password }) }),
   register: (username, email, password) =>
     apiRequest('/api/auth/register', { method: 'POST', body: JSON.stringify({ username, email, password }) }),
-  logout: (refresh_token) =>
-    apiRequest('/api/auth/logout', { method: 'POST', body: JSON.stringify({ refresh_token }) }),
+  // Server đọc Refresh Token từ cookie, thu hồi nó và xóa cookie (không cần Access Token còn hạn)
+  logout: () =>
+    apiRequest('/api/auth/logout', { method: 'POST', headers: { 'X-Requested-With': 'fetch' }, body: '{}' }),
   me: () => apiRequest('/api/auth/me'),
+  forgotPassword: (email) =>
+    apiRequest('/api/auth/forgot-password', { method: 'POST', body: JSON.stringify({ email }) }),
+  resetPassword: (reset_token, new_password) =>
+    apiRequest('/api/auth/reset-password', { method: 'POST', body: JSON.stringify({ reset_token, new_password }) }),
 };
 
+export const FOLDERS_CACHE_KEY = 'folders:list';
 export const foldersApi = {
   list: () => apiRequest('/api/folders'),
-  create: (name) => apiRequest('/api/folders', { method: 'POST', body: JSON.stringify({ name }) }),
-  update: (id, name) => apiRequest(`/api/folders/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }),
-  remove: (id) => apiRequest(`/api/folders/${id}`, { method: 'DELETE' }),
+  create: (name) => apiRequest('/api/folders', { method: 'POST', body: JSON.stringify({ name }) }).finally(() => invalidate('folders')),
+  update: (id, name) => apiRequest(`/api/folders/${id}`, { method: 'PUT', body: JSON.stringify({ name }) }).finally(() => invalidate('folders')),
+  remove: (id) => apiRequest(`/api/folders/${id}`, { method: 'DELETE' }).finally(() => invalidate('folders')),
   progress: (id) => apiRequest(`/api/folders/${id}/progress`),
   words: (id, params = {}) => {
     const qs = new URLSearchParams(params).toString();
     return apiRequest(`/api/folders/${id}/words${qs ? `?${qs}` : ''}`);
   },
   addWord: (folderId, wordId) =>
-    apiRequest(`/api/folders/${folderId}/words`, { method: 'POST', body: JSON.stringify({ word_id: wordId }) }),
+    apiRequest(`/api/folders/${folderId}/words`, { method: 'POST', body: JSON.stringify({ word_id: wordId }) }).finally(() => invalidate('folders')),
   removeWord: (folderId, wordId) =>
-    apiRequest(`/api/folders/${folderId}/words/${wordId}`, { method: 'DELETE' }),
+    apiRequest(`/api/folders/${folderId}/words/${wordId}`, { method: 'DELETE' }).finally(() => invalidate('folders')),
 };
 
 export const learningApi = {
@@ -232,13 +264,33 @@ export const passTestApi = {
   get: (id) => apiRequest(`/api/pass-test/${id}`),
   submit: (id, answers) =>
     apiRequest(`/api/pass-test/${id}/submit`, { method: 'POST', body: JSON.stringify({ answers }) }),
+  // Lưu câu đã trả lời + giữ phiên (server đo đồng hồ 15 phút). Hết giờ -> lỗi code TIME_UP
+  saveProgress: (id, answers) =>
+    apiRequest(`/api/pass-test/${id}/progress`, { method: 'PUT', body: JSON.stringify({ answers }) }),
+  // Thoát giữa chừng: lưu câu đã trả lời và DỪNG đồng hồ. keepalive: vẫn gửi được khi đang đóng tab/chuyển trang
+  leave: (id, answers, { keepalive = false } = {}) =>
+    apiRequest(`/api/pass-test/${id}/leave`, { method: 'POST', body: JSON.stringify({ answers }), keepalive }),
 };
 
+// Từ điển thật + kho từ vựng trong database (backend: /api/dictionary/*)
+export const dictionaryApi = {
+  // Lần đầu tra 1 từ: backend gọi từ điển trực tuyến + dịch + lưu vào DB (vài giây); các lần sau trả ngay từ DB
+  lookup: (q) => apiRequest(`/api/dictionary/lookup?q=${encodeURIComponent(q)}`, { timeout: 30000 }),
+  suggest: (q, limit = 8) => apiRequest(`/api/dictionary/suggest?q=${encodeURIComponent(q)}&limit=${limit}`, { timeout: 8000 }),
+  save: (data) => apiRequest('/api/dictionary/save', { method: 'POST', body: JSON.stringify(data), timeout: 30000 }),
+};
+
+// AI thật (Gemini/Claude) ra đề + chấm/sửa lỗi câu dịch (STT 17)
 export const aiPracticeApi = {
-  sentence: (level, mode) =>
-    apiRequest(`/api/ai-practice/sentence?level=${level}&mode=${mode}`),
+  sentence: (level, mode, { folderId, word } = {}) => {
+    const qs = new URLSearchParams({ level, mode });
+    if (folderId) qs.set('folder_id', folderId);
+    if (word) qs.set('word', word);
+    return apiRequest(`/api/ai-practice/sentence?${qs}`, { timeout: 30000 });
+  },
+  // data = { token, answer }  (token do /sentence trả về)
   check: (data) =>
-    apiRequest('/api/ai-practice/check', { method: 'POST', body: JSON.stringify(data) }),
+    apiRequest('/api/ai-practice/check', { method: 'POST', body: JSON.stringify(data), timeout: 45000 }),
 };
 
 export function speakWord(text, voice = 'en-US') {

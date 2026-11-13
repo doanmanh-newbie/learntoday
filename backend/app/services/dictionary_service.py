@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 DICT_API_BASE = 'https://api.dictionaryapi.dev/api/v2/entries/en'
 
 
-def fetch_word_from_api(word: str, retries=3) -> dict | None:
+def fetch_word_from_api(word: str, retries=2) -> dict | None:
     """Lấy data từ Free Dictionary API. Thêm retry + User-Agent."""
     if not word or not word.strip():
         return None
@@ -30,9 +30,7 @@ def fetch_word_from_api(word: str, retries=3) -> dict | None:
 
     for attempt in range(retries):
         try:
-            print(f'   [Attempt {attempt + 1}/{retries}] GET {url}')
-            res = requests.get(url, headers=headers, timeout=30)
-            print(f'   → Status: {res.status_code}')
+            res = requests.get(url, headers=headers, timeout=8)
 
             if res.status_code == 404:
                 return None
@@ -48,13 +46,11 @@ def fetch_word_from_api(word: str, retries=3) -> dict | None:
             return data[0]
 
         except requests.exceptions.Timeout:
-            print(f'   ⏱️ Timeout lần {attempt + 1}')
             if attempt < retries - 1:
                 time.sleep(3)
                 continue
             return None
         except Exception as e:
-            print(f'   ❌ Lỗi: {e}')
             if attempt < retries - 1:
                 time.sleep(2)
                 continue
@@ -70,8 +66,10 @@ def translate_vi(text: str) -> str:
     try:
         return GoogleTranslator(source='en', target='vi').translate(text)
     except Exception as e:
+        # Trả '' (chưa dịch được) thay vì trả lại chính câu tiếng Anh: lỗi cũ này khiến cả kho dữ liệu
+        # crawl lưu tiếng Anh vào cột `meaning` (nghĩa tiếng Việt) mà không ai biết.
         logger.warning(f'Dịch lỗi: {e}')
-        return text
+        return ''
 
 
 def parse_word_data(raw_data: dict, translate=True) -> dict:

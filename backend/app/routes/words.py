@@ -51,12 +51,13 @@ def complete_learn_route(word_id):
 @token_required
 def complete_review_route(word_id):
     """
-    Body:
-    { "wrong_count": 2, "choice": null }
-      -> wrong_count < 4: tự động "hoàn_thành"
+    Body: { "wrong_count": 2, "choice": null | "quay_ve_lv1" | "lui_1_lv" | "bo_qua" }
 
-    { "wrong_count": 5, "choice": "quay_ve_lv1" | "lui_1_lv" | "bo_qua" }
-      -> wrong_count >= 4: BẮT BUỘC có choice
+    Luật chuyển cấp (chi tiết ở app/utils/srs.py::decide_review và docs/SRS.md):
+      choice hợp lệ            -> luôn được tôn trọng (bo_qua: giữ cấp, hoãn 12 giờ, KHÔNG lên cấp)
+      wrong_count == 0         -> hoan_thanh (+1 cấp)
+      wrong_count 1..3         -> giu_level (giữ cấp, hẹn lại theo khoảng của cấp đó)
+      wrong_count >= 4 (không choice) -> lui_1_lv
     """
     data = request.get_json(silent=True)
     if not data:

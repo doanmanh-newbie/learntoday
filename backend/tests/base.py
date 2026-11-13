@@ -42,6 +42,8 @@ class ApiTestCase(unittest.TestCase):
         self.ctx.push()
         db.create_all()
         self.client = self.app.test_client()
+        from app.utils.rate_limit import auth_limiter
+        auth_limiter.reset()                      # bộ đếm giới hạn đăng nhập/đăng ký nằm trong bộ nhớ, dùng chung giữa các test
 
     def tearDown(self):
         self.db.session.remove()
@@ -53,7 +55,16 @@ class ApiTestCase(unittest.TestCase):
         r = self.client.post('/api/auth/register', json={'username': username, 'email': email, 'password': password})
         self.assertEqual(r.status_code, 201, r.get_json())
         data = r.get_json()
+        self.last_response = r
         return {'Authorization': f"Bearer {data['access_token']}"}, data
+
+    @staticmethod
+    def refresh_cookie(response):
+        """Giá trị cookie refresh_token trong phản hồi (refresh token KHÔNG còn nằm trong JSON)."""
+        for header in response.headers.getlist('Set-Cookie'):
+            if header.startswith('refresh_token='):
+                return header.split(';', 1)[0].split('=', 1)[1]
+        return None
 
     def seed_folder(self):
         """1 folder hệ thống 'Du lịch' với 3 từ."""

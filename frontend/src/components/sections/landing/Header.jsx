@@ -1,135 +1,82 @@
-// Header.jsx - Đã sửa hoàn chỉnh
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../../../hooks/useAuth";
+// Thanh đầu trang giới thiệu: cùng logo/màu với trang đăng nhập và ứng dụng.
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../../hooks/useAuth';
+import BrandLogo from '../../brand/BrandLogo';
+import { IconMenu, IconX } from '../../brand/icons';
+
+const NAV = [
+  { label: 'Tính năng', href: '#tinh-nang' },
+  { label: 'Cách hoạt động', href: '#cach-hoat-dong' },
+  { label: 'Luyện câu cùng AI', href: '#luyen-cau-ai' },
+  { label: 'Chủ đề', href: '#chu-de' },
+];
+
+const btnGhost = 'rounded-xl px-4 py-2 text-sm font-semibold text-ink-muted transition hover:bg-surface-2 hover:text-ink';
+const btnPrimary = 'rounded-xl bg-brand-700 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-brand-600';
 
 export default function SiteHeaderSection() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusMessage, setStatusMessage] = useState("");
-  const { user, isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
 
   const handleLogout = async () => {
     await logout();
-    navigate("/");
+    setOpen(false);
+    navigate('/');
   };
 
-  const handleSearchSubmit = (event) => {
-    event.preventDefault();
-    const query = searchQuery.trim();
-    if (!query) {
-      setStatusMessage("Vui lòng nhập từ vựng cần tìm kiếm.");
-      return;
-    }
-    setStatusMessage(`Đang tìm kiếm từ vựng: ${query}`);
-    window.dispatchEvent(
-      new CustomEvent("learn-today-search", {
-        detail: { query },
-      })
-    );
-  };
-
-  const handlePremiumClick = () => {
-    window.dispatchEvent(new CustomEvent("learn-today-premium"));
-  };
+  const actions = isAuthenticated ? (
+    <>
+      <Link to="/app" className={btnPrimary} onClick={() => setOpen(false)}>Vào ứng dụng</Link>
+      <button type="button" onClick={handleLogout} className={btnGhost}>Đăng xuất</button>
+    </>
+  ) : (
+    <>
+      <Link to="/login" className={btnGhost} onClick={() => setOpen(false)}>Đăng nhập</Link>
+      <Link to="/register" className={btnPrimary} onClick={() => setOpen(false)}>Bắt đầu</Link>
+    </>
+  );
 
   return (
-    <header className="relative flex w-full flex-wrap items-center justify-between gap-4 border border-solid border-slate-200 bg-white px-4 py-3 sm:px-8 lg:h-20 lg:flex-nowrap lg:px-20 lg:py-0">
-      <Link
-      to="/"
-      className="relative inline-flex flex-[0_0_auto] items-center gap-2 rounded-md no-underline transition-opacity duration-200 hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-indigo-600"
-      aria-label="Learn Today - Về trang chủ"
-    >
-      <img
-        className="relative h-9 w-9"
-        alt=""
-        aria-hidden="true"
-        src="https://c.animaapp.com/zdBS24aH/img/frame.svg"
-      />
-      <div className="relative w-fit [font-family:'Lexend_Deca',Helvetica] text-[22px] font-extrabold leading-[normal] tracking-[0] text-indigo-600">
-        Learn Today
-        </div>
-      </Link>
-      <form
-        className="relative order-3 flex h-11 w-full min-w-0 items-center gap-2 rounded-[99px] border border-solid border-slate-200 bg-slate-50 px-4 py-0 sm:max-w-[430px] lg:order-none lg:w-[430px] lg:flex-1"
-        role="search"
-        onSubmit={handleSearchSubmit}
-      >
-        <svg
-          className="relative h-[18px] w-[18px] shrink-0 text-slate-600"
-          aria-hidden="true"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-        >
-          <circle cx="11" cy="11" r="7" />
-          <path d="m20 20-3.5-3.5" />
-        </svg>
-        <label className="sr-only" htmlFor="vocabulary-search">
-          Tìm kiếm từ vựng
-        </label>
-        <input
-          id="vocabulary-search"
-          className="relative min-w-0 flex-1 [font-family:'Rethink_Sans',Helvetica] text-sm font-normal leading-[normal] tracking-[0] text-slate-600 placeholder:text-slate-600"
-          type="search"
-          value={searchQuery}
-          onChange={(event) => setSearchQuery(event.target.value)}
-          placeholder="Tìm kiếm từ vựng..."
-          autoComplete="off"
-        />
-      </form>
-      <div className="relative inline-flex flex-[0_0_auto] flex-wrap items-center gap-2 sm:gap-3">
+    <header className="sticky top-0 z-40 border-b border-line bg-bg/85 backdrop-blur">
+      <div className="mx-auto flex h-16 w-full max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">
+        <BrandLogo />
+
+        <nav aria-label="Điều hướng chính" className="hidden items-center gap-1 lg:flex">
+          {NAV.map((item) => (
+            <a key={item.href} href={item.href} className="rounded-lg px-3.5 py-2 text-sm font-medium text-ink-muted transition hover:bg-surface-2 hover:text-ink">
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="hidden items-center gap-2 lg:flex">{actions}</div>
+
         <button
-          className="all-unset box-border relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-[#eef2f6] px-4 py-2.5 sm:px-6 sm:py-3"
           type="button"
-          onClick={handlePremiumClick}
+          onClick={() => setOpen((v) => !v)}
+          aria-expanded={open}
+          aria-controls="mobile-menu"
+          aria-label={open ? 'Đóng menu' : 'Mở menu'}
+          className="rounded-lg p-2 text-ink-muted transition hover:bg-surface-2 hover:text-ink lg:hidden"
         >
-          <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-indigo-600">
-            Nâng cấp Premium
-          </span>
+          {open ? <IconX size={24} /> : <IconMenu size={24} />}
         </button>
-        {isAuthenticated ? (
-          <>
-            <span className="relative hidden items-center px-3 py-2 sm:inline-flex">
-              <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-slate-600">
-                Xin chào, {user?.username ?? "bạn"}
-              </span>
-            </span>
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="all-unset box-border relative inline-flex flex-[0_0_auto] cursor-pointer items-center justify-center gap-2 rounded-lg border border-solid border-slate-200 px-4 py-2.5 sm:px-6 sm:py-3"
-            >
-              <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-slate-600">
-                Đăng xuất
-              </span>
-            </button>
-          </>
-        ) : (
-          <>
-            <Link
-              className="relative inline-flex flex-[0_0_auto] items-start px-3 py-2 no-underline"
-              to="/login"
-            >
-              <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-slate-600">
-                Đăng nhập
-              </span>
-            </Link>
-            <Link
-              className="relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-indigo-600 px-4 py-2.5 no-underline sm:px-6 sm:py-3"
-              to="/register"
-            >
-              <span className="relative mt-[-1.00px] w-fit whitespace-nowrap [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-white">
-                Đăng ký
-              </span>
-            </Link>
-          </>
-        )}
       </div>
-      <p className="sr-only" aria-live="polite">
-        {statusMessage}
-      </p>
+
+      {open && (
+        <div id="mobile-menu" className="border-t border-line bg-surface px-5 pb-5 pt-3 lg:hidden">
+          <nav aria-label="Điều hướng chính (di động)" className="flex flex-col">
+            {NAV.map((item) => (
+              <a key={item.href} href={item.href} onClick={() => setOpen(false)} className="rounded-lg px-3 py-3 text-base font-medium text-ink-muted hover:bg-surface-2 hover:text-ink">
+                {item.label}
+              </a>
+            ))}
+          </nav>
+          <div className="mt-3 flex flex-col gap-2 [&>*]:text-center">{actions}</div>
+        </div>
+      )}
     </header>
   );
 }

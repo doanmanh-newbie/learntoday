@@ -53,6 +53,18 @@ class LearningLog(db.Model):
         }
 
     @classmethod
+    def count_reviewed_today(cls, user_id):
+        """Số lượt ÔN TẬP thật sự hoàn thành hôm nay (giờ VN); "Bỏ qua" không tính là ôn."""
+        start_vn = datetime.now(VN_TZ).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_start_utc = start_vn.astimezone(UTC_TZ).replace(tzinfo=None)
+        return cls.query.filter(
+            cls.user_id == user_id,
+            cls.action == 'review',
+            db.or_(cls.choice != 'bo_qua', cls.choice.is_(None)),
+            cls.created_at >= today_start_utc
+        ).count()
+
+    @classmethod
     def count_learned_today(cls, user_id):
         """
         Đếm số từ đã học mới (action='learn') trong ngày hôm nay - dùng cho STT 6.

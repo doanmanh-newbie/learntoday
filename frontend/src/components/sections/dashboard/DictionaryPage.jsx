@@ -2,9 +2,9 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 
-import { DICTIONARY } from "../../../data/dictionary";
-import SaveModal from "./SaveModal";   // modal dùng chung (DictionaryPage + WordDetailPage) - trước đây thiếu import -> crash khi bấm Lưu
-import { foldersApi, searchApi, translateApi, wordsApi } from "../../../api/client";
+import SaveModal from "./SaveModal";
+import { speak } from "../../../utils/tts";   // modal dùng chung (DictionaryPage + WordDetailPage) - trước đây thiếu import -> crash khi bấm Lưu
+import { dictionaryApi, foldersApi, searchApi } from "../../../api/client";
 
 
 // ─── Inject CSS Animations ───
@@ -39,13 +39,7 @@ function injectStyles() {
 
 // ─── Utility Functions ───
 
-function speak(text) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const utt = new SpeechSynthesisUtterance(text);
-  utt.lang = "en-US";
-  window.speechSynthesis.speak(utt);
-}
+// speak() dùng chung ở utils/tts.js (đọc theo giọng đã chọn trong Cài đặt)
 
 // ─── Loading Dots ───
 
@@ -55,7 +49,7 @@ function LoadingDots() {
       {[0, 1, 2].map((i) => (
         <span key={i} style={{
           width: "8px", height: "8px", borderRadius: "50%",
-          background: "#6366f1", display: "inline-block",
+          background: "#0f766e", display: "inline-block",
           animation: `bounce 1.2s ease-in-out ${i * 0.15}s infinite`,
         }} />
       ))}
@@ -68,49 +62,36 @@ function LoadingDots() {
 function TraTuTab({ initialQuery = "" }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState(initialQuery);
-  const [suggestions, setSuggestions] = useState([]);
+  const [suggestions, setSuggestions] = useState({ q: "", list: [] });
+  const [searchError, setSearchError] = useState("");
   const [recentSearches, setRecentSearches] = useState([]);
   const [popularWords, setPopularWords] = useState([]);
-  const allKeys = Object.keys(DICTIONARY);
 
+  // Lịch sử tra + "từ được lưu nhiều nhất" (STT 10) đều lấy từ database
   useEffect(() => {
     Promise.allSettled([searchApi.history(), searchApi.popular()]).then(([historyResult, popularResult]) => {
       if (historyResult.status === "fulfilled") {
-        setRecentSearches((historyResult.value.history || []).map(item => item.query).filter(Boolean).slice(0, 8));
+        const seen = new Set();
+        setRecentSearches((historyResult.value.history || []).map((item) => item.query)
+          .filter((q) => q && !seen.has(q) && seen.add(q)).slice(0, 8));
       }
       if (popularResult.status === "fulfilled") {
-        setPopularWords((popularResult.value.words || []).map(item => item.word).filter(Boolean).slice(0, 8));
+        setPopularWords((popularResult.value.words || []).map((item) => item.word).filter(Boolean).slice(0, 8));
       }
     });
   }, []);
 
-  // ✅ Search → navigate sang WordDetailPage
-  const doSearch = async (q) => {
-    const key = q.trim().toLowerCase();
+  // Tra từ: kiểm tra đầu vào rồi chuyển sang trang chi tiết (trang đó gọi từ điển thật, kho DB)
+  const doSearch = (q) => {
+    const key = q.trim().toLowerCase().replace(/\s+/g, " ");
     if (!key) return;
-    try {
-      const result = await searchApi.query(key);
-      const match = (result.results || []).find(item => item.word.toLowerCase() === key)
-        || result.results?.[0];
-      if (match) {
-        navigate(`/app/dictionary/${encodeURIComponent(match.word)}`);
-        return;
-      }
-      const lookup = await wordsApi.lookup(key);
-      if (lookup.found && lookup.word) {
-        navigate(`/app/dictionary/${encodeURIComponent(lookup.word.word)}`);
-        return;
-      }
-    } catch (err) {
-      if (DICTIONARY[key]) {
-        navigate(`/app/dictionary/${encodeURIComponent(DICTIONARY[key].word)}`);
-        return;
-      }
-      alert(err.message || `Không tìm thấy từ "${q}"`);
+    if (!/^[a-z][a-z'\- ]{0,59}$/.test(key)) {
+      setSearchError("Chỉ nhập chữ cái tiếng Anh (tối đa 60 ký tự), ví dụ: accomplish.");
       return;
     }
-    if (DICTIONARY[key]) navigate(`/app/dictionary/${encodeURIComponent(DICTIONARY[key].word)}`);
-    else alert(`Không tìm thấy từ "${q}"`);
+    setSearchError("");
+    setSuggestions({ q: "", list: [] });
+    navigate(`/app/dictionary/${encodeURIComponent(key)}`);
   };
 
   useEffect(() => {
@@ -122,15 +103,19 @@ function TraTuTab({ initialQuery = "" }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- chỉ chạy lại khi initialQuery đổi; doSearch tạo mới mỗi lần render
   }, [initialQuery]);
 
-  const handleInputChange = (value) => {
-    setQuery(value);
-    if (value.trim()) {
-      const matches = allKeys.filter((w) => w.startsWith(value.trim().toLowerCase()));
-      setSuggestions(matches.slice(0, 8));
-    } else {
-      setSuggestions([]);
-    }
-  };
+  // Gợi ý khi gõ: gọi API sau 250ms ngừng gõ (kho database + nguồn gợi ý trực tuyến), không gọi mỗi phím
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) return undefined;
+    let cancelled = false;
+    const t = setTimeout(() => {
+      dictionaryApi.suggest(q)
+        .then((res) => { if (!cancelled) setSuggestions({ q, list: res.suggestions || [] }); })
+        .catch(() => { /* gợi ý là phụ: lỗi thì bỏ qua, vẫn tra được bằng Enter */ });
+    }, 250);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [query]);
+  const shownSuggestions = suggestions.q === query.trim() ? suggestions.list : [];
 
   return (
     <div>
@@ -140,19 +125,19 @@ function TraTuTab({ initialQuery = "" }) {
           <span style={{ fontSize: "20px", marginLeft: "10px" }}>🔍</span>
           <input
             value={query}
-            onChange={(e) => handleInputChange(e.target.value)}
+            onChange={(e) => { setQuery(e.target.value); setSearchError(""); }}
             onKeyDown={(e) => { if (e.key === "Enter") doSearch(query); }}
             placeholder="Nhập từ tiếng Anh để tra cứu..."
             style={{
               flex: 1, border: "none", background: "transparent", outline: "none",
-              fontSize: "18px", color: "#f8faff", fontFamily: "Inter, sans-serif",
+              fontSize: "18px", color: "#f4f6f7", fontFamily: "Inter, sans-serif",
             }}
           />
           <button
             onClick={() => doSearch(query)}
             style={{
-              background: "linear-gradient(135deg,#6366f1,#818cf8)", border: "none",
-              borderRadius: "12px", padding: "10px 24px", color: "#fff",
+              background: "linear-gradient(135deg,#0f766e,#0e8077)", border: "none",
+              borderRadius: "12px", padding: "10px 24px", color: "#ffffff",
               fontSize: "15px", fontWeight: 700, cursor: "pointer",
             }}
           >
@@ -161,24 +146,24 @@ function TraTuTab({ initialQuery = "" }) {
         </div>
 
         {/* Dropdown gợi ý */}
-        {suggestions.length > 0 && (
+        {shownSuggestions.length > 0 && (
           <div style={{
             position: "absolute", top: "110%", left: 0, right: 0,
-            background: "#0e1130", border: "0.8px solid rgba(255,255,255,0.1)",
+            background: "#161a1d", border: "0.8px solid rgba(255,255,255,0.1)",
             borderRadius: "16px", boxShadow: "0 16px 40px rgba(0,0,0,0.4)",
             zIndex: 10, overflow: "hidden",
           }}>
-            {suggestions.map((s) => (
+            {shownSuggestions.map((s) => (
               <button
                 key={s}
                 onClick={() => { setQuery(s); doSearch(s); }}
                 style={{
                   display: "block", width: "100%", padding: "12px 18px",
                   background: "transparent", border: "none", textAlign: "left",
-                  color: "#a5b4fc", fontSize: "15px", cursor: "pointer", fontFamily: "Outfit, sans-serif",
+                  color: "#5eead4", fontSize: "15px", cursor: "pointer", fontFamily: "Outfit, sans-serif",
                   borderBottom: "0.8px solid rgba(255,255,255,0.04)",
                 }}
-                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.1)"; }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(20,184,166,0.1)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
               >
                 {s}
@@ -188,36 +173,40 @@ function TraTuTab({ initialQuery = "" }) {
         )}
       </div>
 
-      {/* Tra nhanh */}
+      {searchError && (
+        <p role="alert" style={{ maxWidth: "700px", margin: "-10px auto 16px", color: "#fca5a5", fontSize: "13.5px" }}>⚠️ {searchError}</p>
+      )}
+
+      {/* Gợi ý nhanh */}
       <div style={{ marginBottom: "22px" }}>
-        <p style={{ fontFamily: "Inter,sans-serif", fontSize: "12px", color: "#475569", marginBottom: "10px" }}>
-          Tra nhanh:
+        <p style={{ fontFamily: "Inter,sans-serif", fontSize: "12px", color: "#6b747c", marginBottom: "10px" }}>
+          Từ được lưu nhiều nhất:
         </p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-          {(popularWords.length ? popularWords : allKeys.slice(0, 12)).map((w) => (
+        {popularWords.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+          {popularWords.map((w) => (
             <button
               key={w}
               onClick={() => { setQuery(w); doSearch(w); }}
               style={{
-                background: "rgba(99,102,241,0.08)", border: "0.8px solid rgba(99,102,241,0.2)",
+                background: "rgba(20,184,166,0.08)", border: "0.8px solid rgba(20,184,166,0.2)",
                 borderRadius: "20px", padding: "6px 14px",
-                color: "#a5b4fc", fontSize: "13px", fontFamily: "Inter,sans-serif",
+                color: "#5eead4", fontSize: "13px", fontFamily: "Inter,sans-serif",
                 cursor: "pointer", transition: "all 0.15s",
               }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.18)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(99,102,241,0.08)"; }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(20,184,166,0.18)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(20,184,166,0.08)"; }}
             >
               {w}
             </button>
           ))}
-        </div>
+        </div>}
         {recentSearches.length > 0 && (
           <div style={{ marginTop: 14 }}>
-            <p style={{ fontFamily: "Inter,sans-serif", fontSize: 12, color: "#475569", marginBottom: 8 }}>Tìm gần đây:</p>
+            <p style={{ fontFamily: "Inter,sans-serif", fontSize: 12, color: "#6b747c", marginBottom: 8 }}>Tìm gần đây:</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
               {recentSearches.map((item, index) => (
                 <button key={`${item}-${index}`} onClick={() => { setQuery(item); doSearch(item); }}
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "5px 12px", color: "#94a3b8", cursor: "pointer" }}>
+                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 20, padding: "5px 12px", color: "#a2acb3", cursor: "pointer" }}>
                   {item}
                 </button>
               ))}
@@ -226,240 +215,12 @@ function TraTuTab({ initialQuery = "" }) {
         )}
       </div>
 
-      {/* ✅ KHÔNG render DictCard nữa. Chỉ navigate. */}
+      {/* Kết quả hiển thị ở trang chi tiết từ (/app/dictionary/<từ>) */}
     </div>
   );
 }
 
-// ─── Tab 2: Dịch văn bản ───
-
-function DichTab({ folders, onSaveWord, onCreateFolder }) {
-  const [srcLang, setSrcLang] = useState("en");
-  const [tgtLang, setTgtLang] = useState("vi");
-  const [srcText, setSrcText] = useState("");
-  const [tgtText, setTgtText] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [saveModal, setSaveModal] = useState(null); // "src" | "tgt" | null
-  const timerRef = useRef(null);
-
-  const translate = useCallback((text, lang, target = tgtLang) => {
-    if (!text.trim()) { setTgtText(""); setLoading(false); return; }
-    setLoading(true);
-    clearTimeout(timerRef.current);
-    timerRef.current = setTimeout(async () => {
-      try {
-        const result = await translateApi.translate(text, lang, target);
-        setTgtText(result.translated || "");
-      } catch (err) {
-        setTgtText(err.message || "Không dịch được nội dung.");
-      } finally {
-        setLoading(false);
-      }
-    }, 500);
-  }, [tgtLang]);
-
-  const handleSrcChange = (val) => {
-    setSrcText(val);
-    translate(val, srcLang);
-  };
-
-  const handleSwap = () => {
-    const newSrc = tgtLang;
-    const newTgt = srcLang;
-    const newSrcText = tgtText;
-    const newTgtText = srcText;
-    setSrcLang(newSrc);
-    setTgtLang(newTgt);
-    setSrcText(newSrcText);
-    setTgtText(newTgtText);
-    translate(newSrcText, newSrc, newTgt);
-  };
-
-  const handleSave = (folderId, word) => {
-    const sourceText = saveModal === "src" ? srcText : tgtText;
-    const meaningText = saveModal === "src" ? tgtText : srcText;
-    return onSaveWord(folderId, sourceText || word, meaningText || word);
-  };
-
-  const handleCreate = (name) => onCreateFolder(name);
-
-  const langLabel = { en: "🇺🇸 EN", vi: "🇻🇳 VI" };
-
-  return (
-    <div>
-      <div style={{
-        display: "flex", alignItems: "center", gap: "12px",
-        background: "rgba(255,255,255,0.025)", border: "0.8px solid rgba(255,255,255,0.07)",
-        borderRadius: "14px", padding: "12px 18px", marginBottom: "16px",
-      }}>
-        {["en", "vi"].map((l) => (
-          <button
-            key={l}
-            onClick={() => { if (srcLang !== l) { setSrcLang(l); translate(srcText, l); } }}
-            style={{
-              background: srcLang === l ? "rgba(99,102,241,0.2)" : "transparent",
-              border: srcLang === l ? "0.8px solid rgba(99,102,241,0.5)" : "0.8px solid transparent",
-              borderRadius: "10px", padding: "7px 16px",
-              color: srcLang === l ? "#a5b4fc" : "#64748b",
-              fontFamily: "Outfit,sans-serif", fontSize: "14px", fontWeight: 600,
-              cursor: "pointer", transition: "all 0.15s",
-            }}
-          >
-            {langLabel[l]}
-          </button>
-        ))}
-
-        <button
-          onClick={handleSwap}
-          style={{
-            background: "rgba(255,255,255,0.05)", border: "0.8px solid rgba(255,255,255,0.1)",
-            borderRadius: "10px", padding: "7px 14px", cursor: "pointer",
-            color: "#94a3b8", fontSize: "16px", transition: "all 0.15s",
-          }}
-          onMouseEnter={(e) => (e.target.style.color = "#a5b4fc")}
-          onMouseLeave={(e) => (e.target.style.color = "#94a3b8")}
-        >
-          ⇄
-        </button>
-
-        {["en", "vi"].map((l) => (
-          <button
-            key={l}
-            onClick={() => { if (tgtLang !== l) setTgtLang(l); }}
-            style={{
-              background: tgtLang === l ? "rgba(16,185,129,0.15)" : "transparent",
-              border: tgtLang === l ? "0.8px solid rgba(16,185,129,0.4)" : "0.8px solid transparent",
-              borderRadius: "10px", padding: "7px 16px",
-              color: tgtLang === l ? "#34d399" : "#64748b",
-              fontFamily: "Outfit,sans-serif", fontSize: "14px", fontWeight: 600,
-              cursor: "pointer", transition: "all 0.15s",
-            }}
-          >
-            {langLabel[l]}
-          </button>
-        ))}
-      </div>
-
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
-        <div style={{
-          background: "rgba(255,255,255,0.025)", border: "0.8px solid rgba(255,255,255,0.07)",
-          borderRadius: "18px", padding: "18px", display: "flex", flexDirection: "column",
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-            <span style={{ fontFamily: "Outfit,sans-serif", fontSize: "12px", fontWeight: 700, color: "#6366f1", letterSpacing: "0.5px" }}>
-              {langLabel[srcLang]}
-            </span>
-            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-              {srcText && (
-                <>
-                  <button
-                    onClick={() => setSaveModal("src")}
-                    style={{
-                      background: "rgba(99,102,241,0.1)", border: "0.8px solid rgba(99,102,241,0.25)",
-                      borderRadius: "8px", padding: "3px 10px",
-                      color: "#a5b4fc", fontSize: "12px", cursor: "pointer",
-                      fontFamily: "Inter,sans-serif",
-                    }}
-                  >💾 Lưu</button>
-                  <button
-                    onClick={() => { setSrcText(""); setTgtText(""); }}
-                    style={{ background: "none", border: "none", cursor: "pointer", color: "#475569", fontSize: "14px" }}
-                  >✕</button>
-                </>
-              )}
-              <button
-                onClick={() => speak(srcText)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: "14px" }}
-              >🔊</button>
-            </div>
-          </div>
-          <textarea
-            value={srcText}
-            onChange={(e) => handleSrcChange(e.target.value)}
-            placeholder="Nhập văn bản cần dịch..."
-            style={{
-              flex: 1, minHeight: "160px", resize: "none",
-              background: "transparent", border: "none", outline: "none",
-              fontFamily: "Inter,sans-serif", fontSize: "15px", color: "#e2e8f0",
-              lineHeight: 1.6,
-            }}
-          />
-          <div style={{ textAlign: "right", fontFamily: "Inter,sans-serif", fontSize: "11px", color: "#334155", marginTop: "8px" }}>
-            {srcText.length} ký tự
-          </div>
-        </div>
-
-        <div style={{
-          background: "rgba(255,255,255,0.025)", border: "0.8px solid rgba(255,255,255,0.07)",
-          borderRadius: "18px", padding: "18px", display: "flex", flexDirection: "column",
-        }}>
-          <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "10px" }}>
-            <span style={{ fontFamily: "Outfit,sans-serif", fontSize: "12px", fontWeight: 700, color: "#34d399", letterSpacing: "0.5px" }}>
-              {langLabel[tgtLang]}
-            </span>
-            <div style={{ display: "flex", gap: "8px" }}>
-              {tgtText && (
-                <button
-                  onClick={() => setSaveModal("tgt")}
-                  style={{
-                    background: "rgba(99,102,241,0.1)", border: "0.8px solid rgba(99,102,241,0.25)",
-                    borderRadius: "8px", padding: "3px 10px",
-                    color: "#a5b4fc", fontSize: "12px", cursor: "pointer",
-                    fontFamily: "Inter,sans-serif",
-                  }}
-                >
-                  💾 Lưu
-                </button>
-              )}
-              <button
-                onClick={() => speak(tgtText)}
-                style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b", fontSize: "14px" }}
-              >🔊</button>
-            </div>
-          </div>
-
-          <div style={{ flex: 1, minHeight: "160px" }}>
-            {loading ? (
-              <LoadingDots />
-            ) : tgtText ? (
-              <p style={{
-                fontFamily: "Inter,sans-serif", fontSize: "15px", color: "#e2e8f0",
-                lineHeight: 1.6, margin: 0, animation: "fadeSlideIn 0.25s ease",
-              }}>
-                {tgtText}
-              </p>
-            ) : (
-              <p style={{ fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#334155", fontStyle: "italic" }}>
-                Bản dịch sẽ hiện ở đây...
-              </p>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {saveModal === "src" && srcText && (
-        <SaveModal
-          wordOrText={srcText}
-          folders={folders}
-          onSave={handleSave}
-          onClose={() => setSaveModal(null)}
-          onCreate={handleCreate}
-        />
-      )}
-      {saveModal === "tgt" && tgtText && (
-        <SaveModal
-          wordOrText={tgtText}
-          folders={folders}
-          onSave={handleSave}
-          onClose={() => setSaveModal(null)}
-          onCreate={handleCreate}
-        />
-      )}
-    </div>
-  );
-}
-
-// ─── Tab 3: Thư mục (xem/xóa từ đã lưu) ───
+// ─── Tab 2: Thư mục (xem/xóa từ đã lưu) ───
 
 function ThuMucTab({ folders, onRemoveWord }) {
   const navigate = useNavigate();
@@ -468,7 +229,7 @@ function ThuMucTab({ folders, onRemoveWord }) {
 
   if (folders.length === 0) {
     return (
-      <div style={{ textAlign: "center", padding: "60px 20px", color: "#64748b" }}>
+      <div style={{ textAlign: "center", padding: "60px 20px", color: "#848f97" }}>
         Chưa có thư mục nào. Hãy lưu 1 từ ở tab "Tra từ" để tạo thư mục mới.
       </div>
     );
@@ -485,16 +246,16 @@ function ThuMucTab({ folders, onRemoveWord }) {
             style={{
               display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px",
               padding: "11px 14px", borderRadius: "12px", textAlign: "left", cursor: "pointer",
-              background: openFolderId === f.id ? "rgba(99,102,241,0.14)" : "rgba(255,255,255,0.025)",
-              border: openFolderId === f.id ? "0.8px solid rgba(99,102,241,0.35)" : "0.8px solid rgba(255,255,255,0.07)",
+              background: openFolderId === f.id ? "rgba(20,184,166,0.14)" : "rgba(255,255,255,0.025)",
+              border: openFolderId === f.id ? "0.8px solid rgba(20,184,166,0.35)" : "0.8px solid rgba(255,255,255,0.07)",
               fontFamily: "Outfit,sans-serif",
             }}
           >
-            <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#e2e8f0", fontSize: "13.5px", fontWeight: 600 }}>
+            <span style={{ display: "flex", alignItems: "center", gap: "8px", color: "#dde2e5", fontSize: "13.5px", fontWeight: 600 }}>
               <span style={{ width: "8px", height: "8px", borderRadius: "50%", background: f.color, display: "inline-block", flexShrink: 0 }} />
               {f.name}
             </span>
-            <span style={{ fontSize: "12px", color: "#64748b" }}>{f.words.length}</span>
+            <span style={{ fontSize: "12px", color: "#848f97" }}>{f.words.length}</span>
           </button>
         ))}
       </div>
@@ -503,7 +264,7 @@ function ThuMucTab({ folders, onRemoveWord }) {
       <div style={{ flex: "1 1 320px", minWidth: 0 }}>
         {!openFolder || openFolder.words.length === 0 ? (
           <div style={{
-            padding: "40px 20px", textAlign: "center", color: "#64748b",
+            padding: "40px 20px", textAlign: "center", color: "#848f97",
             background: "rgba(255,255,255,0.02)", border: "0.8px dashed rgba(255,255,255,0.1)",
             borderRadius: "14px",
           }}>
@@ -512,7 +273,7 @@ function ThuMucTab({ folders, onRemoveWord }) {
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
             {openFolder.words.map((w) => {
-              const entry = DICTIONARY[w];
+              const phonetic = openFolder.phonetics?.[w];
               return (
                 <div key={w} style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between", gap: "10px",
@@ -520,27 +281,26 @@ function ThuMucTab({ folders, onRemoveWord }) {
                   background: "rgba(255,255,255,0.025)", border: "0.8px solid rgba(255,255,255,0.07)",
                 }}>
                   <button
-                    onClick={() => entry && navigate(`/app/dictionary/${w}`)}
-                    disabled={!entry}
+                    onClick={() => navigate(`/app/dictionary/${encodeURIComponent(w)}`)}
                     style={{
                       background: "none", border: "none", textAlign: "left", padding: 0,
-                      cursor: entry ? "pointer" : "default", flex: 1, minWidth: 0,
+                      cursor: "pointer", flex: 1, minWidth: 0,
                     }}
                   >
-                    <p style={{ margin: 0, color: "#f8faff", fontFamily: "Outfit,sans-serif", fontWeight: 700, fontSize: "15px" }}>
+                    <p style={{ margin: 0, color: "#f4f6f7", fontFamily: "Outfit,sans-serif", fontWeight: 700, fontSize: "15px" }}>
                       {w}
                     </p>
-                    {entry?.phonetic && (
-                      <p style={{ margin: "2px 0 0", color: "#64748b", fontSize: "12.5px", fontFamily: "Inter,sans-serif" }}>
-                        {entry.phonetic}
+                    {phonetic && (
+                      <p style={{ margin: "2px 0 0", color: "#a2acb3", fontSize: "12.5px", fontFamily: "Inter,sans-serif" }}>
+                        {phonetic}
                       </p>
                     )}
                   </button>
                   <button
                     onClick={() => speak(w)}
                     style={{
-                      background: "rgba(165,180,252,0.1)", border: "0.8px solid rgba(165,180,252,0.2)",
-                      borderRadius: "9px", padding: "6px 10px", color: "#a5b4fc", fontSize: "13px", cursor: "pointer",
+                      background: "rgba(94,234,212,0.1)", border: "0.8px solid rgba(94,234,212,0.2)",
+                      borderRadius: "9px", padding: "6px 10px", color: "#5eead4", fontSize: "13px", cursor: "pointer",
                     }}
                   >
                     🔊
@@ -583,8 +343,9 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
       return {
         id: folder.id,
         name: folder.name,
-        color: folder.color || "#6366f1",
+        color: folder.color || "#14b8a6",
         words: rows.map(row => row.word),
+        phonetics: Object.fromEntries(rows.map(row => [row.word, row.pronunciation])),
         wordIds: Object.fromEntries(rows.map(row => [row.word, row.id])),
       };
     }));
@@ -598,21 +359,6 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
     [reloadFolders]
   );
   useEffect(() => { Promise.resolve().then(loadFolders); }, [loadFolders]);
-
-  const createFolder = async (name) => {
-    const result = await foldersApi.create(name);
-    await reloadFolders();
-    return result.folder.id;
-  };
-
-  const saveWordToFolder = async (folderId, word, meaning) => {
-    if (!word?.trim() || word.trim().length > 100) {
-      throw new Error("Từ/cụm từ cần lưu phải có từ 1 đến 100 ký tự.");
-    }
-    const saved = await translateApi.save({ word: word.trim(), meaning: meaning?.trim() || word.trim() });
-    await foldersApi.addWord(folderId, saved.word.id);
-    await reloadFolders();
-  };
 
   useEffect(() => {
     if (initialQuery && initialQuery.trim()) {
@@ -638,14 +384,13 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
 
   const tabs = [
     { label: "🔍 Tra từ", component: <TraTuTab initialQuery={externalQuery} /> },
-    { label: "🌐 Dịch văn bản", component: <DichTab folders={folders} onSaveWord={saveWordToFolder} onCreateFolder={createFolder} /> },
     { label: "📁 Thư mục", component: <ThuMucTab folders={folders} onRemoveWord={handleRemoveWord} /> },
   ];
     return (
     <div
       className="dict-page"
       style={{
-        minHeight: "100vh", background: "#07091a",
+        minHeight: "100vh", background: "#0f1214",
         padding: "0 0 60px", position: "relative", overflow: "hidden",
       }}
     >
@@ -653,13 +398,13 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
       <div style={{
         position: "fixed", top: "-160px", left: "-160px",
         width: "500px", height: "500px", borderRadius: "50%",
-        background: "radial-gradient(circle,rgba(99,102,241,0.13) 0%,transparent 70%)",
+        background: "radial-gradient(circle,rgba(20,184,166,0.13) 0%,transparent 70%)",
         pointerEvents: "none",
       }} />
       <div style={{
         position: "fixed", bottom: "-120px", right: "-120px",
         width: "420px", height: "420px", borderRadius: "50%",
-        background: "radial-gradient(circle,rgba(139,92,246,0.1) 0%,transparent 70%)",
+        background: "radial-gradient(circle,rgba(45,212,191,0.1) 0%,transparent 70%)",
         pointerEvents: "none",
       }} />
 
@@ -668,14 +413,14 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
           <div style={{ textAlign: "center", marginBottom: "28px" }}>
           <h1 style={{
             fontFamily: "Outfit,sans-serif", fontSize: "32px", fontWeight: 900,
-            color: "#f8faff", margin: "0 0 6px",
-            background: "linear-gradient(135deg,#a5b4fc,#818cf8)",
+            color: "#f4f6f7", margin: "0 0 6px",
+            background: "linear-gradient(135deg,#5eead4,#2dd4bf)",
             WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
           }}>
             Từ điển &amp; Dịch thuật
           </h1>
-          <p style={{ fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#475569", margin: 0 }}>
-            Tra cứu, dịch văn bản và quản lý từ vựng của bạn
+          <p style={{ fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#6b747c", margin: 0 }}>
+            Tra cứu từ và quản lý từ vựng đã lưu của bạn
           </p>
         </div>
 
@@ -694,14 +439,14 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
               style={{
                 flex: 1, padding: "10px 8px",
                 background: activeTab === i
-                  ? "linear-gradient(135deg,rgba(99,102,241,0.25),rgba(129,140,248,0.18))"
+                  ? "linear-gradient(135deg,rgba(20,184,166,0.25),rgba(20,184,166,0.18))"
                   : "transparent",
                 border: activeTab === i
-                  ? "0.8px solid rgba(99,102,241,0.35)"
+                  ? "0.8px solid rgba(20,184,166,0.35)"
                   : "0.8px solid transparent",
                 borderRadius: "10px", cursor: "pointer",
                 fontFamily: "Outfit,sans-serif", fontSize: "13.5px", fontWeight: activeTab === i ? 700 : 500,
-                color: activeTab === i ? "#a5b4fc" : "#64748b",
+                color: activeTab === i ? "#5eead4" : "#848f97",
                 transition: "all 0.18s", whiteSpace: "nowrap",
               }}
             >

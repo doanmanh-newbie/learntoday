@@ -1,4 +1,4 @@
-// Chạy:  node --test src/api/tests/        (Node >= 20, không cần cài thêm gì)
+// Chạy:  npm test        (Node >= 20, không cần cài thêm gì)
 import { test, mock } from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -12,8 +12,7 @@ globalThis.localStorage = {
 globalThis.window = new EventTarget();
 globalThis.document = Object.assign(new EventTarget(), { visibilityState: 'visible' });
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
-store.set('access_token', `${b64({ alg: 'HS256' })}.${b64({ user_id: 'u1' })}.sig`);
-store.set('refresh_token', 'rt-1');
+const fakeJwt = (extra = {}) => `${b64({ alg: 'HS256' })}.${b64({ user_id: 'u1', ...extra })}.sig`;
 
 let calls = [];
 let handler = async () => ({ status: 200, body: {} });
@@ -24,8 +23,9 @@ globalThis.fetch = async (url, opts = {}) => {
 };
 
 const { toUiWord, blankWord, shortPos } = await import('../adapters.js');
-const { apiRequest, ApiError } = await import('../client.js');
-const { enqueueProgress, flushOutbox, getSyncSnapshot } = await import('../outbox.js');
+const { apiRequest, ApiError, setAccessToken, getAccessToken, hasSession } = await import('../client.js');
+setAccessToken(fakeJwt());           // Access Token chỉ nằm trong bộ nhớ; Refresh Token nằm ở cookie HttpOnly (client không thấy)
+const { enqueueProgress, flushOutbox, getSyncSnapshot, dismissRejected } = await import('../outbox.js');
 
 const waitFor = async (cond, ms = 1000) => {
   const end = Date.now() + ms;
@@ -43,7 +43,8 @@ test('blankWord che từ (kể cả biến thể -s/-ed/-ing) và KHÔNG che t�
   assert.equal(blankWord('He is simmering soup.', 'simmer'), 'He is ___ soup.');          // simmer + ing
   assert.equal(blankWord('Cloud storage is cheap.', 'cloud'), '___ storage is cheap.');   // không phân biệt hoa/thường
   assert.equal(blankWord('The sky is cloudy.', 'cloud'), null);                           // "cloudy" là từ khác
-  assert.equal(blankWord('He is running.', 'run'), null);                                 // biến thể bất quy tắc: không đoán mò -> dùng ví dụ dự phòng
+  assert.equal(blankWord('He is running.', 'run'), 'He is ___.');                         // gấp đôi phụ âm
+  assert.equal(blankWord('The sky is cloudy.', 'cloud'), null);                           // từ khác: không che, dùng ví dụ dự phòng
   assert.equal(blankWord('', 'x'), null);
 });
 
@@ -85,7 +86,7 @@ test('đăng nhập sai mật khẩu (401) KHÔNG bị coi là hết phiên: kh�
   });
   assert.equal(calls.length, 1);
   assert.equal(expired, 0);
-  assert.ok(localStorage.getItem('access_token'), 'token không bị xóa');
+  assert.ok(getAccessToken(), 'token không bị xóa');
 });
 
 test('401 ở API thường: refresh 1 lần rồi gọi lại với token mới', async () => {
@@ -103,7 +104,7 @@ test('401 ở API thường: refresh 1 lần rồi gọi lại với token mới
 
 test('nhiều request cùng gặp 401 chỉ gọi refresh ĐÚNG 1 lần', async () => {
   reset();
-  store.set('access_token', `${b64({})}.${b64({ user_id: 'u1' })}.sig`);
+  setAccessToken(fakeJwt());
   const seen = new Set();
   handler = async (url, opts) => {
     if (url.endsWith('/api/auth/refresh-token')) { await new Promise((r) => setTimeout(r, 20)); return { status: 200, body: { access_token: 'NEW2' } }; }
@@ -118,7 +119,6 @@ test('nhiều request cùng gặp 401 chỉ gọi refresh ĐÚNG 1 lần', async
 
 test('refresh token hỏng -> phát auth:expired và ném SESSION_EXPIRED; mất mạng thì KHÔNG đăng xuất', async () => {
   reset();
-  store.set('refresh_token', 'bad');
   let expired = 0;
   const onExp = () => { expired++; };
   window.addEventListener('auth:expired', onExp);
@@ -127,8 +127,7 @@ test('refresh token hỏng -> phát auth:expired và ném SESSION_EXPIRED; mất
   assert.equal(expired, 1);
 
   // mất mạng khi refresh: giữ nguyên token
-  store.set('access_token', `${b64({})}.${b64({ user_id: 'u1' })}.sig`);
-  store.set('refresh_token', 'rt-2');
+  setAccessToken(fakeJwt());
   const realFetch = globalThis.fetch;
   let first = true;
   globalThis.fetch = async (url, opts) => {
@@ -137,14 +136,14 @@ test('refresh token hỏng -> phát auth:expired và ném SESSION_EXPIRED; mất
     return realFetch(url, opts);
   };
   await assert.rejects(() => apiRequest('/api/y'), (e) => e.retryable === true && e.code === 'NETWORK');
-  assert.ok(localStorage.getItem('refresh_token'), 'không xóa token khi chỉ là lỗi mạng');
+  assert.ok(hasSession(), 'không xóa phiên khi chỉ là lỗi mạng');
   globalThis.fetch = realFetch;
   window.removeEventListener('auth:expired', onExp);
 });
 
 test('mất mạng / DB sập trả ApiError có retryable', async () => {
   reset();
-  store.set('access_token', `${b64({})}.${b64({ user_id: 'u1' })}.sig`);
+  setAccessToken(fakeJwt());
   handler = async () => ({ status: 503, body: { message: 'Không kết nối được cơ sở dữ liệu', code: 'DB_UNAVAILABLE' } });
   await assert.rejects(() => apiRequest('/api/folders'), (e) => e.status === 503 && e.code === 'DB_UNAVAILABLE' && e.retryable);
   handler = async () => ({ status: 200, body: {} });
@@ -171,6 +170,13 @@ test('outbox: lỗi 400 vĩnh viễn bị bỏ, không kẹt hàng đợi', asyn
   handler = async () => ({ status: 400, body: { message: 'sai' } });
   enqueueProgress('review', 'w3', { wrong_count: 0 });
   await waitFor(() => getSyncSnapshot().pending === 0);
+  // không còn bỏ im lặng: người dùng được báo có mục bị từ chối (SyncBanner), và đóng được thông báo
+  assert.equal(getSyncSnapshot().rejected, 1);
+  assert.equal(getSyncSnapshot().lastRejected, 'sai');
+  assert.equal(JSON.parse(localStorage.getItem('lt_outbox_rejected_v1'))[0].wordId, 'w3');
+  dismissRejected();
+  assert.equal(getSyncSnapshot().rejected, 0);
+  assert.equal(localStorage.getItem('lt_outbox_rejected_v1'), '[]');
 });
 
 test('outbox: DB/mạng lỗi -> GIỮ trong hàng đợi (bền qua F5), giữ thứ tự, gửi lại được khi hết lỗi', async () => {
@@ -202,4 +208,36 @@ test('outbox: DB/mạng lỗi -> GIỮ trong hàng đợi (bền qua F5), giữ 
 
 test('outbox: loại tiến độ không hợp lệ bị từ chối ngay', () => {
   assert.throws(() => enqueueProgress('xoa-het', 'w1'), /không hợp lệ/);
+});
+
+// ───────────────────────── prefs (giọng đọc) ─────────────────────────
+test('giọng đọc: mặc định en-US, lưu được en-GB, bỏ qua giá trị lạ', async () => {
+  const { getTtsVoice, setTtsVoice, applyUserPrefs } = await import('../../utils/prefs.js');
+  localStorage.removeItem('lt_tts_voice');
+  assert.equal(getTtsVoice(), 'en-US');
+  setTtsVoice('en-GB');
+  assert.equal(getTtsVoice(), 'en-GB');
+  setTtsVoice('vi-VN');                       // không hợp lệ -> giữ nguyên
+  assert.equal(getTtsVoice(), 'en-GB');
+  applyUserPrefs({ tts_voice: 'en-US' });     // đăng nhập/khôi phục phiên: áp theo hồ sơ server
+  assert.equal(getTtsVoice(), 'en-US');
+});
+
+// ───────────────────────── toUiEntry (từ điển thật) ─────────────────────────
+test('toUiEntry: giữ nghĩa chưa dịch là RỖNG (không điền tiếng Anh), gắn nhãn loại từ tiếng Việt', async () => {
+  const { toUiEntry, posLabelVi } = await import('../adapters.js');
+  const e = toUiEntry({
+    word: 'accomplish', phonetic: '/əˈkʌmplɪʃ/', vi_complete: false,
+    audio: { uk: 'u.mp3', us: 's.mp3' },
+    meanings: [{ pos: 'verb', synonyms: ['achieve'], antonyms: [],
+      definitions: [{ definition_en: 'To succeed.', meaning_vi: 'Thành công.', example: 'She did.', example_vi: null },
+                    { definition_en: 'To complete.', meaning_vi: null, example: null, example_vi: null }] }],
+  });
+  assert.equal(e.meanings[0].posLabel, 'Động từ');
+  assert.deepEqual(e.meanings[0].definitions.map((d) => d.vi), ['Thành công.', '']);
+  assert.equal(e.meanings[0].definitions[1].en, 'To complete.');
+  assert.equal(e.viComplete, false);
+  assert.equal(e.audio.uk, 'u.mp3');
+  assert.equal(posLabelVi('gibberish'), 'gibberish');
+  assert.equal(posLabelVi(undefined), 'Khác');
 });

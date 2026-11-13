@@ -18,35 +18,48 @@ VALID_REMINDER_HOURS = {8, 12, 20}
 @bp.route('', methods=['GET'])
 @token_required
 def get_profile():
-    user = User.query.get(request.user_id)
+    user = db.session.get(User, request.user_id)
     if not user:
         return jsonify({'message': 'Không tìm thấy user!'}), 404
     return jsonify({'user': user.to_dict()}), 200
 
 
+def _as_int(value):
+    """int(...) an toàn: chuỗi/None/bool -> None (trước đây int('abc') làm API văng lỗi 500)."""
+    if isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
+
+
 @bp.route('', methods=['PUT'])
 @token_required
 def update_profile():
-    user = User.query.get(request.user_id)
+    user = db.session.get(User, request.user_id)
     if not user:
         return jsonify({'message': 'Không tìm thấy user!'}), 404
 
-    data = request.get_json() or {}
+    data = request.get_json(silent=True) or {}
 
-    if 'username' in data and data['username']:
-        existing = User.query.filter(User.username == data['username'], User.id != user.id).first()
+    if 'username' in data:
+        username = (data['username'] or '').strip() if isinstance(data['username'], str) else ''
+        if not 1 <= len(username) <= 50:
+            return jsonify({'message': 'Tên người dùng phải từ 1 đến 50 ký tự!'}), 400
+        existing = User.query.filter(db.func.lower(User.username) == username.lower(), User.id != user.id).first()
         if existing:
             return jsonify({'message': 'Tên người dùng đã tồn tại!'}), 400
-        user.username = data['username'].strip()
+        user.username = username
 
     if 'daily_goal' in data:
-        goal = int(data['daily_goal'])
+        goal = _as_int(data['daily_goal'])
         if goal not in VALID_DAILY_GOALS:
             return jsonify({'message': f'daily_goal phải là 1 trong {sorted(VALID_DAILY_GOALS)}'}), 400
         user.daily_goal = goal
 
     if 'review_limit' in data:
-        limit = int(data['review_limit'])
+        limit = _as_int(data['review_limit'])
         if limit not in VALID_REVIEW_LIMITS:
             return jsonify({'message': f'review_limit phải là 1 trong {sorted(VALID_REVIEW_LIMITS)}'}), 400
         user.review_limit = limit
@@ -57,17 +70,25 @@ def update_profile():
         user.level = data['level']
 
     if 'email_reminder' in data:
-        user.email_reminder = bool(data['email_reminder'])
+        if not isinstance(data['email_reminder'], bool):
+            return jsonify({'message': 'email_reminder phải là true hoặc false'}), 400
+        user.email_reminder = data['email_reminder']
 
     if 'reminder_time' in data:
-        hour = data['reminder_time']
-        if isinstance(hour, int):
-            if hour not in VALID_REMINDER_HOURS:
+        raw = data['reminder_time']
+        hour = minute = None
+        if isinstance(raw, int) and not isinstance(raw, bool):
+            if raw not in VALID_REMINDER_HOURS:
                 return jsonify({'message': f'Giờ nhắc nhở phải là 1 trong {sorted(VALID_REMINDER_HOURS)}'}), 400
-            user.reminder_time = dt_time(hour=hour, minute=0)
-        elif isinstance(hour, str) and ':' in hour:
-            parts = hour.split(':')
-            user.reminder_time = dt_time(hour=int(parts[0]), minute=int(parts[1]))
+            hour, minute = raw, 0
+        elif isinstance(raw, str) and ':' in raw:
+            h, _, m = raw.partition(':')
+            hour, minute = _as_int(h), _as_int(m[:2])
+            if hour is None or minute is None or not (0 <= hour <= 23 and 0 <= minute <= 59):
+                return jsonify({'message': 'reminder_time phải có dạng HH:MM hợp lệ'}), 400
+        else:
+            return jsonify({'message': 'reminder_time không hợp lệ'}), 400
+        user.reminder_time = dt_time(hour=hour, minute=minute)
 
     if 'tts_voice' in data:
         if data['tts_voice'] not in VALID_TTS_VOICES:

@@ -26,7 +26,7 @@ function VocabChips() {
           fontSize: 11,
           fontWeight: 700,
           letterSpacing: "0.08em",
-          color: "#5a6a8a",
+          color: "#a2acb3",
           textTransform: "uppercase",
           marginBottom: 10,
         }}
@@ -37,8 +37,8 @@ function VocabChips() {
         {VOCAB.map(({ word, pos, vi }) => (
           <div key={word} className="vocab-chip cursor-pointer">
             <span style={{ fontWeight: 600 }}>{word}</span>
-            <span style={{ color: "#6366f1", marginLeft: 4 }}>({pos})</span>
-            <span style={{ color: "#5a6a8a", marginLeft: 4 }}>: {vi}</span>
+            <span style={{ color: "#14b8a6", marginLeft: 4 }}>({pos})</span>
+            <span style={{ color: "#a2acb3", marginLeft: 4 }}>: {vi}</span>
           </div>
         ))}
       </div>
@@ -107,8 +107,8 @@ function FeedbackSuggestion() {
     <div
       className="rounded-xl p-4 flex gap-3"
       style={{
-        background: "rgba(16,185,129,0.06)",
-        border: "1px solid rgba(16,185,129,0.18)",
+        background: "rgba(134,162,77,0.06)",
+        border: "1px solid rgba(134,162,77,0.18)",
       }}
     >
       <div style={{ marginTop: 1, flexShrink: 0 }}>
@@ -119,7 +119,7 @@ function FeedbackSuggestion() {
           style={{
             fontSize: 12,
             fontWeight: 700,
-            color: "#10b981",
+            color: "#86a24d",
             marginBottom: 4,
             letterSpacing: "0.04em",
           }}
@@ -129,7 +129,7 @@ function FeedbackSuggestion() {
         <p
           style={{
             fontSize: 13,
-            color: "#6ee7b7",
+            color: "#bcd08c",
             lineHeight: 1.6,
             fontStyle: "italic",
           }}
@@ -138,7 +138,7 @@ function FeedbackSuggestion() {
           <span
             style={{
               textDecoration: "underline",
-              textDecorationColor: "rgba(110,231,183,0.5)",
+              textDecorationColor: "rgba(163,189,106,0.5)",
               fontWeight: 600,
             }}
           >
@@ -148,7 +148,7 @@ function FeedbackSuggestion() {
           <span
             style={{
               textDecoration: "underline",
-              textDecorationColor: "rgba(110,231,183,0.5)",
+              textDecorationColor: "rgba(163,189,106,0.5)",
               fontWeight: 600,
             }}
           >
@@ -174,8 +174,8 @@ export default function AIAssistant() {
           <div
             className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg"
             style={{
-              background: "rgba(165,180,252,0.1)",
-              border: "1px solid rgba(165,180,252,0.2)",
+              background: "rgba(94,234,212,0.1)",
+              border: "1px solid rgba(94,234,212,0.2)",
             }}
           >
             <BrainIcon />
@@ -183,7 +183,7 @@ export default function AIAssistant() {
               style={{
                 fontSize: 10,
                 fontWeight: 700,
-                color: "#a5b4fc",
+                color: "#5eead4",
                 letterSpacing: "0.1em",
                 textTransform: "uppercase",
               }}
@@ -197,12 +197,12 @@ export default function AIAssistant() {
                 fontFamily: "'Outfit',sans-serif",
                 fontWeight: 700,
                 fontSize: 16,
-                color: "#e8eaf6",
+                color: "#e9edef",
               }}
             >
               Đặt câu + Sửa lỗi AI · Cấp độ B1
             </p>
-            <p style={{ fontSize: 12, color: "#8892b0", marginTop: 1 }}>
+            <p style={{ fontSize: 12, color: "#a2acb3", marginTop: 1 }}>
               Luyện viết câu với từ vựng đã học và nhận phản hồi ngữ pháp tức thì từ AI.
             </p>
           </div>
@@ -225,14 +225,14 @@ export default function AIAssistant() {
         <div
           className="rounded-xl p-4"
           style={{
-            background: "rgba(99,102,241,0.07)",
-            border: "1px solid rgba(99,102,241,0.18)",
+            background: "rgba(20,184,166,0.07)",
+            border: "1px solid rgba(20,184,166,0.18)",
           }}
         >
           <p
             style={{
               fontSize: 11,
-              color: "#6366f1",
+              color: "#14b8a6",
               fontWeight: 600,
               letterSpacing: "0.06em",
               textTransform: "uppercase",
@@ -245,7 +245,7 @@ export default function AIAssistant() {
             className="w-full resize-none bg-transparent outline-none"
             style={{
               fontSize: 14,
-              color: "#c7d2fe",
+              color: "#99f6e4",
               fontStyle: "italic",
               lineHeight: 1.6,
               minHeight: 48,
@@ -263,7 +263,7 @@ export default function AIAssistant() {
             border: "1px solid rgba(255,255,255,0.07)",
           }}
         >
-          <p style={{ fontSize: 13.5, color: "#8892b0", lineHeight: 1.6 }}>
+          <p style={{ fontSize: 13.5, color: "#a2acb3", lineHeight: 1.6 }}>
             "He accomplished a very significant milestones last year."
           </p>
         </div>

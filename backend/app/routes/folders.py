@@ -12,6 +12,32 @@ bp = Blueprint('folders', __name__, url_prefix='/api/folders')
 
 
 # ===== USER: XEM DANH SÁCH FOLDER =====
+# Tổng số từ của folder HỆ THỐNG hầu như không đổi: nhớ 60 giây trong bộ nhớ để mỗi lượt mở Thư viện bớt một truy vấn
+# GROUP BY nặng (DB ở xa). Folder cá nhân luôn tính tươi vì người dùng thêm/xóa từ liên tục.
+_TOTALS_TTL = 60
+_system_totals_cache = {'at': 0.0, 'key': None, 'data': {}}
+
+
+def _system_totals(ids):
+    import time
+    key = tuple(sorted(ids))
+    now = time.monotonic()
+    if _system_totals_cache['key'] == key and now - _system_totals_cache['at'] < _TOTALS_TTL:
+        return _system_totals_cache['data']
+    data = dict(
+        db.session.query(FolderWord.folder_id, db.func.count(FolderWord.id))
+        .join(Word, Word.id == FolderWord.word_id)
+        .filter(FolderWord.folder_id.in_(ids), Word.deleted_at.is_(None))
+        .group_by(FolderWord.folder_id).all()
+    ) if ids else {}
+    _system_totals_cache.update(at=now, key=key, data=data)
+    return data
+
+
+def invalidate_system_totals():
+    _system_totals_cache['key'] = None
+
+
 @bp.route('', methods=['GET'])
 @token_required
 def get_folders():
@@ -28,12 +54,16 @@ def get_folders():
     ids = [f.id for f in system_folders + personal_folders]
     totals, learned = {}, {}
     if ids:
-        totals = dict(
-            db.session.query(FolderWord.folder_id, db.func.count(FolderWord.id))
-            .join(Word, Word.id == FolderWord.word_id)
-            .filter(FolderWord.folder_id.in_(ids), Word.deleted_at.is_(None))
-            .group_by(FolderWord.folder_id).all()
-        )
+        sys_ids = [f.id for f in system_folders]
+        totals = dict(_system_totals(sys_ids))
+        personal_ids = [f.id for f in personal_folders]
+        if personal_ids:
+            totals.update(dict(
+                db.session.query(FolderWord.folder_id, db.func.count(FolderWord.id))
+                .join(Word, Word.id == FolderWord.word_id)
+                .filter(FolderWord.folder_id.in_(personal_ids), Word.deleted_at.is_(None))
+                .group_by(FolderWord.folder_id).all()
+            ))
         learned = dict(
             db.session.query(FolderWord.folder_id, db.func.count(db.distinct(UserWord.word_id)))
             .join(UserWord, UserWord.word_id == FolderWord.word_id)
@@ -203,7 +233,15 @@ def get_folder_words(folder_id):
         Word.deleted_at.is_(None)
     )
     if has_level_filter:
-        query = query.filter(UserWord.level.is_(None) if level == 0 else UserWord.level == level)
+        # level=0 gồm cả từ chưa có bản ghi user_words lẫn bản ghi level 0
+        query = query.filter(db.or_(UserWord.level.is_(None), UserWord.level == 0) if level == 0 else UserWord.level == level)
+
+    # status=new|learned: "chưa học" (level 0) / "đã học" (level >= 1) - dùng cho bộ lọc ở màn danh sách từ
+    status = request.args.get('status')
+    if status == 'new':
+        query = query.filter(db.or_(UserWord.level.is_(None), UserWord.level == 0))
+    elif status == 'learned':
+        query = query.filter(UserWord.level >= 1)
 
     if search:
         pattern = like_pattern(search)

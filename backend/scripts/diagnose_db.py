@@ -151,13 +151,13 @@ def main():
     cur.execute("select table_name from information_schema.tables where table_schema='public'")
     tables = {r[0] for r in cur.fetchall()}
     expected = {'users', 'words', 'folders', 'folder_words', 'user_words', 'learning_logs',
-                'refresh_tokens', 'search_history', 'user_milestones', 'alembic_version'}
+                'refresh_tokens', 'search_history', 'user_milestones', 'dictionary_entries', 'alembic_version'}
     missing = sorted(expected - tables)
     if missing:
         say(BAD, f'Thiếu bảng: {", ".join(missing)}\n       -> chạy:  flask db upgrade   rồi   python seed_from_crawl.py')
         problems.append('schema')
     else:
-        say(OK, 'Đủ 10 bảng cần thiết')
+        say(OK, f'Đủ {len(expected)} bảng cần thiết')
         cur.execute('select version_num from alembic_version')
         cur_rev = {r[0] for r in cur.fetchall()}
         try:
@@ -175,10 +175,10 @@ def main():
         except Exception as e:  # noqa: BLE001
             say(WARN, f'Không so được phiên bản migration: {e}')
 
-        for t in ('users', 'folders', 'words', 'folder_words'):
+        for t in ('users', 'folders', 'words', 'folder_words', 'dictionary_entries'):
             cur.execute(f'select count(*) from {t}')
             n = cur.fetchone()[0]
-            say(OK if n else WARN, f'{t}: {n} dòng' + ('' if n else '  (trống -> python seed_from_crawl.py)'))
+            say(OK if n else WARN, f'{t}: {n} dòng' + ('' if n else '  (trống: bình thường với dictionary_entries/users mới; folders/words -> python seed.py)'))
         cur.execute("select count(*) from words where meaning is not null and meaning !~ '[ăâđêôơưáàảãạéèẻẽẹíìỉĩịóòỏõọúùủũụýỳỷỹỵ]'")
         no_vi = cur.fetchone()[0]
         if no_vi:

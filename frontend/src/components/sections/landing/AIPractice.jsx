@@ -1,161 +1,72 @@
-// AIPractice.jsx - Đã sửa hoàn chỉnh
-import { useState } from "react";
+// Luyện câu cùng AI. Khung bên phải là VÍ DỤ MINH HOẠ định dạng phản hồi của AI (không phải kết quả thật).
+import Section from './Section';
+import { IconSparkles, IconCheck } from '../../brand/icons';
 
-const featureItems = [
-  {
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-7.svg",
-    text: "Luyện đặt câu tùy ý với từ vựng vừa học",
-  },
-  {
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-8.svg",
-    text: "AI phân tích ngữ pháp, thang điểm và góp ý cải thiện chi tiết",
-  },
-  {
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-9.svg",
-    text: "5 cấp độ từ A1 (Căn bản) lên tới IELTS / TOEIC nâng cao",
-  },
-  {
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-10.svg",
-    text: "2 chế độ linh hoạt: Dịch Việt → Anh hoặc Anh → Việt",
-  },
+function Ring({ label, score }) {
+  const color = score >= 8 ? '#a3bd6a' : score >= 6 ? '#2dd4bf' : '#f87171';
+  const r = 20, c = 2 * Math.PI * r;
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <div className="relative h-[54px] w-[54px]">
+        <svg width="54" height="54" className="-rotate-90" aria-hidden="true">
+          <circle cx="27" cy="27" r={r} fill="none" stroke="#262c31" strokeWidth="4" />
+          <circle cx="27" cy="27" r={r} fill="none" stroke={color} strokeWidth="4" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - score / 10)} />
+        </svg>
+        <span className="absolute inset-0 flex items-center justify-center font-display text-sm font-bold" style={{ color }}>{score}</span>
+      </div>
+      <span className="text-xs text-ink-muted">{label}</span>
+    </div>
+  );
+}
+
+const POINTS = [
+  'AI soạn câu theo trình độ từ A1 đến IELTS, hoặc theo từ trong folder của bạn.',
+  'Chấm công bằng với mọi cách dịch đúng, không chỉ khớp một đáp án mẫu.',
+  'Chỉ ra từng lỗi, giải thích bằng tiếng Việt và đưa câu đã sửa.',
 ];
 
 export default function AiSentenceCorrectionSection() {
-  const [isStarted, setIsStarted] = useState(false);
-
   return (
-    <section
-      className="relative flex w-full flex-col items-center gap-12 bg-[linear-gradient(112deg,rgba(30,27,75,1)_0%,rgba(46,16,101,1)_100%),linear-gradient(0deg,rgba(30,27,75,1)_0%,rgba(30,27,75,1)_100%)] px-6 py-16 sm:px-10 lg:px-20 lg:py-24"
-      aria-labelledby="ai-sentence-correction-heading"
-    >
-      {/* Phần còn lại giữ nguyên */}
-      <div className="relative flex w-full flex-[0_0_auto] flex-col items-center gap-12 self-stretch lg:flex-row">
-        <div className="relative flex flex-1 grow flex-col items-start gap-8">
-          <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-3 self-stretch">
-            <div className="relative inline-flex flex-[0_0_auto] items-start rounded-[99px] border border-solid border-amber-500 bg-[#f59e0b20] px-3 py-1">
-              <p className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-xs font-bold leading-[normal] tracking-[0] text-amber-500">
-                ⚡ ĐỘC QUYỀN TRÊN LEARN TODAY
-              </p>
-            </div>
-            <h2
-              id="ai-sentence-correction-heading"
-              className="relative self-stretch [font-family:'Lexend_Deca',Helvetica] text-[40px] font-extrabold leading-[48px] tracking-[0] text-white"
-            >
-              Đặt câu &amp; Sửa lỗi AI tức thì
-            </h2>
-            <p className="relative self-stretch [font-family:'Rethink_Sans',Helvetica] text-base font-normal leading-6 tracking-[0] text-purple-300">
-              Không chỉ nhớ mặt chữ, hãy áp dụng từ vựng vào ngữ cảnh thực tế
-              với hệ thống phản hồi trí tuệ nhân tạo thế hệ mới.
-            </p>
-          </div>
-          <ul className="relative flex w-full flex-[0_0_auto] list-none flex-col items-start gap-4 self-stretch p-0">
-            {featureItems.map((feature) => (
-              <li
-                key={feature.text}
-                className="relative flex w-full flex-[0_0_auto] items-center gap-4 self-stretch"
-              >
-                <img
-                  className="relative h-8 w-8"
-                  alt=""
-                  aria-hidden="true"
-                  src={feature.icon}
-                />
-                <span className="relative flex-1 [font-family:'Rethink_Sans',Helvetica] text-base font-medium leading-[normal] tracking-[0] text-white">
-                  {feature.text}
-                </span>
+    <Section id="luyen-cau-ai" eyebrow="Luyện câu cùng AI" title="Dịch một câu, nhận phản hồi như có giáo viên bên cạnh">
+      <div className="grid items-center gap-12 lg:grid-cols-2">
+        <div>
+          <ul className="space-y-5">
+            {POINTS.map((p) => (
+              <li key={p} className="flex gap-4">
+                <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-moss-500/20 text-moss-300"><IconCheck size={16} /></span>
+                <span className="text-base leading-relaxed text-ink-muted">{p}</span>
               </li>
             ))}
           </ul>
-          <button
-            type="button"
-            onClick={() => setIsStarted(true)}
-            className="relative inline-flex flex-[0_0_auto] items-center justify-center gap-2 rounded-lg bg-amber-500 px-6 py-3 transition-opacity hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-300"
-            aria-label="Bắt đầu luyện ngay cùng AI"
-          >
-            <img
-              className="relative h-[18px] w-[18px]"
-              alt=""
-              aria-hidden="true"
-              src="https://c.animaapp.com/zdBS24aH/img/cpu.svg"
-            />
-            <span className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-[15px] font-semibold leading-[normal] tracking-[0] text-indigo-950">
-              {isStarted
-                ? "Đã sẵn sàng luyện cùng AI"
-                : "Bắt đầu luyện ngay cùng AI"}
-            </span>
-          </button>
         </div>
-        <article
-          className="relative flex flex-1 grow flex-col items-start gap-6 rounded-[20px] border border-solid border-violet-900 bg-[#1e1e38] p-8 shadow-[0px_12px_24px_#00000040]"
-          aria-label="Ví dụ phản hồi từ Learn Today AI"
-        >
-          <header className="relative flex w-full flex-[0_0_auto] items-center justify-between self-stretch">
-            <div
-              className="relative inline-flex flex-[0_0_auto] items-center gap-2"
-              aria-hidden="true"
-            >
-              <span className="relative h-3 w-3 rounded-md bg-red-500" />
-              <span className="relative h-3 w-3 rounded-md bg-amber-500" />
-              <span className="relative h-3 w-3 rounded-md bg-emerald-500" />
-            </div>
-            <p className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-[13px] font-normal leading-[normal] tracking-[0] text-violet-400">
-              Learn Today AI Engine v2.0
-            </p>
-          </header>
-          <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-2.5 self-stretch">
-            <p className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-[13px] font-bold leading-[normal] tracking-[0] text-indigo-400">
-              TỪ KHÓA MỤC TIÊU
-            </p>
-            <div className="relative inline-flex flex-[0_0_auto] items-center gap-2">
-              <strong className="relative mt-[-1px] w-fit [font-family:'Lexend_Deca',Helvetica] text-xl font-bold leading-[normal] tracking-[0] text-white">
-                Accumulate
-              </strong>
-              <span className="relative w-fit [font-family:'Rethink_Sans',Helvetica] text-sm font-normal leading-[normal] tracking-[0] text-slate-400">
-                /əˈkjuːmjəleɪt/ (verb): Tích lũy
-              </span>
-            </div>
+
+        <div className="rounded-2xl border border-line bg-surface p-6 shadow-[0_24px_60px_rgba(0,0,0,0.4)]">
+          <div className="mb-4 flex items-center justify-between">
+            <span className="inline-flex items-center gap-2 text-sm font-semibold text-brand-300"><IconSparkles size={16} /> Phản hồi của AI</span>
+            <span className="text-xs text-ink-subtle">Ví dụ minh hoạ</span>
           </div>
-          <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-2 rounded-lg border border-solid border-indigo-600 bg-[#111122] p-4 self-stretch">
-            <p className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-[13px] font-bold leading-[normal] tracking-[0] text-indigo-400">
-              Câu bạn đặt
-            </p>
-            <blockquote className="relative m-0 self-stretch [font-family:'Rethink_Sans',Helvetica] text-[15px] font-normal italic leading-[normal] tracking-[0] text-slate-200">
-              &quot;I want to accumulate more experiences before apply for this
-              job.&quot;
-            </blockquote>
+          <p className="text-xs text-ink-subtle">Đề (tiếng Việt)</p>
+          <p className="font-display text-lg font-bold text-ink">Kỷ luật giúp tôi tập trung học tập.</p>
+          <p className="mt-4 text-xs text-ink-subtle">Bài làm của bạn</p>
+          <p className="rounded-xl border border-line bg-bg px-4 py-3 text-ink">Discipline <span className="text-red-400 line-through">help</span> me focus on study.</p>
+
+          <div className="mt-5 flex justify-around rounded-xl bg-bg py-4">
+            <Ring label="Ngữ pháp" score={7} />
+            <Ring label="Từ vựng" score={8} />
+            <Ring label="Tự nhiên" score={7} />
           </div>
-          <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-3 rounded-lg border border-solid border-emerald-500 bg-[#152b23] p-4 self-stretch">
-            <div className="relative flex w-full flex-[0_0_auto] items-center justify-between self-stretch">
-              <div className="relative inline-flex flex-[0_0_auto] items-center gap-2">
-                <img
-                  className="relative h-[18px] w-[18px]"
-                  alt=""
-                  aria-hidden="true"
-                  src="https://c.animaapp.com/zdBS24aH/img/check.svg"
-                />
-                <p className="relative mt-[-1px] w-fit [font-family:'Rethink_Sans',Helvetica] text-sm font-bold leading-[normal] tracking-[0] text-emerald-500">
-                  Đánh giá từ AI (9.0/10)
-                </p>
-              </div>
-              <span className="relative inline-flex flex-[0_0_auto] items-start rounded bg-[#10b98120] px-2 py-0.5 [font-family:'Rethink_Sans',Helvetica] text-[11px] font-bold leading-[normal] tracking-[0] text-emerald-500">
-                Đã Sửa
-              </span>
-            </div>
-            <p className="relative self-stretch [font-family:'Rethink_Sans',Helvetica] text-sm font-normal leading-[normal] tracking-[0] text-slate-200">
-              Góp ý: Thay đổi &quot;before apply&quot; thành{" "}
-              <strong className="font-bold text-emerald-500">
-                &quot;before applying&quot;
-              </strong>{" "}
-              vì sau giới từ cần dùng V-ing.
-            </p>
-            <p className="relative self-stretch [font-family:'Rethink_Sans',Helvetica] text-sm font-normal leading-[normal] tracking-[0] text-slate-200">
-              <em>💡 &quot;I want to accumulate more experiences before </em>
-              <strong className="font-bold text-emerald-500">applying</strong>
-              <em> for this job.&quot;</em>
-            </p>
+
+          <div className="mt-5 rounded-xl border border-moss-500/30 bg-moss-500/10 px-4 py-3">
+            <p className="text-xs font-semibold text-moss-300">Câu đã sửa</p>
+            <p className="mt-1 text-ink">Discipline <b className="text-moss-300">helps</b> me focus on my studies.</p>
           </div>
-        </article>
+          <div className="mt-3 rounded-xl border border-line bg-bg px-4 py-3 text-sm">
+            <span className="mr-2 rounded-md bg-red-500/15 px-2 py-0.5 text-xs font-bold text-red-300">Ngữ pháp</span>
+            <span className="text-red-400 line-through">help</span> → <span className="font-semibold text-moss-300">helps</span>
+            <p className="mt-1.5 text-ink-muted">Chủ ngữ “Discipline” là số ít nên động từ thêm -s.</p>
+          </div>
+        </div>
       </div>
-    </section>
+    </Section>
   );
 }

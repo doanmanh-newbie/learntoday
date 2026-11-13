@@ -6,7 +6,7 @@ Module 6.5 - Quy trình học từ vựng (CỐT LÕI).
 from app import db
 from sqlalchemy.exc import IntegrityError
 from app.models import Word, UserWord, LearningLog, User
-from app.utils.srs import get_next_review
+from app.utils.srs import decide_review, get_next_review
 from app.services.streak_service import update_streak_if_goal_met
 from app.services.pass_test_service import check_and_create_milestones
 from datetime import datetime
@@ -205,11 +205,10 @@ def complete_learn(user_id, word_id):
 # ============================================================
 def complete_review(user_id, word_id, wrong_count, choice):
     """
-    Trường hợp A: biến_đếm_sai < 4 -> "hoàn_thành", tăng 1 Level SRS.
-    Trường hợp B: biến_đếm_sai >= 4 -> bắt buộc có choice:
-        - quay_ve_lv1 -> Reset LV1
-        - lui_1_lv    -> Giảm 1 cấp độ (không dưới LV1)
-        - bo_qua      -> Giữ nguyên Level, KHÔNG đổi next_review
+    Luật chuyển cấp nằm ở app/utils/srs.py::decide_review (đọc docstring ở đó):
+      0 lần sai -> hoan_thanh (+1 cấp) | 1-3 lần sai -> giu_level | >= 4 lần sai -> lui_1_lv (mặc định)
+      choice hợp lệ (quay_ve_lv1 | lui_1_lv | bo_qua) luôn được tôn trọng.
+      bo_qua -> giữ cấp, hoãn SKIP_DELAY (không xuất hiện lại ngay).
     """
     word = Word.query.filter_by(id=word_id, deleted_at=None).first()
     if not word:
@@ -223,45 +222,22 @@ def complete_review(user_id, word_id, wrong_count, choice):
         raise ServiceError('wrong_count phải là số nguyên >= 0!', 400)
 
     level_before = user_word.level
+    try:
+        result, level_after, interval = decide_review(level_before, wrong_count, choice)
+    except ValueError:
+        raise ServiceError('choice không hợp lệ! Phải là 1 trong: quay_ve_lv1 | lui_1_lv | bo_qua', 400)
 
-    # ----- Trường hợp A: biến_đếm_sai < 4 -----
-    if wrong_count < 4:
-        result = 'hoan_thanh'
-        level_after = min(level_before + 1, 6)
-        user_word.next_review = get_next_review(level_after)
-
-    # ----- Trường hợp B: biến_đếm_sai >= 4 -----
-    else:
-        if choice not in ('quay_ve_lv1', 'lui_1_lv', 'bo_qua'):
-            raise ServiceError(
-                'wrong_count >= 4 bắt buộc phải có choice hợp lệ: quay_ve_lv1 | lui_1_lv | bo_qua',
-                400
-            )
-
-        result = choice
-
-        if choice == 'quay_ve_lv1':
-            level_after = 1
-            user_word.next_review = get_next_review(1)
-
-        elif choice == 'lui_1_lv':
-            level_after = max(level_before - 1, 1)
-            user_word.next_review = get_next_review(level_after)
-
-        else:  # bo_qua
-            level_after = level_before
-            # Giữ nguyên next_review -> từ vẫn "đến hạn", sẽ xuất hiện lại ở due-words tiếp theo
-
+    now = datetime.utcnow()
     user_word.level = level_after
-    user_word.last_reviewed = datetime.utcnow()
+    user_word.next_review = now + interval
+    user_word.last_reviewed = now
     user_word.review_count = (user_word.review_count or 0) + 1
-    
+
     if wrong_count == 0:
         user_word.correct_count = (user_word.correct_count or 0) + 1
     else:
         user_word.wrong_count = (user_word.wrong_count or 0) + wrong_count
 
-    # ✅ GHI LOG CÓ WRONG_COUNT
     log = LearningLog(
         id=str(uuid.uuid4()),
         user_id=user_id,
@@ -275,12 +251,15 @@ def complete_review(user_id, word_id, wrong_count, choice):
     db.session.add(log)
     db.session.commit()
 
+    streak = update_streak_if_goal_met(user_id)      # ôn tập cũng được tính cho chuỗi ngày (xem streak_service.py)
+
     return {
         'result': result,
-        'user_word': user_word.to_dict()
+        'user_word': user_word.to_dict(),
+        'streak': streak,
     }
-    
-    
+
+
 # ============================================================
 # STT 6: ĐÁNH DẤU "ĐÃ BIẾT"
 # ============================================================

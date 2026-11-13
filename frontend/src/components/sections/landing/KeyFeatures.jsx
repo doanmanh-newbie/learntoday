@@ -1,81 +1,39 @@
-// KeyFeatures.jsx - Đã sửa hoàn chỉnh
+// Tính năng chính - chỉ liệt kê những gì sản phẩm thực sự có.
+import Section from './Section';
+import { IconBook, IconRepeat, IconLayers, IconSearch, IconVolume, IconChart } from '../../brand/icons';
 
-const learningTools = [
-  {
-    title: "Không bao giờ quên",
-    description:
-      "Hệ thống tự động phân tích và nhắc nhở bạn ôn tập chính xác vào thời điểm vàng để tối đa hiệu quả ghi nhớ.",
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-3.svg",
-  },
-  {
-    title: "Học theo chủ đề",
-    description:
-      "Hơn 3000+ từ vựng phong phú được chia nhỏ thành nhiều chủ đề thực tế từ đời sống, công sở đến thi cử.",
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-4.svg",
-  },
-  {
-    title: "Tiến độ rõ ràng",
-    description:
-      "Biểu đồ thống kê chi tiết mức độ ghi nhớ, giúp bạn kiểm soát sát sao lượng kiến thức đã tích lũy hàng ngày.",
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-5.svg",
-  },
-  {
-    title: "Động lực mỗi ngày",
-    description:
-      "Hệ thống huy hiệu, bảng xếp hạng và chuỗi ngày học liên tục (Streak) thú vị giữ lửa nhiệt huyết học tập.",
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-6.svg",
-  },
+const FEATURES = [
+  { icon: IconBook, title: 'Học theo chủ đề', text: 'Chọn folder, xem danh sách từ rồi bắt đầu học từng lô 5 từ. Tự tạo thư mục riêng cho từ của bạn.', tone: 'brand' },
+  { icon: IconRepeat, title: 'Ôn tập ngắt quãng', text: 'Sáu cấp độ với lịch ôn từ 20 phút đến 21 ngày. Số từ ôn mỗi lần do bạn chọn.', tone: 'brand' },
+  { icon: IconLayers, title: 'Bốn dạng bài cho mỗi từ', text: 'Gõ chính tả, trắc nghiệm, điền từ vào câu và ghép từ với nghĩa giúp nhớ bằng nhiều cách.', tone: 'moss' },
+  { icon: IconSearch, title: 'Từ điển Anh – Việt', text: 'Tra mọi nghĩa của từ kèm phiên âm, ví dụ, đồng/trái nghĩa. Lưu từ vào thư mục chỉ bằng một nút.', tone: 'moss' },
+  { icon: IconVolume, title: 'Phát âm Anh – Anh, Anh – Mỹ', text: 'Nghe phát âm tự động sau mỗi lần trả lời và chọn giọng đọc ưa thích trong cài đặt.', tone: 'brand' },
+  { icon: IconChart, title: 'Thống kê và chuỗi học', text: 'Theo dõi số từ đã học, độ chính xác, thời gian học và chuỗi ngày học liên tiếp.', tone: 'red' },
 ];
 
-export default function LearningToolsFeaturesSection() {
+const TONES = {
+  brand: 'border-brand-500/30 bg-brand-500/10 text-brand-300',
+  moss: 'border-moss-500/35 bg-moss-500/10 text-moss-300',
+  red: 'border-red-500/30 bg-red-500/10 text-red-300',
+};
+
+export default function VocabularyLearningFeaturesSection() {
   return (
-    <section
-      className="flex w-full flex-col items-center gap-12 bg-white px-6 py-16 sm:px-10 lg:px-20 lg:py-24"
-      aria-labelledby="learning-tools-heading"
+    <Section
+      id="tinh-nang"
+      eyebrow="Tính năng"
+      title="Mọi thứ bạn cần để nhớ từ vựng"
+      subtitle="Từ lúc học từ mới đến khi từ đó thật sự ở lại trong đầu."
     >
-      <header className="relative flex w-full flex-[0_0_auto] flex-col items-center gap-4">
-        <p className="relative mt-[-1px] w-full [font-family:'Rethink_Sans',Helvetica] text-center text-sm font-bold leading-[normal] tracking-[0.21px] text-indigo-600">
-          TÍNH NĂNG VƯỢT TRỘI
-        </p>
-        <h2
-          id="learning-tools-heading"
-          className="relative w-full [font-family:'Lexend_Deca',Helvetica] text-center text-4xl font-bold leading-[43.2px] tracking-[0] text-slate-900"
-        >
-          Đầy đủ công cụ thông minh cho hành trình học tập
-        </h2>
-      </header>
-      <div className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-6">
-        {[learningTools.slice(0, 2), learningTools.slice(2, 4)].map(
-          (toolRow, rowIndex) => (
-            <div
-              key={`learning-tools-row-${rowIndex}`}
-              className="relative flex w-full flex-[0_0_auto] flex-col items-start gap-6 sm:flex-row"
-            >
-              {toolRow.map((tool) => (
-                <article
-                  key={tool.title}
-                  className="relative flex flex-1 grow items-start gap-5 rounded-2xl border border-solid border-slate-200 bg-white p-7 shadow-[0px_6px_16px_#0f172a04]"
-                >
-                  <img
-                    className="relative h-12 w-12 shrink-0"
-                    src={tool.icon}
-                    alt=""
-                    aria-hidden="true"
-                  />
-                  <div className="relative flex flex-1 grow flex-col items-start gap-2">
-                    <h3 className="relative mt-[-1px] w-full [font-family:'Lexend_Deca',Helvetica] text-lg font-bold leading-[normal] tracking-[0] text-slate-900">
-                      {tool.title}
-                    </h3>
-                    <p className="relative w-full [font-family:'Rethink_Sans',Helvetica] text-[15px] font-normal leading-[22.5px] tracking-[0] text-slate-600">
-                      {tool.description}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )
-        )}
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {FEATURES.map(({ icon: Icon, title, text, tone }) => (
+          <article key={title} className="rounded-2xl border border-line bg-surface p-6 transition hover:border-brand-500/40 hover:bg-surface-2">
+            <span className={`mb-5 flex h-12 w-12 items-center justify-center rounded-xl border ${TONES[tone]}`}><Icon size={24} /></span>
+            <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">{text}</p>
+          </article>
+        ))}
       </div>
-    </section>
+    </Section>
   );
 }

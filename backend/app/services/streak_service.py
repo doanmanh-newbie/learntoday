@@ -1,36 +1,43 @@
-"""Cập nhật streak khi hoàn thành mục tiêu học trong ngày (STT 6, 12)."""
-from datetime import datetime, timedelta
+"""Cập nhật chuỗi ngày học (streak) - STT 6, 12. Luật nằm ở app/utils/streak.py."""
+from datetime import datetime
 
 from app import db
 from app.models import User
 from app.models.learning_logs import LearningLog, VN_TZ
+from app.services.reminder_service import due_count
+from app.services.study_time import get_today_minutes
+from app.utils.streak import STUDY_MINUTES_GOAL, active_today, effective_streak, next_streak  # noqa: F401
+
+
+def today_vn():
+    return datetime.now(VN_TZ).date()
 
 
 def update_streak_if_goal_met(user_id: str):
     """
-    Gọi sau khi user học xong 1 từ mới.
-    Nếu đạt daily_goal hôm nay (giờ VN) thì cập nhật streak.
+    Gọi sau khi người dùng học xong 1 từ mới, hoàn thành 1 lượt ôn tập, hoặc được cộng phút học.
+    Nếu hôm nay (giờ VN) đã đạt một trong các điều kiện của utils/streak.py thì cập nhật chuỗi (mỗi ngày tối đa 1 lần).
+    Trả về chuỗi đang còn hiệu lực.
     """
-    user = User.query.get(user_id)
+    user = db.session.get(User, user_id)
     if not user:
         return None
 
-    learned_today = LearningLog.count_learned_today(user_id)
-    daily_target = user.daily_goal or 10
-    if learned_today < daily_target:
+    today = today_vn()
+    if user.last_goal_date == today:
         return user.streak
 
-    today_vn = datetime.now(VN_TZ).date()
+    reviews_today = LearningLog.count_reviewed_today(user_id)
+    if not active_today(
+        learned_today=LearningLog.count_learned_today(user_id),
+        daily_goal=user.daily_goal,
+        minutes_today=get_today_minutes(user),
+        reviews_today=reviews_today,
+        due_now=due_count(user_id) if reviews_today else 0,       # chỉ cần đếm từ đến hạn khi đã ôn ít nhất 1 từ
+    ):
+        return effective_streak(user.streak, user.last_goal_date, today)
 
-    if user.last_goal_date == today_vn:
-        return user.streak
-
-    yesterday = today_vn - timedelta(days=1)
-    if user.last_goal_date == yesterday:
-        user.streak = (user.streak or 0) + 1
-    else:
-        user.streak = 1
-
-    user.last_goal_date = today_vn
+    user.streak = next_streak(user.streak, user.last_goal_date, today)
+    user.last_goal_date = today
     db.session.commit()
     return user.streak

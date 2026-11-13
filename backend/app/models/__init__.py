@@ -7,3 +7,5 @@ from .user_words import UserWord
 from .learning_logs import LearningLog
 from .search_history import SearchHistory
 from .user_milestones import UserMilestone
+from .dictionary_entries import DictionaryEntry
+from .lexicon_entries import LexiconEntry

@@ -1,0 +1,9 @@
+# name: Công việc & nghề nghiệp
+# icon: 💼
+# color: #2dd4bf
+# description: Nghề nghiệp, tìm việc và môi trường làm việc.
+job work career profession employee employer boss manager colleague staff worker salary wage income
+bonus promotion interview resume application position vacancy contract meeting deadline project task
+report office factory engineer lawyer accountant architect designer driver cook chef waiter farmer
+pilot police soldier mechanic electrician plumber carpenter secretary clerk receptionist customer
+client department company business retire resign hire experience skill qualification training

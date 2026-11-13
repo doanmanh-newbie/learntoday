@@ -48,9 +48,10 @@ def search_words():
 def get_search_history():
     limit = min(max(1, request.args.get('limit', 20, type=int)), 50)
 
-    history = SearchHistory.query.filter_by(user_id=request.user_id).order_by(
-        SearchHistory.created_at.desc()
-    ).limit(limit).all()
+    # SearchHistory có cột tên `query` che mất `SearchHistory.query` -> dùng db.session.query.
+    # (Trước đây dòng này làm GET /api/search/history luôn trả lỗi 500.)
+    history = (db.session.query(SearchHistory).filter(SearchHistory.user_id == request.user_id)
+               .order_by(SearchHistory.created_at.desc()).limit(limit).all())
 
     return jsonify({'history': [h.to_dict() for h in history]}), 200
 

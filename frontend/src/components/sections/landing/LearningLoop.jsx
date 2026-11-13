@@ -1,96 +1,59 @@
-// LearningLoop.jsx - Giữ nguyên cấu trúc, chỉ sửa lỗi TypeScript
+// Cách hoạt động: các bước + thang 6 cấp độ ôn tập (khớp constants/srs.js).
+import Section from './Section';
 
-// Đã xóa type LearningStep và khai báo trực tiếp mảng steps
-// Ghi chú: các biến thể width/height cố định (w-60/w-72/w-[290px], absolute...) của
-// từng thẻ trong bản gốc chỉ là khác biệt trình bày ngẫu nhiên từ file thiết kế,
-// không mang ý nghĩa nội dung => đã gộp lại dùng chung 1 layout thẻ nhất quán,
-// responsive, để cả 4 bước hiển thị đều nhau trên mọi kích thước màn hình.
-const cardClassName =
-  "flex h-full w-full flex-col items-start gap-4 rounded-2xl border border-solid border-slate-200 bg-white p-6";
-const headerClassName = "flex w-full flex-[0_0_auto] items-center justify-between";
-const numberClassName =
-  "relative mt-[-1.00px] w-fit text-[28px] leading-[normal] tracking-[0] text-indigo-600 [font-family:'Lexend_Deca',Helvetica] font-extrabold";
-const iconClassName = "relative h-6 w-6";
-const contentClassName = "flex w-full flex-[0_0_auto] flex-col items-start gap-2";
-const titleClassName =
-  "relative self-stretch [font-family:'Lexend_Deca',Helvetica] text-lg font-bold leading-[normal] tracking-[0] text-slate-900";
-const descriptionClassName =
-  "relative self-stretch [font-family:'Rethink_Sans',Helvetica] text-sm font-normal leading-[21px] tracking-[0] text-slate-600";
+const STEPS = [
+  ['1', 'Học 5 từ mới', 'Xem từ, nghe phát âm rồi gõ lại từ theo nghĩa tiếng Việt.'],
+  ['2', 'Làm bài củng cố', 'Trắc nghiệm, điền từ và ghép từ — sai thì làm lại cho đến khi đúng.'],
+  ['3', 'Hệ thống lên lịch', 'Từ vào cấp 1 và được hẹn ngày ôn kế tiếp.'],
+  ['4', 'Ôn đúng lúc', 'Nhớ đúng thì lên cấp, càng lên cấp càng ôn thưa.'],
+];
 
-const learningSteps = [
-  {
-    number: "01",
-    title: "Nhập chính tả",
-    description:
-      "Giúp tay và tai làm quen với cách phát âm và cấu trúc từ mới.",
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-11.svg",
-  },
-  {
-    number: "02",
-    title: "Trắc nghiệm",
-    description: "Thử thách nhận diện phản xạ nghĩa từ vựng nhanh dưới áp lực.",
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-12.svg",
-  },
-  {
-    number: "03",
-    title: "Điền từ",
-    description:
-      "Đưa từ vựng vào đúng ngữ cảnh của câu hoàn chỉnh để nắm vững cách dùng.",
-    icon: "https://c.animaapp.com/zdBS24aH/img/frame-13.svg",
-  },
-  {
-    number: "04",
-    title: "Ghép từ",
-    description:
-      "Kết hợp linh hoạt từ và định nghĩa giúp củng cố liên kết sâu sắc nhất.",
-    icon: null,
-  },
+// khớp SRS_LABELS / SRS_INTERVAL_LABEL trong constants/srs.js
+const LEVELS = [
+  ['Cấp 1', 'Mới học', '20 phút'],
+  ['Cấp 2', 'Biết', '10 giờ'],
+  ['Cấp 3', 'Gần thuộc', '1 ngày'],
+  ['Cấp 4', 'Đã thuộc', '3 ngày'],
+  ['Cấp 5', 'Nhớ dai', '7 ngày'],
+  ['Cấp 6', 'Không quên', '21 ngày'],
+];
+const LEVEL_STYLE = [
+  'border-line bg-surface-2 text-ink', 'border-line bg-surface-2 text-ink',
+  'border-brand-500/40 bg-brand-500/10 text-brand-200', 'border-brand-500/40 bg-brand-500/15 text-brand-200',
+  'border-moss-500/45 bg-moss-500/15 text-moss-200', 'border-moss-500/60 bg-moss-500/25 text-moss-200',
 ];
 
 export default function SpacedRepetitionProcessSection() {
   return (
-    <section
-      className="flex w-full relative flex-col items-center gap-12 px-6 py-16 sm:px-10 lg:px-20 lg:py-24 bg-slate-50"
-      aria-labelledby="spaced-repetition-title"
+    <Section
+      id="cach-hoat-dong"
+      tone="surface"
+      eyebrow="Cách hoạt động"
+      title="Học một lần, ôn đúng lúc, nhớ thật lâu"
+      subtitle="Vòng lặp đơn giản: học, củng cố, được nhắc lại khi sắp quên."
     >
-      <header className="flex flex-col items-center gap-4 relative self-stretch w-full flex-[0_0_auto]">
-        <p className="relative self-stretch mt-[-1.00px] [font-family:'Rethink_Sans',Helvetica] font-bold text-indigo-600 text-sm text-center tracking-[0.21px] leading-[normal]">
-          PHƯƠNG PHÁP HỌC
-        </p>
-        <h2
-          id="spaced-repetition-title"
-          className="relative self-stretch [font-family:'Lexend_Deca',Helvetica] font-bold text-slate-900 text-4xl text-center tracking-[0] leading-[43.2px]"
-        >
-          Vòng lặp thông minh: Học → Ôn đúng lúc → Nhớ mãi
-        </h2>
-        <p className="relative self-stretch [font-family:'Rethink_Sans',Helvetica] font-normal text-slate-600 text-lg text-center tracking-[0] leading-[28.8px]">
-          Mỗi từ vựng được rèn luyện toàn diện thông qua chuỗi 4 bài tập thực
-          hành tương tác sâu sắc
-        </p>
-      </header>
-      <ol className="grid w-full list-none grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {learningSteps.map((step) => (
-          <li key={step.number} className="h-full">
-            <article className={cardClassName}>
-              <div className={headerClassName}>
-                <span className={numberClassName}>{step.number}</span>
-                {step.icon ? (
-                  <img
-                    className={iconClassName}
-                    alt=""
-                    aria-hidden="true"
-                    src={step.icon}
-                  />
-                ) : null}
-              </div>
-              <div className={contentClassName}>
-                <h3 className={titleClassName}>{step.title}</h3>
-                <p className={descriptionClassName}>{step.description}</p>
-              </div>
-            </article>
+      <ol className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
+        {STEPS.map(([n, title, text]) => (
+          <li key={n} className="relative rounded-2xl border border-line bg-bg p-6">
+            <span className="mb-4 flex h-9 w-9 items-center justify-center rounded-full bg-brand-700 font-display text-base font-extrabold text-white">{n}</span>
+            <h3 className="font-display text-lg font-bold text-ink">{title}</h3>
+            <p className="mt-2 text-sm leading-relaxed text-ink-muted">{text}</p>
           </li>
         ))}
       </ol>
-    </section>
+
+      <div className="mt-12">
+        <h3 className="mb-5 text-center font-display text-xl font-bold text-ink">Sáu cấp độ ôn tập</h3>
+        <ol className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+          {LEVELS.map(([lv, name, gap], i) => (
+            <li key={lv} className={`rounded-xl border p-4 text-center ${LEVEL_STYLE[i]}`}>
+              <p className="text-xs font-semibold uppercase tracking-wider opacity-80">{lv}</p>
+              <p className="mt-1 font-display text-base font-bold">{name}</p>
+              <p className="mt-2 text-xs opacity-80">ôn lại sau {gap}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </Section>
   );
 }

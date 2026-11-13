@@ -38,7 +38,7 @@ function HighlightExample({ text, word, hideWord = true }) {
               display: 'inline-block',
               minWidth: 60,
               height: 20,
-              borderBottom: '2px solid #fbbf24',
+              borderBottom: '2px solid #f87171',
               verticalAlign: 'bottom',
               margin: '0 4px',
             }} />
@@ -47,9 +47,9 @@ function HighlightExample({ text, word, hideWord = true }) {
         // Tô đậm + màu
         return (
           <span key={i} style={{
-            color: '#fbbf24',
+            color: '#f87171',
             fontWeight: 700,
-            background: 'rgba(251,191,36,0.15)',
+            background: 'rgba(239,68,68,0.15)',
             padding: '0 4px',
             borderRadius: 4,
           }}>{part}</span>
@@ -167,7 +167,7 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
     }}>
       <div style={{
         width: '100%', maxWidth: 560, maxHeight: '90vh',
-        background: '#13162a',
+        background: '#1f2325',
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: 20,
         display: 'flex', flexDirection: 'column',
@@ -182,17 +182,17 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 20 }}>✏️</span>
             <div>
-              <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 17, color: '#e8eaf6' }}>
+              <div style={{ fontFamily: 'Outfit, sans-serif', fontWeight: 800, fontSize: 17, color: '#e9edef' }}>
                 Sửa từ
               </div>
-              <div style={{ fontSize: 12, color: '#8892b0' }}>{word.word}</div>
+              <div style={{ fontSize: 12, color: '#a2acb3' }}>{word.word}</div>
             </div>
           </div>
           <button type="button" onClick={onClose} style={{
             width: 32, height: 32, borderRadius: 8,
             background: 'rgba(255,255,255,0.04)',
             border: '1px solid rgba(255,255,255,0.1)',
-            color: '#8892b0', cursor: 'pointer', fontSize: 18,
+            color: '#a2acb3', cursor: 'pointer', fontSize: 18,
           }}>×</button>
         </div>
 
@@ -262,7 +262,7 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
                     style={sSuggestionRow}
                   >
                     <span style={sSuggestionTag}>({m.pos})</span>
-                    <span style={{ flex: 1, textAlign: 'left', color: '#e8eaf6' }}>{m.meaning}</span>
+                    <span style={{ flex: 1, textAlign: 'left', color: '#e9edef' }}>{m.meaning}</span>
                     <span style={sSuggestionAction}>Chọn</span>
                   </button>
                 ))}
@@ -303,10 +303,10 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
                     }}
                     style={sExampleCard}
                   >
-                    <div style={{ fontSize: 13.5, color: '#fbbf24', fontStyle: 'italic', marginBottom: 4 }}>
+                    <div style={{ fontSize: 13.5, color: '#f87171', fontStyle: 'italic', marginBottom: 4 }}>
                       <HighlightExample text={ex.en} word={form.word} hideWord />
                     </div>
-                    <div style={{ fontSize: 12.5, color: '#8892b0' }}>🇻🇳 {ex.vi}</div>
+                    <div style={{ fontSize: 12.5, color: '#a2acb3' }}>🇻🇳 {ex.vi}</div>
                   </button>
                 ))}
               </div>
@@ -333,7 +333,7 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
                     type="button"
                     onClick={() => handleChange('image_url', url)}
                     style={{
-                      padding: 0, border: form.image_url === url ? '2px solid #6366f1' : '1px solid rgba(255,255,255,0.1)',
+                      padding: 0, border: form.image_url === url ? '2px solid #14b8a6' : '1px solid rgba(255,255,255,0.1)',
                       borderRadius: 8, overflow: 'hidden', cursor: 'pointer', background: 'none',
                       aspectRatio: '1',
                     }}
@@ -393,7 +393,7 @@ function Field({ label, children }) {
 const sLabel = {
   fontSize: 11,
   fontWeight: 700,
-  color: '#8892b0',
+  color: '#a2acb3',
   textTransform: 'uppercase',
   letterSpacing: 0.7,
   marginBottom: 6,
@@ -405,7 +405,7 @@ const sInput = {
   borderRadius: 10,
   background: 'rgba(255,255,255,0.04)',
   border: '1px solid rgba(255,255,255,0.1)',
-  color: '#e8eaf6',
+  color: '#e9edef',
   fontSize: 14,
   fontFamily: 'Inter, sans-serif',
   outline: 'none',
@@ -414,7 +414,7 @@ const sInput = {
 
 const sHint = {
   fontSize: 12.5,
-  color: '#5a6a8a',
+  color: '#a2acb3',
   fontStyle: 'italic',
   padding: '8px 0',
 };
@@ -425,8 +425,8 @@ const sSuggestionRow = {
   gap: 10,
   padding: '10px 14px',
   borderRadius: 10,
-  background: 'rgba(99,102,241,0.06)',
-  border: '1px solid rgba(99,102,241,0.15)',
+  background: 'rgba(20,184,166,0.06)',
+  border: '1px solid rgba(20,184,166,0.15)',
   cursor: 'pointer',
   fontSize: 14,
   fontFamily: 'Inter, sans-serif',
@@ -438,18 +438,18 @@ const sSuggestionTag = {
   fontWeight: 700,
   padding: '3px 7px',
   borderRadius: 5,
-  background: 'rgba(165,180,252,0.15)',
-  color: '#a5b4fc',
+  background: 'rgba(94,234,212,0.15)',
+  color: '#5eead4',
   fontStyle: 'italic',
 };
 
 const sSuggestionAction = {
   fontSize: 11,
   fontWeight: 700,
-  color: '#6366f1',
+  color: '#14b8a6',
   padding: '4px 10px',
   borderRadius: 6,
-  background: 'rgba(99,102,241,0.12)',
+  background: 'rgba(20,184,166,0.12)',
 };
 
 const sExampleCard = {
@@ -457,8 +457,8 @@ const sExampleCard = {
   textAlign: 'left',
   padding: '12px 14px',
   borderRadius: 10,
-  background: 'rgba(251,191,36,0.05)',
-  border: '1px solid rgba(251,191,36,0.15)',
+  background: 'rgba(239,68,68,0.05)',
+  border: '1px solid rgba(239,68,68,0.15)',
   cursor: 'pointer',
   fontFamily: 'Inter, sans-serif',
   transition: 'all 0.15s ease',
@@ -468,9 +468,9 @@ const sUploadBtn = {
   width: '100%',
   padding: '11px',
   borderRadius: 10,
-  background: 'rgba(99,102,241,0.06)',
-  border: '1.5px dashed rgba(99,102,241,0.3)',
-  color: '#a5b4fc',
+  background: 'rgba(20,184,166,0.06)',
+  border: '1.5px dashed rgba(20,184,166,0.3)',
+  color: '#5eead4',
   fontSize: 13,
   fontWeight: 600,
   fontFamily: 'Inter, sans-serif',
@@ -482,7 +482,7 @@ const sBtnGhost = {
   borderRadius: 10,
   background: 'rgba(255,255,255,0.04)',
   border: '1px solid rgba(255,255,255,0.1)',
-  color: '#8892b0',
+  color: '#a2acb3',
   fontSize: 13.5,
   fontWeight: 600,
   fontFamily: 'Outfit, sans-serif',
@@ -492,12 +492,12 @@ const sBtnGhost = {
 const sBtnPrimary = {
   padding: '11px 20px',
   borderRadius: 10,
-  background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+  background: 'linear-gradient(135deg,#0f766e,#0e8077)',
   border: 'none',
-  color: '#fff',
+  color: '#ffffff',
   fontSize: 13.5,
   fontWeight: 700,
   fontFamily: 'Outfit, sans-serif',
   cursor: 'pointer',
-  boxShadow: '0 4px 20px rgba(99,102,241,0.35)',
+  boxShadow: '0 4px 20px rgba(20,184,166,0.35)',
 };

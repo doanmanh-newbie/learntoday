@@ -74,7 +74,7 @@ def get_stats():
         'mastered_words': mastered,
         'learning_words': learning,
         'accuracy': accuracy,                       # % lượt ôn không sai lần nào
-        'streak': user.streak or 0,
+        'streak': user.effective_streak(),
         'total_study_minutes': user.total_study_minutes or 0,
         'study_minutes_today': get_today_minutes(user),
         'badges': user._parse_badges(),

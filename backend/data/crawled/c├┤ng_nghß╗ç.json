@@ -1,0 +1,151 @@
+{
+  "folder": "Công nghệ",
+  "words": [
+    {
+      "word": "algorithm",
+      "pronunciation": "/ˈælɡəɹɪðm̩/",
+      "word_type": "noun",
+      "meaning": "A collection of ordered steps that solve a mathematical problem. A precise step-by-step plan for a computational procedure that possibly begins with an input value and yields an output value in a finite number of steps.",
+      "meaning_en": "A collection of ordered steps that solve a mathematical problem. A precise step-by-step plan for a computational procedure that possibly begins with an input value and yields an output value in a finite number of steps.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/algorithm-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "database",
+      "pronunciation": "/ˈdeɪtəˌbeɪs/",
+      "word_type": "noun",
+      "meaning": "(general) A collection of (usually) organized information in a regular structure, usually but not necessarily in a machine-readable format accessible by a computer.",
+      "meaning_en": "(general) A collection of (usually) organized information in a regular structure, usually but not necessarily in a machine-readable format accessible by a computer.",
+      "example": "I have a database of all my contacts in my personal organizer.",
+      "example_meaning": "I have a database of all my contacts in my personal organizer.",
+      "audio_url": "",
+      "synonyms": [
+        "databank",
+        "database management system"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "network",
+      "pronunciation": "/nɛtwɜːk/",
+      "word_type": "noun",
+      "meaning": "A fabric or structure of fibrous elements attached to each other at regular intervals.",
+      "meaning_en": "A fabric or structure of fibrous elements attached to each other at regular intervals.",
+      "example": "A network of roads crisscrossed the country.",
+      "example_meaning": "A network of roads crisscrossed the country.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/network-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "software",
+      "pronunciation": "/ˈsɑftˌwɛɹ/",
+      "word_type": "noun",
+      "meaning": "Encoded computer instructions, usually modifiable (unless stored in some form of unalterable memory such as ROM).",
+      "meaning_en": "Encoded computer instructions, usually modifiable (unless stored in some form of unalterable memory such as ROM).",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/software-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "hardware",
+      "pronunciation": "/ˈhɑːdˌwɛə/",
+      "word_type": "noun",
+      "meaning": "Fixtures, equipment, tools and devices used for general-purpose construction and repair of a structure or object. Also such equipment as sold as stock by a store of the same name, e.g. hardware store.",
+      "meaning_en": "Fixtures, equipment, tools and devices used for general-purpose construction and repair of a structure or object. Also such equipment as sold as stock by a store of the same name, e.g. hardware store.",
+      "example": "military hardware",
+      "example_meaning": "military hardware",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/hardware-us.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "interface",
+      "pronunciation": "/ˈɪntəfeɪs/",
+      "word_type": "noun",
+      "meaning": "The point of interconnection or contact between entities.",
+      "meaning_en": "The point of interconnection or contact between entities.",
+      "example": "Public relations firms often serve as the interface between a company and the press.",
+      "example_meaning": "Public relations firms often serve as the interface between a company and the press.",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "cloud",
+      "pronunciation": "/klaʊd/",
+      "word_type": "noun",
+      "meaning": "A rock; boulder; a hill.",
+      "meaning_en": "A rock; boulder; a hill.",
+      "example": "He opened the door and was greeted by a cloud of bats.",
+      "example_meaning": "He opened the door and was greeted by a cloud of bats.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/cloud-uk.mp3",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "server",
+      "pronunciation": "/ˈsɜːvə/",
+      "word_type": "noun",
+      "meaning": "A program that provides services to other programs or devices, either in the same computer or over a computer network.",
+      "meaning_en": "A program that provides services to other programs or devices, either in the same computer or over a computer network.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [
+        "salver"
+      ],
+      "antonyms": [
+        "client"
+      ]
+    },
+    {
+      "word": "protocol",
+      "pronunciation": "/ˈpɹəʊtəˌkɒl/",
+      "word_type": "noun",
+      "meaning": "The minutes, or official record, of a negotiation or transaction; especially a document drawn up officially which forms the legal basis for subsequent agreements based on it.",
+      "meaning_en": "The minutes, or official record, of a negotiation or transaction; especially a document drawn up officially which forms the legal basis for subsequent agreements based on it.",
+      "example": "",
+      "example_meaning": "",
+      "audio_url": "",
+      "synonyms": [
+        "policy",
+        "procedure"
+      ],
+      "antonyms": []
+    },
+    {
+      "word": "framework",
+      "pronunciation": "/ˈfɹeɪm.wɜːk/",
+      "word_type": "noun",
+      "meaning": "A support structure comprising joined parts or conglomerated particles and intervening open spaces of similar or larger size.",
+      "meaning_en": "A support structure comprising joined parts or conglomerated particles and intervening open spaces of similar or larger size.",
+      "example": "These ‘three principles of connexion’ compose the framework of principles in Hume's account of the association of ideas.",
+      "example_meaning": "These ‘three principles of connexion’ compose the framework of principles in Hume's account of the association of ideas.",
+      "audio_url": "",
+      "synonyms": [],
+      "antonyms": []
+    },
+    {
+      "word": "application",
+      "pronunciation": "/aplɪˈkeɪʃ(ə)n/",
+      "word_type": "noun",
+      "meaning": "The act of applying or laying on, in a literal sense",
+      "meaning_en": "The act of applying or laying on, in a literal sense",
+      "example": "The application of this cream should reduce the swelling.",
+      "example_meaning": "The application of this cream should reduce the swelling.",
+      "audio_url": "https://api.dictionaryapi.dev/media/pronunciations/en/application-us.mp3",
+      "synonyms": [
+        "app",
+        "program",
+        "software"
+      ],
+      "antonyms": []
+    }
+  ]
+}

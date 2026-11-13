@@ -1,0 +1,74 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   BẢNG MÀU & FONT DÙNG CHUNG (Landing · Đăng nhập · Đăng ký · Ứng dụng)
+
+   Chủ đạo : XÁM (nền, bề mặt, chữ)  +  XANH NGỌC (thương hiệu, nút chính, liên kết, trạng thái đang chọn)
+   Phụ     : ĐỎ (lỗi, cảnh báo, nhấn mạnh như streak)  +  XANH RÊU (thành công, đã thuộc, tiến độ hoàn thành)
+
+   Dùng:  class Tailwind  bg-surface  text-ink  text-brand-300  bg-brand-700  text-moss-400  text-red-400 ...
+          hoặc biến CSS   var(--color-brand-500)  (có sẵn trong style={{...}} nhờ `@theme static`).
+   Độ tương phản đã kiểm (WCAG AA): chữ ink/ink-muted/ink-subtle trên bg & surface-2 ≥ 4.8:1;
+   chữ trắng trên brand-700 / red-600 / moss-700 ≥ 4.8:1.  KHÔNG dùng chữ trắng trên brand-600 hoặc moss-600.
+   Test chống quay lại màu cũ: src/styles/tests/palette.test.mjs
+   ═══════════════════════════════════════════════════════════════════════════ */
+@theme static {
+  /* Xám trung tính (hơi lạnh) */
+  --color-bg: #0f1214;
+  --color-surface: #161a1d;
+  --color-surface-2: #1d2226;
+  --color-surface-3: #262c31;
+  --color-line: #2b3238;
+  --color-ink: #e9edef;
+  --color-ink-muted: #a2acb3;
+  --color-ink-subtle: #848f97;
+
+  /* Xanh ngọc - màu chủ đạo */
+  --color-brand-50: #f0fdfa;
+  --color-brand-100: #ccfbf1;
+  --color-brand-200: #99f6e4;
+  --color-brand-300: #5eead4;
+  --color-brand-400: #2dd4bf;
+  --color-brand-500: #14b8a6;
+  --color-brand-600: #0d9488;
+  --color-brand-700: #0f766e;
+  --color-brand-800: #115e59;
+  --color-brand-900: #134e4a;
+
+  /* Xanh rêu - màu phụ (thành công) */
+  --color-moss-200: #d6e2b5;
+  --color-moss-300: #bcd08c;
+  --color-moss-400: #a3bd6a;
+  --color-moss-500: #86a24d;
+  --color-moss-600: #6b8a3a;
+  --color-moss-700: #556f2d;
+  --color-moss-800: #425624;
+  --color-moss-900: #2f3d1a;
+
+  /* Đỏ - màu phụ (lỗi / cảnh báo / nhấn mạnh) */
+  --color-red-200: #fecaca;
+  --color-red-300: #fca5a5;
+  --color-red-400: #f87171;
+  --color-red-500: #ef4444;
+  --color-red-600: #dc2626;
+  --color-red-700: #b91c1c;
+  --color-red-900: #7f1d1d;
+
+  /* Tên tương thích với các component kiểu shadcn trong components/ui */
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-ink);
+  --color-card: var(--color-surface);
+  --color-card-foreground: var(--color-ink);
+  --color-primary: var(--color-brand-700);
+  --color-primary-foreground: #ffffff;
+  --color-muted: var(--color-surface-2);
+  --color-muted-foreground: var(--color-ink-muted);
+  --color-accent: var(--color-surface-3);
+  --color-accent-foreground: var(--color-ink);
+  --color-border: var(--color-line);
+  --color-input: var(--color-line);
+  --color-ring: var(--color-brand-500);
+  --color-destructive: var(--color-red-600);
+
+  /* Font: tiêu đề Outfit, nội dung Inter (trước đây landing dùng Rethink Sans/Lexend Deca nhưng không hề nạp font -> rơi về Helvetica) */
+  --font-display: 'Outfit', 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+}

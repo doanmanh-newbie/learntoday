@@ -29,20 +29,25 @@ def create_app(config_object=Config):
     if config_object is Config:
         validate_config(Config)        # dừng sớm, báo rõ nếu thiếu cấu hình DB
 
+    proxies = int(app.config.get('TRUSTED_PROXIES', 0) or 0)
+    if proxies > 0:                                 # tin X-Forwarded-For của đúng N proxy -> request.remote_addr là IP thật
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=proxies, x_proto=proxies, x_host=proxies)
+
     CORS(app, origins=app.config['CORS_ORIGINS'], supports_credentials=True)
     db.init_app(app)
     migrate.init_app(app, db)
 
     # Import tất cả models (để Alembic/SQLAlchemy nhìn thấy metadata)
-    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog, SearchHistory, UserMilestone  # noqa: F401
+    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog, SearchHistory, UserMilestone, DictionaryEntry, LexiconEntry  # noqa: F401
 
     from .routes import (
         auth_bp, folders_bp, learning_bp, review_bp, words_bp,
         profile_bp, history_bp, search_bp, translate_bp, study_bp,
-        pass_test_bp, ai_practice_bp,
+        pass_test_bp, ai_practice_bp, dictionary_bp,
     )
     for bp in (auth_bp, folders_bp, learning_bp, review_bp, words_bp, profile_bp,
-               history_bp, search_bp, translate_bp, study_bp, pass_test_bp, ai_practice_bp):
+               history_bp, search_bp, translate_bp, study_bp, pass_test_bp, ai_practice_bp, dictionary_bp):
         app.register_blueprint(bp)
 
     from .utils.errors import register_error_handlers

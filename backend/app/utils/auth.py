@@ -1,4 +1,5 @@
 import datetime
+import hashlib
 import os
 import uuid
 
@@ -61,20 +62,39 @@ def generate_refresh_token(user_id: str) -> str:
     )
 
 
-def generate_reset_token(user_id: str) -> str:
-    """Token reset password, hết hạn sau 15 phút"""
-    return _encode({'user_id': str(user_id), 'purpose': 'reset_password'}, datetime.timedelta(minutes=15))
+def password_fingerprint(password_hash) -> str:
+    """Dấu vân tay của mật khẩu hiện tại. Gắn vào token đặt lại mật khẩu: đổi mật khẩu xong thì dấu vân tay đổi,
+    token cũ tự vô hiệu -> chỉ dùng được MỘT lần (không cần thêm bảng trong database)."""
+    return hashlib.sha256((password_hash or '').encode('utf-8')).hexdigest()[:16]
+
+
+def generate_reset_token(user_id: str, password_hash=None) -> str:
+    """Token reset password, hết hạn sau 15 phút và chỉ dùng được một lần."""
+    return _encode(
+        {'user_id': str(user_id), 'purpose': 'reset_password', 'pwf': password_fingerprint(password_hash)},
+        datetime.timedelta(minutes=15),
+    )
+
+
+def read_reset_token(token: str):
+    """Trả payload (dict) nếu token đặt lại mật khẩu hợp lệ và chưa hết hạn, ngược lại None."""
+    try:
+        payload = jwt.decode(token, _secret(), algorithms=['HS256'])
+    except jwt.InvalidTokenError:       # gồm cả ExpiredSignatureError
+        return None
+    if payload.get('purpose') != 'reset_password' or not payload.get('user_id'):
+        return None
+    return payload
 
 
 def verify_reset_token(token: str):
-    """Trả về user_id nếu đúng, None nếu sai/hết hạn"""
-    try:
-        payload = jwt.decode(token, _secret(), algorithms=['HS256'])
-        if payload.get('purpose') != 'reset_password':
-            return None
-        return payload.get('user_id')
-    except jwt.InvalidTokenError:       # gồm cả ExpiredSignatureError
-        return None
+    """Trả về user_id nếu đúng, None nếu sai/hết hạn (KHÔNG kiểm tra đã dùng chưa: xem reset_token_unused)."""
+    payload = read_reset_token(token)
+    return payload.get('user_id') if payload else None
+
+
+def reset_token_unused(payload: dict, password_hash) -> bool:
+    return bool(payload) and payload.get('pwf') == password_fingerprint(password_hash)
 
 
 def decode_token(token: str):

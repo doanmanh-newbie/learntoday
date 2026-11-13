@@ -35,7 +35,7 @@ export default function WelcomeSection({
           >
             Chào {username}! 👋
           </h1>
-          <p style={{ color: "#8892b0", fontSize: 15 }}>
+          <p style={{ color: "#a2acb3", fontSize: 15 }}>
             Hãy duy trì ngọn lửa học tập ngày hôm nay nhé.
           </p>
         </div>
@@ -48,7 +48,7 @@ export default function WelcomeSection({
           }}
         >
           <span>📅</span>
-          <span style={{ fontSize: 13, fontWeight: 500, color: "#8892b0" }}>
+          <span style={{ fontSize: 13, fontWeight: 500, color: "#a2acb3" }}>
             {dateStr}
           </span>
         </div>
@@ -58,8 +58,8 @@ export default function WelcomeSection({
       <div
         className="mt-5 rounded-xl p-4 flex items-center gap-6 flex-wrap"
         style={{
-          background: "rgba(99,102,241,0.06)",
-          border: "1px solid rgba(99,102,241,0.15)",
+          background: "rgba(20,184,166,0.06)",
+          border: "1px solid rgba(20,184,166,0.15)",
         }}
       >
         {/* Progress bar */}
@@ -68,14 +68,14 @@ export default function WelcomeSection({
             <span
               style={{
                 fontSize: 12,
-                color: "#8892b0",
+                color: "#a2acb3",
                 fontWeight: 500,
                 letterSpacing: "0.04em",
               }}
             >
               Tiến độ hôm nay
             </span>
-            <span style={{ fontSize: 12, fontWeight: 600, color: "#a5b4fc" }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: "#5eead4" }}>
               {learnedToday} / {learnTarget} từ
             </span>
           </div>
@@ -96,14 +96,14 @@ export default function WelcomeSection({
                 style={{
                   fontSize: 16,
                   fontWeight: 700,
-                  color: "#e8eaf6",
+                  color: "#e9edef",
                   fontFamily: "'Outfit',sans-serif",
                   lineHeight: 1,
                 }}
               >
                 {value}
               </p>
-              <p style={{ fontSize: 11, color: "#5a6a8a", marginTop: 2 }}>
+              <p style={{ fontSize: 11, color: "#a2acb3", marginTop: 2 }}>
                 {label}
               </p>
             </div>

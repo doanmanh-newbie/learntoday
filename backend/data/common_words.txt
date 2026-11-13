@@ -1,0 +1,19 @@
+# Danh sách ~1000 từ tiếng Anh thông dụng, xếp GẦN ĐÚNG theo mức phổ biến (phổ biến nhất ở trên). Một dòng = nhiều từ.
+# Đây là xấp xỉ viết tay để sắp xếp từ trong folder. Muốn chính xác hơn: nạp danh sách tần suất thật bằng
+# `python scripts/import_dict.py --skip-import --freq <file>` (thứ hạng đó được ưu tiên hơn danh sách này).
+the be to of and a in that have i it for not on with he as you do at this but his by from they we say her she or an will my one all would there their what so up out if about who get which go me when make can like time no just him know take people into year your good some could them see other than then now look only come its over think also back after use two how our work first well way even new want because any these give day most us
+is are was were been has had did said went made may many much more very such where each long great little own old right big high different small large next early young important few public bad same able
+house home water food money family friend school student teacher child children man woman men women life world country city town street road car room door window table chair book word name number part problem question hand head eye face body heart mind night morning week month hour minute city area story fact idea reason result change level office company business team group job market night
+eat drink sleep walk run talk speak read write listen learn teach study play buy sell pay cost need feel find keep leave begin start stop help ask tell call try seem show hear let put mean turn move live believe bring happen hold stand lose meet include continue set follow open close wait watch love like hate wish hope remember forget understand
+happy sad angry tired hungry ready sure afraid late easy hard hot cold warm cool free busy cheap expensive clean dirty full empty fast slow strong weak heavy light dark quiet loud sweet bitter fresh dry wet safe dangerous rich poor beautiful ugly nice kind
+red blue green yellow black white brown pink orange purple grey gray
+breakfast lunch dinner meal bread rice meat fish chicken egg milk coffee tea fruit vegetable apple banana sugar salt oil cheese butter soup salad cake pizza potato tomato onion
+brother sister mother father parent son daughter husband wife grandmother grandfather uncle aunt cousin baby
+doctor nurse hospital medicine health pain sick ill disease patient dentist pharmacy
+weather rain snow wind sun cloud storm summer winter spring autumn season temperature
+shop store market price sale bag shirt dress shoes hat coat pants clothes size
+train bus plane ticket airport station travel trip journey hotel passport luggage map traffic
+kitchen bedroom bathroom garden floor wall roof stairs key bed sofa lamp mirror
+email phone computer internet website message screen keyboard camera video photo music song film movie
+ingredient recipe cook bake boil fry slice mix cut pour
+manager employee salary meeting report project deadline client customer contract interview

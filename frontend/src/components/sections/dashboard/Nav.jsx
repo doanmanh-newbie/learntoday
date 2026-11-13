@@ -1,17 +1,20 @@
-import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon, BookOpenIcon, CheckCircleIcon } from "../../../icons/dashboard/index.jsx";
+import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon, BookOpenIcon } from "../../../icons/dashboard/index.jsx";
 import { useNavigate } from "react-router-dom";
 
 const TABS = [
   { id: "dashboard", icon: <HomeIcon />, label: "Trang chủ" },
   { id: "review", icon: <RotateCcwIcon />, label: "Ôn tập" },
-  { id: "thongke", icon: <BarChartIcon />, label: "Thống kê" },
-  { id: "thuvien", icon: <BookIcon />, label: "Thư viện chủ đề" },
-  { id: "datcau", icon: <PenIcon />, label: "Đặt câu · Sửa lỗi" },
+  { id: "luyentap", icon: <PenIcon />, label: "Luyện tập" },
+  { id: "thuvien", icon: <BookIcon />, label: "Thư viện" },
   { id: "dictionary", icon: <BookOpenIcon />, label: "Từ điển" },
-  { id: "kiemtra", icon: <CheckCircleIcon />, label: "Kiểm tra" },   // STT 16 - trang đã code nhưng trước đây KHÔNG có lối vào nào
+  { id: "thongke", icon: <BarChartIcon />, label: "Thống kê" },
 ];
 
-export default function Nav({ activeTab, setActiveTab }) {
+// Đặt câu / Kiểm tra nằm trong tab Luyện tập: vẫn sáng đúng tab khi đang ở đó
+const TAB_GROUP = { datcau: "luyentap", kiemtra: "luyentap" };
+
+export default function Nav({ activeTab: rawTab, setActiveTab }) {
+  const activeTab = TAB_GROUP[rawTab] || rawTab;
   const navigate = useNavigate();
 
   // Map tab -> URL, để URL luôn phản ánh đúng tab đang xem (đồng bộ 2
@@ -25,9 +28,8 @@ export default function Nav({ activeTab, setActiveTab }) {
     review: "/app/on-tap",
     thongke: "/app/thongke",
     thuvien: "/app/thuvien",
-    datcau: "/app/datcau",
+    luyentap: "/app/luyen-tap",
     dictionary: "/app/dictionary",
-    kiemtra: "/app/kiem-tra",
   };
 
   const handleTabClick = (id) => {
@@ -37,19 +39,25 @@ export default function Nav({ activeTab, setActiveTab }) {
 
   return (
     <nav
-      className="animate-fade-in delay-100 sticky z-40 flex items-center gap-1 px-6 py-2"
+      className="animate-fade-in delay-100 sticky z-40 flex items-center gap-1 px-3 sm:px-6 py-2"
       style={{
         top: 57,
-        background: "rgba(7,9,26,0.75)",
+        background: "rgba(17,19,20,0.75)",
         backdropFilter: "blur(16px)",
         WebkitBackdropFilter: "blur(16px)",
         borderBottom: "1px solid rgba(255,255,255,0.05)",
+        // 8 tab không vừa màn hình điện thoại: cho cuộn ngang thay vì tràn/vỡ bố cục
+        overflowX: "auto",
+        scrollbarWidth: "none",
       }}
     >
       {TABS.map(({ id, icon, label }) => (
         <button
           key={id}
           className={`nav-tab${activeTab === id ? " active" : ""}`}
+          style={{ flexShrink: 0, whiteSpace: "nowrap" }}
+          aria-current={activeTab === id ? "page" : undefined}
+          ref={(el) => { if (el && activeTab === id) el.scrollIntoView?.({ inline: "center", block: "nearest" }); }}
           onClick={() => handleTabClick(id)}
         >
           {icon}
@@ -61,9 +69,9 @@ export default function Nav({ activeTab, setActiveTab }) {
                 width: 5,
                 height: 5,
                 borderRadius: "50%",
-                background: "#a5b4fc",
+                background: "#5eead4",
                 marginLeft: 2,
-                boxShadow: "0 0 8px rgba(165,180,252,0.8)",
+                boxShadow: "0 0 8px rgba(94,234,212,0.8)",
               }}
             />
           )}

@@ -29,7 +29,7 @@ và gợi ý cách sửa bằng tiếng Việt cho từng lỗi.
 
 ## 4. Tạo bảng + nạp dữ liệu
 ```bash
-flask db upgrade                 # tạo toàn bộ bảng/chỉ mục (8 migration)
+flask db upgrade                 # tạo toàn bộ bảng/chỉ mục (9 migration)
 python seed.py                   # 6 folder hệ thống + 70 từ (đã có nghĩa tiếng Việt)
 python seed.py --admin           # (tùy chọn) cần ADMIN_EMAIL, ADMIN_PASSWORD trong .env
 python scripts/diagnose_db.py    # kiểm tra lại: kỳ vọng "Mọi bước đều ổn"
@@ -38,7 +38,7 @@ python scripts/diagnose_db.py    # kiểm tra lại: kỳ vọng "Mọi bước 
 ## 5. Chạy thử
 ```bash
 python run.py                    # http://127.0.0.1:5000/api/health  -> {"connected": true, ...}
-python -m unittest discover -s tests -t .      # 23 test (chạy trên SQLite, không đụng DB thật)
+python -m unittest discover -s tests -t .      # nhiều test (chạy trên SQLite, không đụng DB thật)
 ```
 
 ## 6. Bảng lỗi thường gặp

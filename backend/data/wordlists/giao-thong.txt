@@ -1,0 +1,9 @@
+# name: Giao thông & di chuyển
+# icon: 🚗
+# color: #6366f1
+# description: Phương tiện, đường sá và chuyến đi.
+car bus train taxi bicycle motorbike truck plane airplane airport station platform ticket passenger
+driver pilot captain ship boat ferry subway tram road street highway bridge tunnel traffic signal
+crossing pavement corner junction roundabout map direction turn straight left right ahead behind
+distance mile kilometer journey trip travel arrive depart delay accident fuel petrol engine wheel
+brake parking license

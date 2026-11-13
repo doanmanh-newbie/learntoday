@@ -110,3 +110,24 @@ export function stepMachine(m, { wordId, correct, removed = false, batch }) {
     gatesCleared: m.gatesCleared,
   });
 }
+
+
+/**
+ * Tiến độ 0..1 của MỘT nhóm từ, tính từ trạng thái máy:
+ *   (dạng hiện tại - 1 + (số câu đúng - số câu sai trong vòng) / cỡ vòng) / 4
+ * Trả lời đúng -> tăng; trả lời sai -> lùi; sai nhiều bị đưa về dạng thấp hơn -> thanh lùi một đoạn rõ rệt.
+ */
+export function batchProgress(m) {
+  if (!m || !m.roundSize) return 0;
+  const answered = m.roundSize - m.remaining.length;
+  const wrong = m.failed.length;
+  const ok = Math.max(0, answered - wrong);
+  const raw = ((m.level - 1) + (ok - wrong) / m.roundSize) / MAX_LEVEL;
+  return Math.min(1, Math.max(0, raw));
+}
+
+/** Tiến độ cả buổi học (0..1): các nhóm đã xong + phần của nhóm hiện tại. */
+export function sessionProgress(m, batchIdx, batchCount) {
+  if (!batchCount) return 0;
+  return Math.min(1, Math.max(0, (batchIdx + batchProgress(m)) / batchCount));
+}
