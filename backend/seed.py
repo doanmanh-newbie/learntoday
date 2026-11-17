@@ -25,6 +25,7 @@ from pathlib import Path
 from app import create_app, db
 from app.models import Folder, FolderWord, User, Word
 from app.utils.auth import hash_password
+from app.utils.word_level import tier_for_word
 
 CRAWLED_DIR = Path(__file__).parent / 'data' / 'crawled'
 OVERRIDES_FILE = Path(__file__).parent / 'data' / 'vi_overrides.json'
@@ -101,7 +102,7 @@ def seed_words_and_folders(overrides=None, crawled_dir=CRAWLED_DIR):
 
                 word = words.get(key)
                 if word is None:
-                    word = Word(id=str(uuid.uuid4()), word=wd['word'], difficulty=1, category=folder_name, **values)
+                    word = Word(id=str(uuid.uuid4()), word=wd['word'], difficulty=tier_for_word(wd['word']), category=folder_name, **values)
                     db.session.add(word)
                     words[key] = word
                     stats['words_created'] += 1

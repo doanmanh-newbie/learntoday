@@ -27,6 +27,7 @@ from app import db
 from app.models import DictionaryEntry, Folder, FolderWord, LexiconEntry, Word
 from app.services import dict_import
 from app.utils.sql import escape_like
+from app.utils.word_level import tier_for_word
 
 logger = logging.getLogger(__name__)
 
@@ -341,7 +342,7 @@ def save_to_folder(user_id, word, folder_id, pos=None):
             word_type=word_type[:30], meaning=meaning, meaning_en=meaning_en,
             example=example, example_meaning=example_vi,
             audio_url=audio[:255] if audio else None,
-            difficulty=1, category='Từ điển',
+            difficulty=tier_for_word(entry['word']), category='Từ điển',
         )
         db.session.add(db_word)
         db.session.flush()

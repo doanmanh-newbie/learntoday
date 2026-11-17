@@ -33,6 +33,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from app.services import dict_import  # noqa: E402
 from app.utils.mobi_reader import MobiError, mobi_to_html  # noqa: E402
+from app.utils.word_level import tier_for_word  # noqa: E402
 
 CHUNK = 1000
 
@@ -189,7 +190,7 @@ def build_folder(db, name, words, meta=None, overrides=None):
         if word is None:
             word = Word(id=str(uuid.uuid4()), word=entry['word'], pronunciation=(entry.get('phonetic') or None),
                         word_type=card['pos'][:30], meaning=card['meaning_vi'], example=card['example'],
-                        example_meaning=card['example_vi'], difficulty=1, category='Từ điển')
+                        example_meaning=card['example_vi'], difficulty=tier_for_word(entry['word']), category='Từ điển')
             db.session.add(word)
             db.session.flush()
         if word.id in in_folder:

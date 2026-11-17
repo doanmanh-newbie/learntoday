@@ -7,6 +7,7 @@ from app import db
 from app.models import Word
 from app.utils.middleware import token_required
 from app.utils.sql import escape_like
+from app.utils.word_level import tier_for_word
 
 bp = Blueprint('translate', __name__, url_prefix='/api/translate')
 
@@ -95,3 +96,4 @@ def save_translated_word():
     db.session.commit()
 
     return jsonify({'message': 'Lưu từ thành công!', 'word': new_word.to_dict()}), 201
+        difficulty=tier_for_word(word_text),
