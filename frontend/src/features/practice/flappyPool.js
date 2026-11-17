@@ -19,13 +19,13 @@ export async function loadFolderWords(folderId, fetchPage, { includeUnlearned = 
   return usableWords(includeUnlearned ? ui : ui.filter((w) => w.level >= 1));
 }
 
-export function describePool(words) {
+export function describePool(words, source = 'folder') {
   const list = usableWords(words);
   const count = list.length;
   const playable = count >= MIN_WORDS;
   const max = maxScore(list);
   const note = !playable
     ? `Cần ít nhất ${MIN_WORDS} từ để chơi.`
-    : `Thư mục này chỉ có ${count} từ nên điểm tối đa là ${max}.`;
+    : `${source === 'learned' ? 'Kho từ của bạn' : 'Thư mục này'} chỉ có ${count} từ nên điểm tối đa là ${max}.`;
   return { count, maxScore: max, playable, note };
 }

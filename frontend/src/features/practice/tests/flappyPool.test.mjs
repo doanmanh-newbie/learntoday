@@ -55,3 +55,7 @@ test('describePool: 3 từ -> không chơi được; từ trùng/thiếu nghĩa 
   assert.equal(d.note, 'Cần ít nhất 4 từ để chơi.');
   assert.equal(describePool([...mk(4), { id: 9, word: 'w1', meaning: 'x' }, { id: 8, word: 'q', meaning: ' ' }]).count, 4);
 });
+
+test('describePool: nguồn kho từ đã học dùng câu "Kho từ của bạn"', () => {
+  assert.equal(describePool(mk(5), 'learned').note, 'Kho từ của bạn chỉ có 5 từ nên điểm tối đa là 70.');
+});
