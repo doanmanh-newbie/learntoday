@@ -9,3 +9,4 @@ from .search_history import SearchHistory
 from .user_milestones import UserMilestone
 from .dictionary_entries import DictionaryEntry
 from .lexicon_entries import LexiconEntry
+from .game_runs import GameRun
