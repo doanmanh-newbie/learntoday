@@ -101,6 +101,7 @@ export function toUiWord(w) {
     example_meaning: w.example_meaning || '',
     examples,
     audio_url: w.audio_url || '',
+    difficulty: w.difficulty || 1,
     lv: level,
     level,
     next_review: w.next_review || null,
