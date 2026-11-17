@@ -253,6 +253,12 @@ export const translateApi = {
   save: (data) => apiRequest('/api/translate/save', { method: 'POST', body: JSON.stringify(data) }),
 };
 
+export const gameApi = {
+  submitFlappy: (answers, folderId) =>
+    apiRequest('/api/game/flappy/runs', { method: 'POST', body: JSON.stringify({ answers, folder_id: folderId }) }),
+  leaderboard: (period) => apiRequest(`/api/game/flappy/leaderboard?period=${encodeURIComponent(period)}`),
+};
+
 export const studyApi = {
   heartbeat: (minutes = 1) =>
     apiRequest('/api/study/heartbeat', { method: 'POST', body: JSON.stringify({ minutes }) }),

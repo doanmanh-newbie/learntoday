@@ -241,3 +241,18 @@ test('toUiEntry: giữ nghĩa chưa dịch là RỖNG (không điền tiếng An
   assert.equal(posLabelVi('gibberish'), 'gibberish');
   assert.equal(posLabelVi(undefined), 'Khác');
 });
+
+test('gameApi: nộp ván flappy chỉ gửi answers + folder_id (không có score); bảng xếp hạng đúng URL', async () => {
+  const { gameApi } = await import('../client.js');
+  reset();
+  handler = async () => ({ status: 201, body: { score: 10 } });
+  await gameApi.submitFlappy([{ word_id: 'w1', dir: 'en_vi', choice: 'x', t_ms: 5 }], 'f1');
+  const c = calls[0];
+  assert.ok(c.url.endsWith('/api/game/flappy/runs'));
+  assert.equal(c.method, 'POST');
+  assert.deepEqual(JSON.parse(c.body), { answers: [{ word_id: 'w1', dir: 'en_vi', choice: 'x', t_ms: 5 }], folder_id: 'f1' });
+  reset();
+  handler = async () => ({ status: 200, body: {} });
+  await gameApi.leaderboard('week');
+  assert.ok(calls[0].url.endsWith('/api/game/flappy/leaderboard?period=week'));
+});
