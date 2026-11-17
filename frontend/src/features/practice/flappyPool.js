@@ -1,7 +1,7 @@
 // Logic thuần chọn bộ từ cho Flappy (không UI, test được bằng node).
 import { toUiWord } from '../../api/adapters';
 import { usableWords, MIN_WORDS } from './practiceLogic';
-import { maxScore } from './flappyLogic';
+import { maxScore, MAX_ANSWERS } from './flappyLogic';
 
 const PAGE_LIMIT = 100;   // server chặn ở 100
 
@@ -23,9 +23,11 @@ export function describePool(words, source = 'folder') {
   const list = usableWords(words);
   const count = list.length;
   const playable = count >= MIN_WORDS;
-  const max = maxScore(list);
+  const max = maxScore(list.slice(0, MAX_ANSWERS));
   const note = !playable
     ? `Cần ít nhất ${MIN_WORDS} từ để chơi.`
-    : `${source === 'learned' ? 'Kho từ của bạn' : 'Thư mục này'} chỉ có ${count} từ nên điểm tối đa là ${max}.`;
+    : count > MAX_ANSWERS
+      ? `Mỗi ván tối đa ${MAX_ANSWERS} từ nên điểm tối đa là ${max}.`
+      : `${source === 'learned' ? 'Kho từ của bạn' : 'Thư mục này'} chỉ có ${count} từ nên điểm tối đa là ${max}.`;
   return { count, maxScore: max, playable, note };
 }

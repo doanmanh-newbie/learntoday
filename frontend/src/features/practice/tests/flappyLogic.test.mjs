@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
   BIRD_X, BIRD_R, FLAP_V, LIVES, SPEED_START, SPEED_STEP, SPEED_MAX, GAP_PX, ENDING_S, MIN_ANSWER_GAP_MS,
-  pointsFor, maxScore, laneAt, buildQuestions, createGame, flap, tick, wrapText,
+  pointsFor, maxScore, laneAt, buildQuestions, MAX_ANSWERS, createGame, flap, tick, wrapText,
 } from '../flappyLogic.js';
 
 const H = 420;
@@ -45,6 +45,13 @@ test('buildQuestions: mỗi từ một câu, đủ hai hướng, đáp án đún
     assert.equal(q.choices[q.answerIndex], q.dir === 'en_vi' ? q.word.meaning : q.word.word);
     assert.equal(q.prompt, q.dir === 'en_vi' ? q.word.word : q.word.meaning);
   }
+});
+
+test('buildQuestions: tối đa MAX_ANSWERS (200) câu, không trùng từ', () => {
+  const qs = buildQuestions(mk(250), { random: lcg() });
+  assert.equal(MAX_ANSWERS, 200);
+  assert.equal(qs.length, 200);
+  assert.equal(new Set(qs.map((q) => q.word.id)).size, 200);
 });
 
 test('buildQuestions: thư mục nhỏ lấy nhiễu từ distractorPool; không đủ thì ít ô, không trùng', () => {

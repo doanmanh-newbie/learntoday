@@ -56,6 +56,13 @@ test('describePool: 3 từ -> không chơi được; từ trùng/thiếu nghĩa 
   assert.equal(describePool([...mk(4), { id: 9, word: 'w1', meaning: 'x' }, { id: 8, word: 'q', meaning: ' ' }]).count, 4);
 });
 
+test('describePool: trên 200 từ chỉ tính điểm tối đa cho 200 từ và ghi chú rõ', () => {
+  const d = describePool(mk(250));
+  assert.equal(d.count, 250);
+  assert.equal(d.maxScore, describePool(mk(200)).maxScore);
+  assert.match(d.note, /tối đa 200 từ/);
+});
+
 test('describePool: nguồn kho từ đã học dùng câu "Kho từ của bạn"', () => {
   assert.equal(describePool(mk(5), 'learned').note, 'Kho từ của bạn chỉ có 5 từ nên điểm tối đa là 70.');
 });

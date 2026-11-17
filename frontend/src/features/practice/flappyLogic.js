@@ -18,6 +18,7 @@ export const GAP_PX = 520;            // khoảng cách cột kế tiếp; GAP_P
 export const ENDING_S = 1.2;          // sau câu cuối / hết mạng: chim bay thêm rồi mới báo 'over'
 export const MIN_ANSWER_GAP_MS = 2500;
 export const LIVES = 3;
+export const MAX_ANSWERS = 200;       // server (game_score.MAX_ANSWERS) từ chối ván dài hơn
 export const TIER_POINTS = { 1: 10, 2: 13, 3: 16, 4: 20 };
 const DT_MAX = 0.05;
 
@@ -39,7 +40,7 @@ export function laneAt(y, lanes, h) {
 export function buildQuestions(words, { distractorPool = words, random = Math.random } = {}) {
   const pool = usableWords(distractorPool);
   const out = [];
-  for (const word of shuffle(usableWords(words), random)) {
+  for (const word of shuffle(usableWords(words), random).slice(0, MAX_ANSWERS)) {
     const dir = random() < 0.5 ? 'en_vi' : 'vi_en';
     const en = dir === 'en_vi';
     const choices = en ? meaningChoices(word, pool, 3) : wordChoices(word, pool, 3);

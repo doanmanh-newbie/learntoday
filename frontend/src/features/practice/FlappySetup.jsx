@@ -14,6 +14,7 @@ export default function FlappySetup({ learnedWords, onStart }) {
   const [folderWords, setFolderWords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [retry, setRetry] = useState(0);   // đổi để effect tải chạy lại khi bấm lại cùng thư mục sau lỗi
   const [view, setView] = useState('play');   // 'play' | 'board'
   const learned = useMemo(() => usableWords(learnedWords), [learnedWords]);
 
@@ -25,8 +26,8 @@ export default function FlappySetup({ learnedWords, onStart }) {
 
   // Đổi nguồn/công tắc: reset đồng bộ trong handler để không có render nào giữ từ của nguồn cũ với Chơi đang mở.
   const switchTo = (id, unlearned) => {
-    if (id === folderId && unlearned === includeUnlearned) return;   // không đổi gì thì effect không chạy lại, đừng bật loading
-    setFolderId(id); setIncludeUnlearned(unlearned);
+    if (id === folderId && unlearned === includeUnlearned && !error) return;   // không đổi gì thì effect không chạy lại, đừng bật loading
+    setFolderId(id); setIncludeUnlearned(unlearned); setRetry((n) => n + 1);
     setFolderWords([]); setError(''); setLoading(id != null);
   };
 
@@ -37,7 +38,7 @@ export default function FlappySetup({ learnedWords, onStart }) {
       .then((w) => { if (!stale) { setFolderWords(w); setLoading(false); } })
       .catch((e) => { if (!stale) { setError(e?.message || 'Không tải được thư mục này.'); setLoading(false); } });
     return () => { stale = true; };
-  }, [folderId, includeUnlearned]);
+  }, [folderId, includeUnlearned, retry]);
 
   const words = folderId == null ? learned : folderWords;
   const pool = describePool(words, folderId == null ? 'learned' : 'folder');

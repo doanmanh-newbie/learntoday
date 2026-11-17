@@ -68,6 +68,11 @@ class GameApiTest(ApiTestCase):
                      {'answers': [ans('w0', 3000)], 'folder_id': 5}]:
             self.assertEqual(self.post(body).status_code, 400, body)
 
+    def test_rejects_too_many_answers_and_huge_t_ms(self):
+        ok = {'word_id': 'w0', 'dir': 'en_vi', 'choice': 'a', 't_ms': 3000}
+        self.assertEqual(self.post({'answers': [ok] * 201}).status_code, 400)
+        self.assertEqual(self.post({'answers': [{**ok, 't_ms': 86_400_001}]}).status_code, 400)
+
     def test_empty_meaning_word_not_allowed(self):
         from app.models import Word
         Word.query.get('w0').meaning = ''

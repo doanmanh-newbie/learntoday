@@ -62,6 +62,21 @@ class BackfillTests(unittest.TestCase):
         self.assertEqual(dict(first), {3: 1, 4: 1, 1: 1})
         self.assertEqual({w.word: w.difficulty for w in s.query(W)}, {'abandon': 3, 'thesis': 4, 'x': 1})
 
+    def test_aborts_without_data_files(self):
+        import sys, os
+        sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'scripts'))
+        from unittest import mock
+        from app.utils import word_level
+        import backfill_difficulty as bf
+        session = mock.Mock()
+        word_level._DATA = ({}, set())
+        try:
+            with self.assertRaises(SystemExit):
+                bf.backfill(session, object)
+        finally:
+            word_level._DATA = None
+        session.query.assert_not_called()
+
 
 if __name__ == '__main__':
     unittest.main()

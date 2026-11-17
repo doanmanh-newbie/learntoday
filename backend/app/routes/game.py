@@ -7,7 +7,7 @@ from app import db
 from app.models import User, Word, UserWord, Folder, FolderWord
 from app.models.game_runs import GameRun
 from app.models.learning_logs import VN_TZ
-from app.utils.game_score import score_run, RunError, max_score, tier_of
+from app.utils.game_score import score_run, RunError, max_score, tier_of, MAX_ANSWERS
 from app.utils.leaderboard import week_start_utc, rank
 from app.utils.middleware import token_required
 
@@ -28,13 +28,15 @@ def _validate(body):
     answers = body.get('answers')
     if not isinstance(answers, list) or not answers:
         return 'Chưa có câu trả lời nào.'
+    if len(answers) > MAX_ANSWERS:
+        return 'Ván chơi quá dài.'
     for a in answers:
         if not isinstance(a, dict):
             return 'Câu trả lời không hợp lệ.'
         if not all(isinstance(a.get(k), str) for k in ('word_id', 'dir', 'choice')):
             return 'Câu trả lời không hợp lệ.'
         t = a.get('t_ms')
-        if not isinstance(t, int) or isinstance(t, bool):
+        if not isinstance(t, int) or isinstance(t, bool) or t > 86_400_000:   # chặn tràn Integer của duration_ms
             return 'Thời gian trả lời không hợp lệ.'
     fid = body.get('folder_id')
     if fid is not None and not isinstance(fid, str):

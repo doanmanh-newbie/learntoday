@@ -36,6 +36,7 @@ export default function FlappyLeaderboard() {
                 background: r.is_me ? 'rgba(45,212,191,0.16)' : 'rgba(255,255,255,0.04)', border: `1px solid ${r.is_me ? '#2dd4bf' : 'rgba(255,255,255,0.08)'}` }}>
                 <span style={{ minWidth: 34, fontWeight: 800, color: '#99f6e4' }}>#{r.rank}</span>
                 <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.username}</span>
+                {r.correct != null && <span style={{ whiteSpace: 'nowrap', fontSize: 13, opacity: 0.75 }}>{r.correct} đúng</span>}
                 <strong style={{ whiteSpace: 'nowrap' }}>{r.score} đ</strong>
               </div>
             </li>

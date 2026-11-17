@@ -8,11 +8,16 @@ from collections import Counter
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+from app.utils import word_level  # noqa: E402
 from app.utils.word_level import tier_for_word  # noqa: E402
 
 
 def backfill(session, Word, batch=500):
     """Cập nhật theo lô, trả về Counter số từ theo bậc."""
+    if word_level._DATA is None:
+        word_level._DATA = word_level.load_levels()
+    if not any(word_level._DATA):
+        sys.exit('Không tìm thấy dữ liệu CEFR/NAWL (backend/data/wordlists): dừng, chưa ghi gì vào DB.')
     counts = Counter()
     n = 0
     for w in session.query(Word).filter(Word.deleted_at.is_(None)).all():
