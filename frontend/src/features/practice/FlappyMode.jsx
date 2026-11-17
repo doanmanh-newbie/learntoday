@@ -7,6 +7,7 @@ import { posLabelVi } from '../../api/adapters';
 import { gameApi } from '../../api/client';
 import { BIRD_X, BIRD_R, COLUMN_W, LIVES, createGame, flap, tick, laneAt, wrapText, maxScore } from './flappyLogic.js';
 import FlappySetup from './FlappySetup.jsx';
+import FlappyLeaderboard from './FlappyLeaderboard.jsx';
 
 const W = 640; const H = 420;   // thế giới cố định (Task 8 sẽ đổi sang dọc)
 const NET_MSG = 'Chưa lưu được vào bảng xếp hạng';
@@ -124,6 +125,7 @@ function Play({ pool, onExit, onAgain }) {
   const [questions, setQuestions] = useState([]);
   const [message, setMessage] = useState(null);       // { ok, text } sau mỗi câu
   const [result, setResult] = useState(null);
+  const [showBoard, setShowBoard] = useState(false);
   const [submit, setSubmit] = useState(null);         // null | {saving} | {rank_week, rank_all} | {error}
 
   useEffect(() => {
@@ -182,7 +184,7 @@ function Play({ pool, onExit, onAgain }) {
 
   if (result) {
     const best = readBest('flappy');
-    const rank = submit && submit.rank_week != null ? ` · hạng tuần #${submit.rank_week} · hạng mọi thời gian #${submit.rank_all}` : '';
+    const rank = (submit && submit.rank_week != null ? ` · hạng tuần #${submit.rank_week}` : '') + (submit && submit.rank_all != null ? ` · hạng mọi thời gian #${submit.rank_all}` : '');
     return (
       <ModeShell title="Chim bay chọn nghĩa" icon="🐦" onExit={onExit}>
         <RoundSummary correct={result.correct} total={result.answered}
@@ -193,6 +195,12 @@ function Play({ pool, onExit, onAgain }) {
             {submit.saving ? 'Đang lưu vào bảng xếp hạng…' : submit.error}
           </p>
         )}
+        <div style={{ marginTop: 12, textAlign: 'center' }}>
+          <button type="button" style={{ ...SECONDARY_BTN, padding: '8px 16px', fontSize: 13 }} onClick={() => setShowBoard((v) => !v)}>
+            {showBoard ? 'Ẩn bảng xếp hạng' : 'Xem bảng xếp hạng'}
+          </button>
+        </div>
+        {showBoard && <div style={{ marginTop: 12 }}><FlappyLeaderboard /></div>}
         {result.wrong.length > 0 && (
           <div style={{ marginTop: 18 }}>
             <h4 style={{ margin: '0 0 8px', fontFamily: 'Outfit, sans-serif', fontSize: 15, color: '#f1f5f9' }}>Từ cần ôn lại</h4>

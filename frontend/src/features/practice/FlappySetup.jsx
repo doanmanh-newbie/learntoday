@@ -3,6 +3,7 @@ import { foldersApi } from '../../api/client';
 import { PRIMARY_BTN, SECONDARY_BTN } from './modeStyles';
 import { loadFolderWords, describePool } from './flappyPool';
 import { usableWords } from './practiceLogic';
+import FlappyLeaderboard from './FlappyLeaderboard.jsx';
 
 const chip = (on) => ({ ...SECONDARY_BTN, padding: '9px 14px', ...(on ? { background: 'rgba(45,212,191,0.18)', border: '1px solid #2dd4bf' } : {}) });
 
@@ -13,6 +14,7 @@ export default function FlappySetup({ learnedWords, onStart }) {
   const [folderWords, setFolderWords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [view, setView] = useState('play');   // 'play' | 'board'
   const learned = useMemo(() => usableWords(learnedWords), [learnedWords]);
 
   useEffect(() => {
@@ -43,6 +45,11 @@ export default function FlappySetup({ learnedWords, onStart }) {
 
   return (
     <div style={{ maxWidth: 520, margin: '0 auto', padding: 16, color: '#e9edef', fontFamily: 'Outfit, sans-serif' }}>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <button type="button" style={{ ...chip(view === 'play'), flex: 1 }} onClick={() => setView('play')}>Chơi</button>
+        <button type="button" style={{ ...chip(view === 'board'), flex: 1 }} onClick={() => setView('board')}>Xếp hạng</button>
+      </div>
+      {view === 'board' ? <FlappyLeaderboard /> : (<>
       <h2 style={{ margin: '0 0 12px', fontSize: 20 }}>Chọn bộ từ</h2>
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 14 }}>
         <button type="button" style={chip(folderId == null)} onClick={() => switchTo(null, false)}>Kho từ đã học</button>
@@ -59,6 +66,7 @@ export default function FlappySetup({ learnedWords, onStart }) {
       {error && <p role="alert" style={{ color: '#fca5a5', fontSize: 14 }}>{error}</p>}
       <p style={{ fontSize: 14, opacity: 0.85, minHeight: 20 }}>{loading ? 'Đang tải từ...' : (!error && pool.note)}</p>
       <button type="button" style={{ ...PRIMARY_BTN, width: '100%', opacity: pool.playable && !loading ? 1 : 0.45 }} disabled={!pool.playable || loading} onClick={start}>Chơi</button>
+      </>)}
     </div>
   );
 }
