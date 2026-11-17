@@ -91,9 +91,9 @@ def save_translated_word():
         word_type=data.get('word_type', 'noun'),
         example=data.get('example'),
         example_meaning=data.get('example_meaning'),
+        difficulty=tier_for_word(word_text),
     )
     db.session.add(new_word)
     db.session.commit()
 
     return jsonify({'message': 'Lưu từ thành công!', 'word': new_word.to_dict()}), 201
-        difficulty=tier_for_word(word_text),
