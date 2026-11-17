@@ -5,7 +5,7 @@ import { loadFolderWords, describePool } from './flappyPool';
 import { usableWords } from './practiceLogic';
 import FlappyLeaderboard from './FlappyLeaderboard.jsx';
 
-const chip = (on) => ({ ...SECONDARY_BTN, padding: '9px 14px', ...(on ? { background: 'rgba(45,212,191,0.18)', border: '1px solid #2dd4bf' } : {}) });
+const chip = (on) => ({ ...SECONDARY_BTN, padding: '9px 14px', maxWidth: '100%', overflowWrap: 'anywhere', ...(on ? { background: 'rgba(45,212,191,0.18)', border: '1px solid #2dd4bf' } : {}) });
 
 export default function FlappySetup({ learnedWords, onStart }) {
   const [folders, setFolders] = useState([]);
@@ -44,7 +44,7 @@ export default function FlappySetup({ learnedWords, onStart }) {
   const start = () => onStart({ words, folderId: folderId == null ? null : String(folderId), distractorPool: learned });
 
   return (
-    <div style={{ maxWidth: 520, margin: '0 auto', padding: 16, color: '#e9edef', fontFamily: 'Outfit, sans-serif' }}>
+    <div style={{ maxWidth: 520, margin: '0 auto', padding: 'clamp(0px, 2vw, 16px)', color: '#e9edef', fontFamily: 'Outfit, sans-serif' }}>
       <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
         <button type="button" style={{ ...chip(view === 'play'), flex: 1 }} onClick={() => setView('play')}>Chơi</button>
         <button type="button" style={{ ...chip(view === 'board'), flex: 1 }} onClick={() => setView('board')}>Xếp hạng</button>
