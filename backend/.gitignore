@@ -5,3 +5,12 @@ __pycache__/
 *.pyc
 *.db
 node_modules/
+
+
+.supepowers/
+.claude/
+data/
+*/tsv
+*/txt
+*/png
+*/jpg

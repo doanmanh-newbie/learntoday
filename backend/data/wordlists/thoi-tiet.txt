@@ -1,9 +1,0 @@
-# name: Thời tiết & thiên nhiên
-# icon: 🌦️
-# color: #38bdf8
-# description: Thời tiết, các mùa, địa hình và môi trường.
-weather sunny cloudy rainy windy stormy foggy snowy hot warm cool cold freezing humid dry wet rain
-snow wind storm thunder lightning cloud sky sun moon star temperature season spring summer autumn
-winter flood drought earthquake volcano forest mountain hill valley river lake sea ocean beach
-island desert jungle waterfall cave field grass flower tree leaf rock sand soil environment climate
-pollution

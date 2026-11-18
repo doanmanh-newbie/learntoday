@@ -1,8 +1,0 @@
-# name: Nhà cửa
-# icon: 🏠
-# color: #86a24d
-# description: Các phòng, đồ đạc và việc nhà.
-house apartment room bedroom bathroom kitchen garden garage roof floor ceiling wall window door
-stairs balcony furniture table chair sofa bed wardrobe shelf cupboard drawer carpet curtain mirror
-lamp pillow blanket mattress fridge oven stove microwave sink bath shower toilet towel soap broom
-bucket key lock fence yard basement attic neighborhood rent landlord tenant decorate repair clean

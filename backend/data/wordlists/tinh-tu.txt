@@ -1,9 +1,0 @@
-# name: Tính từ thông dụng
-# icon: 🎨
-# color: #c084fc
-# description: Các tính từ cơ bản để miêu tả người và vật.
-good new first last long great little own other old right big high different small large next early
-young important few public bad same able free sure better best real clear full special easy strong
-whole recent hard low late short simple possible human major local common wide ready cold dark deep
-heavy light quiet quick sharp soft thick thin wrong dirty clean empty safe dangerous busy poor rich
-cheap expensive beautiful ugly tall fat slim fresh rough smooth

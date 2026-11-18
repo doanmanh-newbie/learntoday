@@ -1,9 +1,0 @@
-# name: Cảm xúc & tính cách
-# icon: 🙂
-# color: #f472b6
-# description: Cảm xúc, tính cách và các biểu hiện.
-happy sad angry afraid scared nervous worried anxious excited bored lonely proud ashamed jealous
-surprised shocked confused calm relaxed cheerful gloomy upset annoyed furious delighted grateful
-hopeful disappointed embarrassed curious confident shy polite rude kind generous selfish honest
-brave lazy clever stupid creative careful careless patient friendly lovely funny serious gentle
-stubborn smile laugh cry shout whisper hug kiss love hate enjoy
