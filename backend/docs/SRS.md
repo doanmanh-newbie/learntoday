@@ -49,7 +49,23 @@ Chuỗi hiển thị về 0 khi đã bỏ lỡ từ hôm kia trở đi (cột `u
 * Trang Ôn tập (`ReviewLanding`) tự khai báo một lịch ôn riêng (cấp 4 = 3 ngày, cấp 5 = 7 ngày, cấp 6 = 5 ngày) khác cả backend lẫn `constants/srs.js`; nay dùng chung `constants/srs.js`. Văn bản trang giới thiệu cũng đã cập nhật.
 
 ## Chưa làm
-* **Chấm điểm vẫn ở client.** `/api/words/<id>/check-answer` không được dùng; client có thể gửi `complete-learn` mà không học thật. Với app cá nhân điều này chỉ làm sai tiến độ của chính người đó; nó chỉ thành vấn đề khi có bảng xếp hạng hoặc phần thưởng thật. Chuyển sang chấm ở server cần đổi cả luồng 4 dạng bài (server phải giữ trạng thái từng lượt).
+* **Chấm từng đáp án vẫn ở client** (giữ lại để app chạy được khi mất mạng). Phần lạm dụng tiến độ/bảng xếp hạng đã được chặn một phần: xem mục "Chống gian lận" bên dưới. Còn lại: người tự gõ đủ chậm mà không học thật thì server không phát hiện được; chấm từng bước ở server (phá tính năng offline, phải viết lại `LearningSession.jsx`) chỉ đáng làm khi có phần thưởng thật.
 * Chưa có "đóng băng streak" khi bận, chưa có SM-2/FSRS (mức "dễ/vừa/khó"), chưa có chế độ ôn nhanh bằng thẻ lật.
 * Màn hình tổng kết cuối buổi ôn (STT 5: "Đã ôn X/X, Tăng level, Lùi level...") vẫn chưa có.
 * Bài "chính tả" vẫn bắt gõ cho mỗi từ kể cả trên điện thoại.
+
+
+## Chống gian lận (tiến độ và bảng xếp hạng)
+
+Trước đây server tin client hoàn toàn: một vòng lặp gọi `complete-learn` cho cả thư viện cho ~10 điểm/từ, và `complete-review` có thể gọi lặp trên một từ để cộng điểm + lên cấp mãi. Nay có ba lớp:
+
+1. **Chỉ ôn khi đã đến hạn** (`study_service.complete_review`): từ có `next_review` còn xa hơn 60 giây thì trả **409** ("chưa đến hạn ôn tập"). Cũng làm gửi trùng (outbox thử lại) vô hại: lần 2 từ đã bị hẹn xa nên nhận 409, mà client coi 409 là "đã ghi nhận".
+2. **Vé phiên học** (`services/ticket_service.py`, bảng `study_tickets`): client xin từ kèm `?ticket=1` (`GET /api/learning/folders/<id>/new-words`, `GET /api/review/due-words`), server ghi lại các từ đã giao + giờ giao và trả mã vé. `complete-learn` / `complete-review` phải kèm `ticket`:
+   * thiếu vé → 400; vé lạ / của người khác / sai loại → 403; từ không nằm trong vé → 403; vé quá 24 giờ → 403;
+   * lần hoàn thành thứ *k* của một vé phải cách lúc giao ≥ *k* × 5 giây, nếu không trả **429** (outbox tự thử lại với độ trễ tăng dần nên người học không mất tiến độ). Chỉ có cận dưới nên gửi bù sau khi offline vẫn hợp lệ. "Bỏ qua" không tính điểm nên không phải chờ;
+   * mỗi người chỉ giữ 40 vé gần nhất. Tắt bằng `STUDY_TICKET_REQUIRED=0` nếu cần tương thích client rất cũ (mặc định **bật**).
+3. **Trần điểm xếp hạng theo ngày** (`utils/leaderboard.py::capped_counts`, ngày tính theo giờ VN): tối đa 100 từ mới và 300 lượt ôn được tính điểm mỗi ngày; một từ chỉ được tính tối đa 3 lượt ôn/ngày (cấp 1 hẹn 20 phút nên 2-3 lần/ngày là hợp lệ). Mục tiêu học tối đa là 30 từ/ngày nên người học nghiêm túc không chạm trần.
+
+Không chặn được: `mark-known` (đánh dấu "đã biết") vẫn không cần vé; nó không tính điểm xếp hạng nhưng có thể làm tăng tổng số từ đã học (mốc bài kiểm tra Pass). Mục tiêu học mỗi ngày vẫn do client tự đếm.
+
+Chuyển tiếp: mục còn nằm trong hàng đợi trình duyệt từ trước khi có vé sẽ bị server từ chối (400, hiện ở `SyncBanner`); tải lại trang để xin vé mới rồi học tiếp.

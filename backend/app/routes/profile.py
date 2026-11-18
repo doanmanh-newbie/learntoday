@@ -1,5 +1,5 @@
 # app/routes/profile.py - STT 14 Trang cá nhân / Cài đặt
-from datetime import time as dt_time
+from datetime import datetime, time as dt_time
 
 from flask import Blueprint, request, jsonify
 from app import db
@@ -68,6 +68,8 @@ def update_profile():
         if data['level'] not in VALID_LEVELS:
             return jsonify({'message': f'level phải là 1 trong {sorted(VALID_LEVELS)}'}), 400
         user.level = data['level']
+        if data.get('level_source') == 'test':          # trình độ do bài test đầu vào xác định -> ghi ngày test
+            user.level_tested_at = datetime.utcnow()
 
     if 'email_reminder' in data:
         if not isinstance(data['email_reminder'], bool):

@@ -17,7 +17,7 @@ const fakeJwt = (extra = {}) => `${b64({ alg: 'HS256' })}.${b64({ user_id: 'u1',
 let calls = [];
 let handler = async () => ({ status: 200, body: {} });
 globalThis.fetch = async (url, opts = {}) => {
-  calls.push({ url: String(url), method: opts.method || 'GET', headers: opts.headers || {} });
+  calls.push({ url: String(url), method: opts.method || 'GET', headers: opts.headers || {}, body: opts.body });
   const { status, body } = await handler(String(url), opts);
   return { ok: status >= 200 && status < 300, status, json: async () => body };
 };
@@ -240,6 +240,15 @@ test('toUiEntry: giữ nghĩa chưa dịch là RỖNG (không điền tiếng An
   assert.equal(e.audio.uk, 'u.mp3');
   assert.equal(posLabelVi('gibberish'), 'gibberish');
   assert.equal(posLabelVi(undefined), 'Khác');
+});
+
+test('outbox: học từ mới gửi kèm số lần sai (cho danh mục "từ hay sai")', async () => {
+  reset();
+  handler = async () => ({ status: 200, body: {} });
+  enqueueProgress('learn', 'w9', { wrong_count: 2 });
+  await waitFor(() => getSyncSnapshot().pending === 0);
+  const call = calls.find((c) => c.url.includes('/api/words/w9/complete-learn'));
+  assert.equal(JSON.parse(call.body).wrong_count, 2);
 });
 
 test('gameApi: nộp ván flappy chỉ gửi answers + folder_id (không có score); bảng xếp hạng đúng URL', async () => {

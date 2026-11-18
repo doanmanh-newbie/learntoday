@@ -1,4 +1,5 @@
 import { invalidate } from './cache';
+import { rememberTicket } from './tickets';
 // src/api/client.js - MỘT lớp gọi API duy nhất cho toàn app.
 // Địa chỉ backend. Mặc định http://127.0.0.1:5000 (chỉ chạy được trên chính máy đang chạy backend).
 // Mặc định gọi API CÙNG địa chỉ với trang web (đường dẫn tương đối /api/...): khi chạy `npm run dev`, Vite chuyển tiếp /api
@@ -197,21 +198,32 @@ export const foldersApi = {
 };
 
 export const learningApi = {
+  // ticket=1: xin kèm "vé phiên học"; vé được nhớ theo từng từ để outbox gửi kèm khi hoàn thành
   newWords: (folderId, limit = 5) =>
-    apiRequest(`/api/learning/folders/${folderId}/new-words?limit=${limit}`),
+    apiRequest(`/api/learning/folders/${folderId}/new-words?limit=${limit}&ticket=1`).then((res) => {
+      rememberTicket((res.words || []).map((w) => w.id), res.ticket);
+      return res;
+    }),
   todayProgress: () => apiRequest('/api/learning/progress/today'),
 };
 
 export const reviewApi = {
   dueCount: () => apiRequest('/api/review/due-count'),
-  dueWords: (limit) => apiRequest(`/api/review/due-words${limit ? `?limit=${limit}` : ''}`),
+  // withTicket: chỉ màn Ôn tập cần vé (trang chủ chỉ hiển thị danh sách nên không xin, tránh sinh vé thừa)
+  dueWords: (limit, { withTicket = false } = {}) => {
+    const qs = [limit ? `limit=${limit}` : '', withTicket ? 'ticket=1' : ''].filter(Boolean).join('&');
+    return apiRequest(`/api/review/due-words${qs ? `?${qs}` : ''}`).then((res) => {
+      if (withTicket) rememberTicket((res.words || []).map((w) => w.id), res.ticket);
+      return res;
+    });
+  },
 };
 
 export const wordsApi = {
   checkAnswer: (wordId, body) =>
     apiRequest(`/api/words/${wordId}/check-answer`, { method: 'POST', body: JSON.stringify(body) }),
-  completeLearn: (wordId) =>
-    apiRequest(`/api/words/${wordId}/complete-learn`, { method: 'POST', body: '{}' }),
+  completeLearn: (wordId, payload) =>    // payload có thể null (mục cũ trong hàng đợi)
+    apiRequest(`/api/words/${wordId}/complete-learn`, { method: 'POST', body: JSON.stringify({ wrong_count: payload?.wrong_count || 0, ticket: payload?.ticket }) }),
   completeReview: (wordId, body) =>
     apiRequest(`/api/words/${wordId}/complete-review`, { method: 'POST', body: JSON.stringify(body) }),
   markKnown: (wordId) =>
@@ -239,6 +251,8 @@ export const historyApi = {
   words: (page = 1, limit = 100) => apiRequest(`/api/history/words?page=${page}&limit=${limit}`),
   stats: () => apiRequest('/api/history/stats'),
   logs: (limit = 200) => apiRequest(`/api/history/logs?limit=${limit}`),
+  hardWords: (limit = 30) => apiRequest(`/api/history/hard-words?limit=${limit}`),
+  tomorrow: () => apiRequest('/api/history/tomorrow'),
 };
 
 export const searchApi = {
@@ -251,6 +265,16 @@ export const translateApi = {
   translate: (text, source_lang = 'auto', target_lang = 'vi') =>
     apiRequest('/api/translate', { method: 'POST', body: JSON.stringify({ text, source_lang, target_lang }) }),
   save: (data) => apiRequest('/api/translate/save', { method: 'POST', body: JSON.stringify(data) }),
+  // Dịch nhiều câu EN->VI (nghĩa/ví dụ "chưa dịch") -> { translations: [string|null] }
+  batch: (texts) => apiRequest('/api/translate/batch', { method: 'POST', body: JSON.stringify({ texts }), timeout: 45000 }),
+};
+
+// Bạn bè + bảng xếp hạng tuần
+export const friendsApi = {
+  list: () => apiRequest('/api/friends'),
+  add: (username) => apiRequest('/api/friends', { method: 'POST', body: JSON.stringify({ username }) }),
+  remove: (id) => apiRequest(`/api/friends/${id}`, { method: 'DELETE' }),
+  leaderboard: () => apiRequest('/api/friends/leaderboard'),
 };
 
 export const gameApi = {

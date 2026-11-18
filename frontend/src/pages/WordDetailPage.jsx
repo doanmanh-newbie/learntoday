@@ -7,6 +7,7 @@ import SaveModal from "../components/sections/dashboard/SaveModal";
 import { speak } from "../utils/tts";
 import { dictionaryApi, foldersApi } from "../api/client";
 import { toUiEntry } from "../api/adapters";
+import useAutoTranslate from "../hooks/useAutoTranslate";
 
 const TAB_ANH_VIET = { id: "anh-viet", label: "ANH - VIỆT" };
 const TAB_ANH_ANH = { id: "anh-anh", label: "ANH - ANH" };
@@ -106,6 +107,7 @@ export default function WordDetailPage({ word }) {
 
   const retry = useCallback(() => setNonce((n) => n + 1), []);
   const loading = result.key !== reqKey;
+  const tr = useAutoTranslate(result.status === "ok" ? result.entry : null);
 
   const back = (
     <div style={{ marginBottom: 16 }}>
@@ -235,13 +237,22 @@ export default function WordDetailPage({ word }) {
             </p>
             {m.definitions.map((d, i) => (
               <div key={i} style={{ marginBottom: 14 }}>
-                {d.vi
-                  ? <p style={{ color: "#2dd4bf", fontSize: 15.5, margin: "0 0 4px" }}>✧ {d.vi}</p>
-                  : <p style={{ color: "#a2acb3", fontSize: 14.5, margin: "0 0 4px", fontStyle: "italic" }}>✧ {d.en} <span style={{ fontSize: 12 }}>(chưa dịch)</span></p>}
+                {(d.vi || tr.vi(d.en))
+                  ? <>
+                      <p style={{ color: "#2dd4bf", fontSize: 15.5, margin: "0 0 2px" }}>✧ {d.vi || tr.vi(d.en)}</p>
+                      {!d.vi && <p style={{ color: "#848f97", fontSize: 13, margin: "0 0 4px 16px" }}>{d.en}</p>}
+                    </>
+                  : <p style={{ color: "#a2acb3", fontSize: 14.5, margin: "0 0 4px", fontStyle: "italic" }}>✧ {d.en}{" "}
+                      <span style={{ fontSize: 12 }}>
+                        {tr.status === "loading" ? "(đang dịch…)" : (
+                          <>(chưa dịch · <button type="button" onClick={tr.retry} style={{ border: "none", background: "none", padding: 0, color: "#5eead4", cursor: "pointer", fontSize: 12, textDecoration: "underline" }}>dịch lại</button>)</>
+                        )}
+                      </span>
+                    </p>}
                 {d.examples.map((ex, k) => (
                   <div key={k} style={{ marginLeft: 20, marginBottom: 4 }}>
                     <p style={{ color: "#14b8a6", fontSize: 14, margin: "0 0 2px", fontWeight: 500 }}>{ex.en}</p>
-                    {ex.vi && <p style={{ color: "#a2acb3", fontSize: 13, margin: 0 }}>{ex.vi}</p>}
+                    {(ex.vi || tr.vi(ex.en)) && <p style={{ color: "#a2acb3", fontSize: 13, margin: 0 }}>{ex.vi || tr.vi(ex.en)}</p>}
                   </div>
                 ))}
               </div>

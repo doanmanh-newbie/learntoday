@@ -37,7 +37,8 @@ def check_answer(word_id):
 @token_required
 def complete_learn_route(word_id):
     try:
-        result = complete_learn(request.user_id, word_id)
+        body = request.get_json(silent=True) or {}
+        result = complete_learn(request.user_id, word_id, body.get('wrong_count', 0), ticket=body.get('ticket'))
         return jsonify({
             'message': 'Hoàn thành học từ mới!',
             **result
@@ -67,7 +68,7 @@ def complete_review_route(word_id):
     choice = data.get('choice')
 
     try:
-        result = complete_review(request.user_id, word_id, wrong_count, choice)
+        result = complete_review(request.user_id, word_id, wrong_count, choice, ticket=data.get('ticket'))
         return jsonify({
             'message': 'Hoàn thành ôn tập từ!',
             **result

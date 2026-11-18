@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { ModeShell, RoundSummary, SpeakButton, PRIMARY_BTN } from './ModeShell.jsx';
+import { ModeShell, RoundSummary, SpeakButton } from './ModeShell.jsx';
+import { PRIMARY_BTN } from './modeStyles.js';
 import { pickWords, maskedWord, sameText, scoreQuiz, saveBestIfBetter } from './practiceLogic';
 import { speak } from '../../utils/tts';
 

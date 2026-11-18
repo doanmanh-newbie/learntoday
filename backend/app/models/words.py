@@ -20,6 +20,9 @@ class Word(db.Model):
     __table_args__ = (
         db.Index('idx_words_word', 'word'),
         db.Index('idx_words_category', 'category'),
+        # một từ chỉ có một bản ghi đang dùng (seed / tra từ / dịch đều kiểm tra trước, đây là chốt chặn ở DB)
+        db.Index('uq_words_word_lower', db.text('lower(word)'), unique=True,
+                 postgresql_where=db.text('deleted_at IS NULL'), sqlite_where=db.text('deleted_at IS NULL')),
     )
 
     def to_dict(self):

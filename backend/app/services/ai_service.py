@@ -361,3 +361,38 @@ def grade_answer(level, mode, prompt, reference, answer, word=None):
         'feedback_vi': _clean(data.get('feedback_vi'), 500),
         'alternatives': alts,
     }
+
+
+# ───────────────────────── dịch dự phòng (khi deep-translator lỗi/không cài) ─────────────────────────
+TRANSLATE_TOOL = {
+    'name': 'submit_translations',
+    'description': 'Gửi bản dịch, đúng thứ tự các dòng đầu vào.',
+    'input_schema': {
+        'type': 'object',
+        'properties': {
+            'translations': {'type': 'array', 'items': {'type': 'string'},
+                             'description': 'Bản dịch của từng dòng, cùng thứ tự và cùng số lượng.'},
+        },
+        'required': ['translations'],
+    },
+}
+LANG_NAMES = {'vi': 'tiếng Việt', 'en': 'tiếng Anh'}
+
+
+def translate_texts(texts, target='vi'):
+    """Dịch nhiều câu bằng AI. Trả list cùng độ dài `texts`; câu AI không dịch được -> None. Ném AIError khi AI lỗi/chưa cấu hình."""
+    items = [_clean(t, 600) for t in texts or []]
+    if not items:
+        return []
+    numbered = '\n'.join(f'{i}. {t}' for i, t in enumerate(items, 1))
+    system = (f'Bạn là từ điển Anh-Việt. Dịch từng dòng sang {LANG_NAMES.get(target, target)} tự nhiên, ngắn gọn, '
+              'đúng nghĩa trong ngữ cảnh từ điển. Không thêm giải thích.')
+    data = _call_tool(system, f'Dịch {len(items)} dòng sau (bỏ số thứ tự khi trả lời):\n{numbered}',
+                      TRANSLATE_TOOL, max_tokens=60 * len(items) + 200, timeout=30)
+    got = data.get('translations') if isinstance(data, dict) else None
+    got = got if isinstance(got, list) else []
+    out = []
+    for i in range(len(items)):
+        v = got[i] if i < len(got) and isinstance(got[i], str) else ''
+        out.append(v.strip() or None)
+    return out

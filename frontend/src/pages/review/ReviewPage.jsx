@@ -82,7 +82,7 @@ export default function ReviewPage({ onNavigateHome, onGoLearn }) {
 useEffect(() => {
   let cancelled = false;
   whenOutboxIdle()
-    .then(() => reviewApi.dueWords())
+    .then(() => reviewApi.dueWords(undefined, { withTicket: true }))
     .then((data) => {
       if (cancelled) return;
       // Backend trả: { words: [...], has_due_words: true }
@@ -152,7 +152,6 @@ useEffect(() => {
           folder={virtualFolder}
           mode="review"
           dailyGoal={dueWords.length}
-          wordsLearned={reviewed}
           onWordComplete={() => setReviewed(r => r + 1)}
           onBack={() => setScreen("overview")}
         />

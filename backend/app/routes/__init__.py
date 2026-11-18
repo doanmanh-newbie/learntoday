@@ -11,4 +11,5 @@ from .study import bp as study_bp
 from .pass_test import bp as pass_test_bp
 from .ai_practice import bp as ai_practice_bp
 from .dictionary import bp as dictionary_bp
+from .friends import bp as friends_bp
 from .game import bp as game_bp

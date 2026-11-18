@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { ModeShell, RoundSummary, SpeakButton, PRIMARY_BTN, SECONDARY_BTN } from './ModeShell.jsx';
+import { ModeShell, RoundSummary, SpeakButton } from './ModeShell.jsx';
+import { PRIMARY_BTN, SECONDARY_BTN } from './modeStyles.js';
 import { pickWords } from './practiceLogic';
 import { posLabelVi } from '../../api/adapters';
 import WordPicture from '../../components/word/WordPicture.jsx';

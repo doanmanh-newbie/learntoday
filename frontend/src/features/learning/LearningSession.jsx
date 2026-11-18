@@ -17,6 +17,9 @@ import { initMachine, stepMachine, sessionProgress } from './sessionMachine';
 import { meaningChoices, wordChoices, sameText } from './quizChoices';
 import EditWordModal from '../../components/learning/EditWordModal';
 import SuggestionDialog from '../../components/learning/SuggestionDialog';
+import SessionSummary from './SessionSummaryCard.jsx';
+import { markStudiedToday } from '../../utils/pwa';
+import { setWordImage, shrinkImageFile } from '../../utils/wordImages';
 
 const BATCH_SIZE = 5;
 const LAPSE_DIALOG_WRONG = 4;                 // sai từ ngần này lần trở lên khi ÔN TẬP: hỏi người dùng muốn làm gì (khớp backend srs.py)
@@ -101,10 +104,9 @@ function WordImageUploader({ word, onImageAdded }) {
 
     setUploading(true);
     try {
-      // Convert to base64 để preview
-      const reader = new FileReader();
-      reader.onload = (ev) => setPreview(ev.target.result);
-      reader.readAsDataURL(file);
+      // Thu nhỏ rồi lưu trong IndexedDB (localStorage chỉ ~5 MB cho cả trang, ảnh gốc làm đầy và hỏng hàng đợi tiến độ)
+      const dataUrl = await shrinkImageFile(file);
+      setPreview(dataUrl);
 
       // TODO: Gọi API upload ảnh (sẽ bàn sau)
       // const formData = new FormData();
@@ -113,15 +115,8 @@ function WordImageUploader({ word, onImageAdded }) {
       // setPreview(res.image_url);
       // onImageAdded?.(res.image_url);
 
-      // Tạm thời lưu base64 vào localStorage
-      const saved = JSON.parse(localStorage.getItem('word_images') || '{}');
-      const reader2 = new FileReader();
-      reader2.onload = (ev) => {
-        saved[word.id] = ev.target.result;
-        localStorage.setItem('word_images', JSON.stringify(saved));
-        onImageAdded?.(ev.target.result);
-      };
-      reader2.readAsDataURL(file);
+      await setWordImage(word.id, dataUrl);
+      onImageAdded?.(dataUrl);
     } catch (err) {
       console.error('Upload ảnh lỗi:', err);
       setError('Không thể lưu ảnh. Vui lòng thử lại!');
@@ -758,7 +753,7 @@ function Type4Listening({ word, onAnswer, onRemindLater, onSkipForever, onEdit }
 }
 
 // ── Component chính ─────────────────────────────────────────────────────
-export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordComplete, onBack }) {
+export function LearningSession({ folder, mode, dailyGoal, onWordComplete, onBack }) {
   // Cố định cho cả phiên học: useState lazy-init (thay cho useRef(...).current - đọc ref lúc render là sai nguyên tắc)
   const [sessionWords] = useState(() => folder.words.slice(0, dailyGoal || folder.words.length));
   const [batches] = useState(() => chunk(sessionWords, BATCH_SIZE));
@@ -785,6 +780,7 @@ export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordC
   const [editingWord, setEditingWord] = useState(null); // ✅ State cho sửa từ
   const [transitionKey, setTransitionKey] = useState(0);
   const wrongCounts = useRef({});
+  const stats = useRef({ answered: 0, correct: 0, finished: [] });   // cho màn tổng kết phiên
   const [tone, setTone] = useState('neutral');   // màu thanh tiến độ theo kết quả câu vừa làm: xanh = đúng, đỏ = sai
   const [suggestQueue, setSuggestQueue] = useState([]);   // từ ôn sai >= 4 lần đang chờ người dùng chọn cách xử lý
 
@@ -793,8 +789,10 @@ export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordC
   const bumpWrong = (id) => { wrongCounts.current[id] = (wrongCounts.current[id] || 0) + 1; };
 
   const finishWord = (word, opts = {}) => {
+    stats.current.finished.push(word);
+    markStudiedToday();                      // hôm nay đã học -> không bắn thông báo nhắc học nữa
     if (mode === 'learn') {
-      enqueueProgress('learn', word.id);
+      enqueueProgress('learn', word.id, { wrong_count: wrongCounts.current[word.id] || 0 });   // để gom "từ hay sai"
     } else {
       enqueueProgress('review', word.id, { wrong_count: wrongCounts.current[word.id] || 0, choice: opts.choice });
     }
@@ -842,6 +840,8 @@ export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordC
     const word = workingBatch.find((w) => w.id === currentWordId);
     if (!word) return;
     setTone(correct ? 'good' : 'bad');
+    stats.current.answered += 1;
+    if (correct) stats.current.correct += 1;
     if (!correct) bumpWrong(word.id);
     advanceMachine(word.id, correct, false);
   };
@@ -916,14 +916,22 @@ export function LearningSession({ folder, mode, dailyGoal, wordsLearned, onWordC
   }
 
   if (phase === 'sessionDone' || sessionWords.length === 0) {
+    // Đọc ref lúc render là chủ ý: các ref này chỉ đổi trước khi `phase` chuyển sang 'sessionDone' (setState => render lại).
+    /* eslint-disable react-hooks/refs */
+    if (stats.current.finished.length === 0 && stats.current.answered === 0) {
+      return (
+        <div style={{ ...s.wrap, textAlign: 'center', paddingTop: 60 }}>
+          <div style={{ fontSize: 56, marginBottom: 16 }}>✅</div>
+          <p style={{ color: '#a2acb3', fontSize: 15, marginBottom: 24 }}>Không còn từ nào trong lượt này.</p>
+          <button type="button" onClick={onBack} style={{ ...s.btn, ...s.btnPrimary, padding: '14px 36px', fontSize: 15 }}>🏠 Về trang chủ</button>
+        </div>
+      );
+    }
     return (
-      <div style={{ ...s.wrap, textAlign: 'center', paddingTop: 60, animation: 'scaleIn 0.5s ease' }}>
-        <div style={{ fontSize: 72, marginBottom: 20 }}>🎉</div>
-        <h2 style={{ fontFamily: 'Outfit, sans-serif', fontSize: 28, fontWeight: 800, color: '#e9edef', marginBottom: 8 }}>Hoàn thành!</h2>
-        <p style={{ color: '#a2acb3', fontSize: 15, marginBottom: 28 }}>Bạn đã học {sessionWords.length} từ</p>
-        <button type="button" onClick={onBack} style={{ ...s.btn, ...s.btnPrimary, padding: '14px 36px', fontSize: 15 }}>🏠 Về trang chủ</button>
-      </div>
+      <SessionSummary mode={mode} words={stats.current.finished} wrongCounts={wrongCounts.current}
+        answered={stats.current.answered} correct={stats.current.correct} onBack={onBack} />
     );
+    /* eslint-enable react-hooks/refs */
   }
 
   if (phase === 'browse') {

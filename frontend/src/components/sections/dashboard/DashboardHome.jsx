@@ -1,4 +1,5 @@
 // Trang chủ: MỘT việc nên làm bây giờ + kế hoạch hôm nay + luyện tập nhanh + tiến độ.
+import { useNavigate } from "react-router-dom";
 import { nextStep, planSteps, progressPercent, QUICK_PRACTICE } from "./homeLogic";
 import LearningPath from "../../../features/path/LearningPath.jsx";
 import { PRACTICE_MODE_META, randomMode, readLastMode } from "../../../features/practice/modes";
@@ -22,7 +23,8 @@ function ProgressRing({ percent, label, sub }) {
   );
 }
 
-export default function DashboardHome({ username, dueCount, wordsLearnedToday, learnTarget, stats, minutes, onStartReview, onGoLearn, onOpenPractice }) {
+export default function DashboardHome({ username, dueCount, wordsLearnedToday, learnTarget, stats, minutes, onStartReview, onGoLearn, onOpenPractice, levelTested = true }) {
+  const navigate = useNavigate();
   const step = nextStep({ dueCount, learnedToday: wordsLearnedToday, target: learnTarget, totalLearned: stats.totalLearned });
   const plan = planSteps({ dueCount, learnedToday: wordsLearnedToday, target: learnTarget });
   const percent = progressPercent(wordsLearnedToday, learnTarget);
@@ -46,6 +48,18 @@ export default function DashboardHome({ username, dueCount, wordsLearnedToday, l
           </button>
         </section>
 
+        {!levelTested && (
+          <section style={{ ...card, padding: 18, display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 30 }} aria-hidden>🧭</span>
+            <div style={{ flex: 1, minWidth: 200 }}>
+              <b style={{ color: "#f1f5f9", fontFamily: "Outfit, sans-serif" }}>Chưa biết nên bắt đầu từ đâu?</b>
+              <div style={{ color: "#a2acb3", fontSize: 14 }}>Làm bài test trình độ khoảng 3 phút, app gợi ý giai đoạn phù hợp và ghi trình độ vào trang cá nhân.</div>
+            </div>
+            <button onClick={() => navigate("/app/kiem-tra-trinh-do")} style={{ padding: "10px 18px", borderRadius: 12, cursor: "pointer", fontWeight: 700,
+              color: "#99f6e4", background: "rgba(45,212,191,0.12)", border: "1px solid rgba(45,212,191,0.4)" }}>Làm bài test →</button>
+          </section>
+        )}
+
         <LearningPath totalLearned={stats.totalLearned} />
 
         <section style={{ ...card, padding: 20 }}>
@@ -53,7 +67,10 @@ export default function DashboardHome({ username, dueCount, wordsLearnedToday, l
           <ul style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 8 }}>
             {plan.map((p) => (
               <li key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, color: p.done ? "#a3d977" : "#e9edef" }}>
-                <span aria-hidden>{p.done ? "✅" : "⬜"}</span>{p.label}
+                {/* ô tick vẽ bằng CSS (emoji ✅/⬜ bị đảo màu thành ô tím/đen ở chế độ sáng) */}
+                <span aria-hidden className="plan-check" style={{ width: 18, height: 18, borderRadius: 5, flex: "none", display: "inline-grid", placeItems: "center",
+                  fontSize: 12, fontWeight: 900, color: "#0f1214", background: p.done ? "#a3d977" : "transparent",
+                  border: p.done ? "1.5px solid #a3d977" : "1.5px solid rgba(255,255,255,0.35)" }}>{p.done ? "✓" : ""}</span>{p.label}
               </li>
             ))}
           </ul>

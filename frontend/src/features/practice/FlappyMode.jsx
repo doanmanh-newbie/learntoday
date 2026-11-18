@@ -89,7 +89,7 @@ function Play({ pool, onExit, onAgain }) {
     const best = readBest('flappy');
     const rank = (submit && submit.rank_week != null ? ` · hạng tuần #${submit.rank_week}` : '') + (submit && submit.rank_all != null ? ` · hạng mọi thời gian #${submit.rank_all}` : '');
     return (
-      <ModeShell title="Chim bay chọn nghĩa" icon="🐦" onExit={onExit}>
+      <ModeShell title="Flappy Bird" icon="🐦" onExit={onExit}>
         <RoundSummary correct={result.correct} total={result.answered}
           extra={`Điểm ${result.score}/${result.max} · chuỗi đúng dài nhất ${result.bestStreak}${best ? ` · điểm cao nhất ${best}` : ''}${rank}`}
           record={result.record} onAgain={onAgain} onExit={onExit} />
@@ -124,7 +124,7 @@ function Play({ pool, onExit, onAgain }) {
   const q = ui.promptIndex < questions.length ? questions[ui.promptIndex] : null;   // hết câu thì ẩn
   const en = !!q && q.dir === 'en_vi';
   return (
-    <ModeShell title="Chim bay chọn nghĩa" icon="🐦" progress={ui.total ? `${Math.min(ui.promptIndex + 1, ui.total)}/${ui.total}` : null} onExit={onExit}>
+    <ModeShell title="Flappy Bird" icon="🐦" progress={ui.total ? `${Math.min(ui.promptIndex + 1, ui.total)}/${ui.total}` : null} onExit={onExit}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', marginBottom: 10 }}>
         <div style={{ flex: 1, minWidth: 180 }}>
           <div style={{ color: '#a2acb3', fontSize: 12 }}>{q ? (en ? 'Bay vào nghĩa đúng của từ' : 'Bay vào từ tiếng Anh đúng với nghĩa') : ' '}</div>
@@ -155,7 +155,7 @@ export default function FlappyMode({ words, onExit }) {
   const [pool, setPool] = useState(null);
   if (!pool) {
     return (
-      <ModeShell title="Chim bay chọn nghĩa" icon="🐦" onExit={onExit}>
+      <ModeShell title="Flappy Bird" icon="🐦" onExit={onExit}>
         <FlappySetup learnedWords={words} onStart={setPool} />
       </ModeShell>
     );

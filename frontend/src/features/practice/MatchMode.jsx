@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import { ModeShell, RoundSummary } from './ModeShell.jsx';
 import { buildMatchRound, isMatch, formatSeconds, saveBestIfBetter, readBest } from './practiceLogic';
 
+const nowMs = () => Date.now();   // gọi trong trình xử lý sự kiện (không phải lúc render)
+
 export default function MatchMode({ words, onExit }) {
   const [round, setRound] = useState(() => buildMatchRound(words, 6));
   const [left, setLeft] = useState(null);
@@ -28,7 +30,7 @@ export default function MatchMode({ words, onExit }) {
       const nd = [...done, rid];
       setDone(nd); setLeft(null);
       if (nd.length === round.left.length) {
-        const t = Math.max(1, Math.floor((Date.now() - startRef.current) / 1000));
+        const t = Math.max(1, Math.floor((nowMs() - startRef.current) / 1000));
         setSecs(t);
         // điểm = số giây còn lại trong 120s trừ phạt lỗi (cao hơn là tốt hơn)
         setRecord(saveBestIfBetter('match', Math.max(1, 120 - t - wrong * 5)));

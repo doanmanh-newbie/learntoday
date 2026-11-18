@@ -12,7 +12,6 @@ export default function LearnPage({ onNavigateHome, mode = "learn", folderId = n
   // Trạng thái đầu suy ra thẳng từ folderId (không setState đồng bộ trong effect)
   const [loading, setLoading] = useState(!!folderId);
   const [error, setError] = useState(folderId ? "" : "Không có folder nào được chọn");
-  const [wordsLearned, setWordsLearned] = useState(0);
   const [dailyGoal, setDailyGoal] = useState(10);   // mục tiêu thật của người dùng (Cài đặt), không cố định 10
 
   useEffect(() => {
@@ -102,8 +101,6 @@ export default function LearnPage({ onNavigateHome, mode = "learn", folderId = n
         folder={{ ...folder, words }}
         mode={mode}
         dailyGoal={dailyGoal}
-        wordsLearned={wordsLearned}
-        onWordComplete={() => setWordsLearned(w => w + 1)}
         onBack={onNavigateHome}
       />
     </div>

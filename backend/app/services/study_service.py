@@ -9,7 +9,7 @@ from app.models import Word, UserWord, LearningLog, User
 from app.utils.srs import decide_review, get_next_review
 from app.services.streak_service import update_streak_if_goal_met
 from app.services.pass_test_service import check_and_create_milestones
-from datetime import datetime
+from datetime import datetime, timedelta
 import unicodedata
 import uuid
 
@@ -23,6 +23,7 @@ class ServiceError(Exception):
 
 
 VALID_STEPS = ['spelling', 'quiz1', 'quiz2', 'quiz3']
+DUE_GRACE = timedelta(seconds=60)      # sai lệch đồng hồ khi kiểm tra "đã đến hạn ôn" (cùng giá trị ở ticket_service)
 
 
 def count_learned_words(user_id):
@@ -140,11 +141,15 @@ def check_step_answer(word_id, step, data):
 # ============================================================
 # Bước 4, Trường hợp 1: HỌC MỚI (loại = "learn")
 # ============================================================
-def complete_learn(user_id, word_id):
+def complete_learn(user_id, word_id, wrong_count=0, ticket=None):
     """
+    wrong_count: số lần sai trong buổi học (chỉ để thống kê "từ hay sai", KHÔNG đổi cấp SRS).
     Chỉ có 1 kết quả: "hoàn_thành". KHÔNG hộp thoại, KHÔNG lùi LV, KHÔNG bỏ qua.
     -> Gán LV1, next_review = now + 20p, ghi log.
     """
+    if not isinstance(wrong_count, int) or isinstance(wrong_count, bool) or wrong_count < 0:
+        raise ServiceError('wrong_count phải là số nguyên >= 0!', 400)
+    wrong_count = min(wrong_count, 50)
     word = Word.query.filter_by(id=word_id, deleted_at=None).first()
     if not word:
         raise ServiceError('Không tìm thấy từ vựng!', 404)
@@ -152,6 +157,9 @@ def complete_learn(user_id, word_id):
     existing = UserWord.get_by_user_and_word(user_id, word_id)
     if existing and existing.level > 0:
         raise ServiceError('Từ này đã được học rồi!', 409)
+
+    from app.services import ticket_service      # nhập trễ: ticket_service dùng ServiceError của file này
+    ticket_row = ticket_service.verify(user_id, 'learn', ticket, word_id, counted=True)
 
     if existing:
         user_word = existing
@@ -166,6 +174,7 @@ def complete_learn(user_id, word_id):
         level_before = 0
 
     user_word.level = 1
+    user_word.wrong_count = (user_word.wrong_count or 0) + wrong_count
     user_word.next_review = get_next_review(1)
     user_word.last_reviewed = datetime.utcnow()
 
@@ -177,9 +186,10 @@ def complete_learn(user_id, word_id):
         choice='hoan_thanh',
         level_before=level_before,
         level_after=1,
-        wrong_count=0  # Learn mode không đếm sai
+        wrong_count=wrong_count,   # số lần sai khi học (cho danh mục "từ hay sai")
     )
     db.session.add(log)
+    ticket_service.consume(ticket_row, word_id)
 
     try:
         new_milestones = _sync_learned_total(user_id)
@@ -203,7 +213,7 @@ def complete_learn(user_id, word_id):
 # ============================================================
 # Bước 4, Trường hợp 2: ÔN TẬP (loại = "review")
 # ============================================================
-def complete_review(user_id, word_id, wrong_count, choice):
+def complete_review(user_id, word_id, wrong_count, choice, ticket=None):
     """
     Luật chuyển cấp nằm ở app/utils/srs.py::decide_review (đọc docstring ở đó):
       0 lần sai -> hoan_thanh (+1 cấp) | 1-3 lần sai -> giu_level | >= 4 lần sai -> lui_1_lv (mặc định)
@@ -221,11 +231,19 @@ def complete_review(user_id, word_id, wrong_count, choice):
     if wrong_count is None or isinstance(wrong_count, bool) or not isinstance(wrong_count, int) or wrong_count < 0:
         raise ServiceError('wrong_count phải là số nguyên >= 0!', 400)
 
+    # Chỉ nhận khi từ ĐÃ ĐẾN HẠN. Trước đây gọi lặp lại trên một từ vẫn được cộng điểm + lên cấp mãi.
+    # Cũng đúng cho gửi trùng (outbox thử lại sau khi lần đầu đã thành công): lần 2 từ đã bị hẹn xa -> 409 -> client coi là xong.
+    if user_word.next_review and user_word.next_review > datetime.utcnow() + DUE_GRACE:
+        raise ServiceError('Từ này chưa đến hạn ôn tập.', 409)
+
     level_before = user_word.level
     try:
         result, level_after, interval = decide_review(level_before, wrong_count, choice)
     except ValueError:
         raise ServiceError('choice không hợp lệ! Phải là 1 trong: quay_ve_lv1 | lui_1_lv | bo_qua', 400)
+
+    from app.services import ticket_service
+    ticket_row = ticket_service.verify(user_id, 'review', ticket, word_id, counted=(result != 'bo_qua'))
 
     now = datetime.utcnow()
     user_word.level = level_after
@@ -249,6 +267,8 @@ def complete_review(user_id, word_id, wrong_count, choice):
         wrong_count=wrong_count
     )
     db.session.add(log)
+    if result != 'bo_qua':
+        ticket_service.consume(ticket_row, word_id)
     db.session.commit()
 
     streak = update_streak_if_goal_met(user_id)      # ôn tập cũng được tính cho chuỗi ngày (xem streak_service.py)

@@ -13,6 +13,12 @@ Create Date: 2026-10-14 10:00:00
 from alembic import op
 import sqlalchemy as sa
 
+
+def _has_column(table, column):
+    """last_reminder_date được thêm ở CẢ HAI migration b0a948bf5542 và c3d4e5f6a7b8 (hai nhánh sau này gộp lại),
+    nên mỗi bên phải tự kiểm tra cột đã có chưa, nếu không `flask db upgrade` trên DB trống sẽ lỗi 'duplicate column'."""
+    return column in {c['name'] for c in sa.inspect(op.get_bind()).get_columns(table)}
+
 revision = 'c3d4e5f6a7b8'
 down_revision = 'd65263a1aef2'
 branch_labels = None
@@ -23,7 +29,8 @@ def upgrade():
     with op.batch_alter_table('users', schema=None) as batch_op:
         batch_op.add_column(sa.Column('study_minutes_today', sa.Integer(), server_default='0', nullable=True))
         batch_op.add_column(sa.Column('study_minutes_date', sa.Date(), nullable=True))
-        batch_op.add_column(sa.Column('last_reminder_date', sa.Date(), nullable=True))
+        if not _has_column('users', 'last_reminder_date'):
+            batch_op.add_column(sa.Column('last_reminder_date', sa.Date(), nullable=True))
 
     with op.batch_alter_table('words', schema=None) as batch_op:
         batch_op.add_column(sa.Column('meaning_en', sa.Text(), nullable=True))
@@ -68,6 +75,7 @@ def downgrade():
         batch_op.drop_index('idx_words_word')
         batch_op.drop_column('meaning_en')
     with op.batch_alter_table('users', schema=None) as batch_op:
-        batch_op.drop_column('last_reminder_date')
+        if _has_column('users', 'last_reminder_date'):
+            batch_op.drop_column('last_reminder_date')
         batch_op.drop_column('study_minutes_date')
         batch_op.drop_column('study_minutes_today')

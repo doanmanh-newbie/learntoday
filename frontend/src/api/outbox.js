@@ -8,6 +8,7 @@
 // Cách làm: ghi yêu cầu vào hàng đợi (localStorage) rồi gửi tuần tự, tự thử lại khi lỗi tạm thời.
 import { ApiError, getAccessToken, wordsApi } from './client';
 import { invalidate } from './cache';
+import { ticketFor } from './tickets';
 
 const KEY = 'lt_outbox_v1';
 const REJECTED_KEY = 'lt_outbox_rejected_v1';     // mục bị server TỪ CHỐI vĩnh viễn: giữ lại để báo cho người dùng, không bỏ im lặng
@@ -15,7 +16,7 @@ const MAX_REJECTED = 20;
 const MAX_AUTO_TRIES = 6;
 
 const SENDERS = {
-  learn: (e) => wordsApi.completeLearn(e.wordId),
+  learn: (e) => wordsApi.completeLearn(e.wordId, e.payload),
   review: (e) => wordsApi.completeReview(e.wordId, e.payload),
   skip: (e) => wordsApi.skip(e.wordId),
   known: (e) => wordsApi.markKnown(e.wordId),
@@ -175,7 +176,9 @@ export function whenOutboxIdle(timeoutMs = 6000) {
 /** Ghi nhận tiến độ: lưu bền vững trước, gửi sau. kind: learn | review | skip | known | snooze */
 export function enqueueProgress(kind, wordId, payload = null) {
   if (!SENDERS[kind]) throw new Error(`Loại tiến độ không hợp lệ: ${kind}`);
-  queue.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, wordId, payload, owner: currentOwner(), ts: Date.now(), tries: 0 });
+  // learn/review mang theo vé phiên học của từ đó; ghi vào mục hàng đợi để còn đúng sau khi tải lại trang
+  const withTicket = (kind === 'learn' || kind === 'review') ? { ...(payload || {}), ticket: ticketFor(wordId) } : payload;
+  queue.push({ id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`, kind, wordId, payload: withTicket, owner: currentOwner(), ts: Date.now(), tries: 0 });
   persist();
   flushOutbox();
 }

@@ -3,6 +3,7 @@ from flask import Blueprint, request, jsonify
 from app.models import Folder, User, UserWord, LearningLog
 from app.utils.middleware import token_required, is_same_user
 from app.services.study_service import ServiceError
+from app.services.ticket_service import issue_ticket
 
 bp = Blueprint('learning', __name__, url_prefix='/api/learning')
 
@@ -38,11 +39,14 @@ def get_new_words(folder_id):
             'has_new_words': False
         }), 200
 
-    return jsonify({
+    body = {
         'folder': folder.to_dict(),         # FE không cần gọi thêm GET /folders chỉ để lấy tên/màu folder
         'words': [w.to_dict() for w in words],
         'has_new_words': True
-    }), 200
+    }
+    if request.args.get('ticket') == '1':   # vé phiên học (chống gian lận, xem services/ticket_service.py)
+        body['ticket'] = issue_ticket(request.user_id, 'learn', [w.id for w in words])
+    return jsonify(body), 200
 
 
 # ===== STT 6: TIẾN ĐỘ MỤC TIÊU HỌC TRONG NGÀY =====

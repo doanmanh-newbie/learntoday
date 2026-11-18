@@ -1,4 +1,4 @@
-// Vẽ canvas cho "Chim bay chọn nghĩa": hàm thuần nhận (ctx, game, view), kích thước thế giới lấy từ g.w / g.h.
+// Vẽ canvas cho Flappy Bird: hàm thuần nhận (ctx, game, view), kích thước thế giới lấy từ g.w / g.h.
 import { BIRD_X, BIRD_R, laneAt, wrapText } from './flappyLogic.js';
 
 // Màu lấy từ styles/theme.css (xanh ngọc / xanh rêu / đỏ / xám)

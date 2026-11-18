@@ -337,6 +337,42 @@ def build_record(entry):
     return _finalize(entry['head'], entry['ipa'], data, parsed['see'])
 
 
+# ───────────────────────── bản dịch dạng bảng (data/translate_batches/all_done.tsv) ─────────────────────────
+POS_LABEL_VI = {'noun': 'danh từ', 'verb': 'động từ', 'adjective': 'tính từ', 'adverb': 'phó từ',
+                'preposition': 'giới từ', 'conjunction': 'liên từ', 'pronoun': 'đại từ', 'interjection': 'thán từ',
+                'determiner': 'từ hạn định', 'number': 'số từ'}
+
+
+def parse_gloss_tsv(text):
+    """Mỗi dòng 'từ<TAB>loại từ<TAB>nghĩa' -> list (word, pos, gloss). Dòng sai -> ValueError kèm số dòng."""
+    rows = []
+    for i, line in enumerate(text.splitlines(), 1):
+        if not line.strip():
+            continue
+        cols = line.split('\t')
+        if len(cols) != 3 or not all(c.strip() for c in cols):
+            raise ValueError(f'dòng {i}: cần đúng 3 cột không rỗng')
+        word = cols[0].strip().lower()
+        if not HEAD_RE.match(word):
+            raise ValueError(f'dòng {i}: từ không hợp lệ "{cols[0]}"')
+        rows.append((word, cols[1].strip().lower(), ' '.join(cols[2].split())))
+    return rows
+
+
+def record_from_gloss(word, pos, gloss, rank=None):
+    """Một dòng bản dịch (một nghĩa ngắn) -> dict các cột của lexicon_entries, cùng định dạng bản ghi từ .mobi.
+    "/" đổi thành " - " vì is_junk_meaning coi "/" là phiên âm lọt vào (vd "vợ/chồng" -> "vợ - chồng")."""
+    meaning = ' '.join(gloss.replace('/', ' - ').split())
+    sense = {'pos': pos, 'label': POS_LABEL_VI.get(pos), 'note': None, 'meanings': [{'vi': meaning, 'examples': []}]}
+    record = _finalize(word, None, {'senses': [sense], 'idioms': [], 'domains': []}, None)
+    if not record['main_meaning']:          # nghĩa một chữ ("ồ") bị is_junk_meaning bỏ qua: vẫn hiện làm nghĩa chính
+        record['main_meaning'] = _short(meaning)
+    record['freq_rank'] = rank
+    # shortcut: weight ước lượng theo thứ hạng tần suất (bản ghi .mobi tính theo số nghĩa/ví dụ); xem lại nếu trộn hai nguồn
+    record['weight'] = max(1, 500 - rank // 200) if rank else 1
+    return record
+
+
 def merge_records(a, b):
     """Gộp 2 bản ghi trùng từ (nguồn có ~250 từ trùng): nối nghĩa, giữ phiên âm đầu tiên."""
     da, db_ = json.loads(a['data']), json.loads(b['data'])

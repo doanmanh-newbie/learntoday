@@ -1,27 +1,33 @@
 // src/pages/app/Dashboard.jsx
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useState, useEffect, useCallback, lazy, Suspense } from "react";
+import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import Header from "../../components/sections/dashboard/Header.jsx";
 import Nav from "../../components/sections/dashboard/Nav.jsx";
 import DashboardHome from "../../components/sections/dashboard/DashboardHome.jsx";
 import ReviewLanding from "../../components/sections/dashboard/ReviewLanding.jsx";
-import SentencePracticeFull from "../../components/sections/dashboard/SentencePracticeFull.jsx";
-import TopicLibrary from "../../components/sections/dashboard/TopicLibrary.jsx";
-import StatisticsPage from "../../components/sections/dashboard/StatisticsPage.jsx";
-import DictionaryPage from "../../components/sections/dashboard/DictionaryPage";
-import WordDetailPage from "../WordDetailPage";
-import PhraseFolderPage from "../../features/phrases/PhraseFolderPage.jsx";
 import { phraseIdFromFolderId } from "../../features/phrases/phrasesData";
-import PassTestPage from "./PassTestPage";
-import PracticePage from "../../features/practice/PracticePage.jsx";
 import { modeFromPath } from "../../features/practice/modes";
-import FolderWordsPage from "./FolderWordsPage";
-import SettingsPage from "./SettingsPage";
+import { gameFromPath } from "../../features/games/gameRoutes";
 import { useAuth } from "../../hooks/useAuth";
 import { reviewApi, learningApi, historyApi, studyApi } from "../../api/client";
 import { toUiWord } from "../../api/adapters";
 import SyncBanner from "../../components/SyncBanner.jsx";
 import { whenOutboxIdle, getSyncSnapshot, subscribeSync } from "../../api/outbox";
+
+// Các tab nặng (biểu đồ recharts, từ điển, trình đọc...) chỉ tải khi người dùng mở tới
+const SentencePracticeFull = lazy(() => import("../../components/sections/dashboard/SentencePracticeFull.jsx"));
+const TopicLibrary = lazy(() => import("../../components/sections/dashboard/TopicLibrary.jsx"));
+const DictionaryPage = lazy(() => import("../../components/sections/dashboard/DictionaryPage"));
+const WordDetailPage = lazy(() => import("../WordDetailPage"));
+const PhraseFolderPage = lazy(() => import("../../features/phrases/PhraseFolderPage.jsx"));
+const PassTestPage = lazy(() => import("./PassTestPage"));
+const PracticePage = lazy(() => import("../../features/practice/PracticePage.jsx"));
+const FolderWordsPage = lazy(() => import("./FolderWordsPage"));
+const SettingsPage = lazy(() => import("./SettingsPage"));
+const ReaderPage = lazy(() => import("../../features/reader/ReaderPage.jsx"));
+const PlacementTest = lazy(() => import("../../features/placement/PlacementTest.jsx"));
+const LeaderboardPage = lazy(() => import("../../features/friends/LeaderboardPage.jsx"));
+const GamesPage = lazy(() => import("../../features/games/GamesPage.jsx"));
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -43,8 +49,12 @@ export default function Dashboard() {
     if (pathname.startsWith("/app/thongke")) return "thongke";
     if (pathname.startsWith("/app/thuvien")) return "thuvien";
     if (pathname.startsWith("/app/luyen-tap")) return "luyentap";
+    if (pathname.startsWith("/app/tro-choi")) return "trochoi";
     if (pathname.startsWith("/app/datcau")) return "datcau";
+    if (pathname.startsWith("/app/kiem-tra-trinh-do")) return "trinhdo";   // phải đứng TRƯỚC "/app/kiem-tra"
     if (pathname.startsWith("/app/kiem-tra")) return "kiemtra";
+    if (pathname.startsWith("/app/doc-bai")) return "docbai";
+    if (pathname.startsWith("/app/xep-hang")) return "xephang";
     if (pathname.startsWith("/app/cai-dat")) return "caidat";
     return "dashboard";
   };
@@ -152,6 +162,7 @@ export default function Dashboard() {
       <SyncBanner />
 
       <main className="relative z-10 px-6 py-8" style={{ maxWidth: 1200, margin: "0 auto" }}>
+        <Suspense fallback={<p role="status" style={{ color: "var(--color-ink-muted)", fontSize: 14, padding: "40px 0", textAlign: "center" }}>Đang tải…</p>}>
         {loadError && (
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, marginBottom: 16,
                         padding: "10px 16px", borderRadius: 12, fontSize: 13, color: "#fecaca",
@@ -178,6 +189,7 @@ export default function Dashboard() {
                 onStartReview={startReview}
                 onGoLearn={goPickFolder}
                 onOpenPractice={openPractice}
+                levelTested={Boolean(user?.level_tested_at)}
               />
             )}
 
@@ -185,7 +197,8 @@ export default function Dashboard() {
               <ReviewLanding dueWords={dueWords} onReview={startReview} onGoLearn={goPickFolder} />
             )}
 
-            {activeTab === "thongke" && <StatisticsPage />}
+            {/* Thống kê đã chuyển vào Trang cá nhân; giữ URL cũ cho bookmark */}
+            {activeTab === "thongke" && <Navigate to="/app/cai-dat/ho-so" replace />}
 
             {activeTab === "thuvien" && (
               phraseIdFromFolderId(folderId)
@@ -196,9 +209,13 @@ export default function Dashboard() {
             )}
 
             {activeTab === "luyentap" && <PracticePage mode={practiceMode} />}
+            {activeTab === "trochoi" && <GamesPage game={gameFromPath(location.pathname)} />}
             {activeTab === "datcau" && <SentencePracticeFull />}
             {activeTab === "kiemtra" && <PassTestPage />}
             {activeTab === "caidat" && <SettingsPage />}
+            {activeTab === "docbai" && <ReaderPage />}
+            {activeTab === "trinhdo" && <PlacementTest />}
+            {activeTab === "xephang" && <LeaderboardPage />}
 
             {activeTab === "dictionary" && (
               <DictionaryPage
@@ -210,6 +227,7 @@ export default function Dashboard() {
         )}
 
         <div style={{ height: 40 }} />
+      </Suspense>
       </main>
     </div>
   );

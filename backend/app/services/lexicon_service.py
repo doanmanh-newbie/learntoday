@@ -127,24 +127,43 @@ def parse_entry(raw_list, word):
 
 # ───────────────────────── dịch sang tiếng Việt ─────────────────────────
 def translate_many(texts):
-    """Dịch hàng loạt EN->VI. Trả dict {câu gốc: bản dịch}; câu nào lỗi thì KHÔNG có trong dict."""
+    """Dịch hàng loạt EN->VI. Trả dict {câu gốc: bản dịch}; câu nào lỗi thì KHÔNG có trong dict.
+    Ưu tiên deep-translator (Google); câu nào còn thiếu thì dịch dự phòng bằng AI (Gemini) nếu đã cấu hình."""
     unique = [t for t in dict.fromkeys(texts) if t]
     if not unique:
         return {}
+    out = {}
     try:
         from deep_translator import GoogleTranslator
         translator = GoogleTranslator(source='en', target='vi')
-        out = {}
         for i in range(0, len(unique), 20):
             chunk = unique[i:i + 20]
             results = translator.translate_batch(chunk)
             for src, vi in zip(chunk, results):
                 if vi and vi.strip() and vi.strip().lower() != src.strip().lower():
                     out[src] = vi.strip()
-        return out
     except Exception as e:  # noqa: BLE001 - thư viện dịch lỗi mạng/giới hạn đủ kiểu
-        logger.warning('Dịch EN->VI lỗi: %s', e)
+        logger.warning('Dịch EN->VI (deep-translator) lỗi: %s', e)
+    missing = [t for t in unique if t not in out]
+    if missing:
+        out.update(_translate_with_ai(missing))
+    return out
+
+
+def _translate_with_ai(texts):
+    from app.services import ai_service
+    if not ai_service.ai_configured():
         return {}
+    out = {}
+    try:
+        for i in range(0, len(texts), 20):
+            chunk = texts[i:i + 20]
+            for src, vi in zip(chunk, ai_service.translate_texts(chunk, 'vi')):
+                if vi and vi.lower() != src.strip().lower():
+                    out[src] = vi
+    except Exception as e:  # noqa: BLE001 - AI lỗi/quá tải: để "chưa dịch", lần sau thử lại
+        logger.warning('Dịch EN->VI bằng AI lỗi: %s', e)
+    return out
 
 
 def fill_vietnamese(entry):

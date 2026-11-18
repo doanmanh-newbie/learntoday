@@ -25,12 +25,39 @@ def active_today(learned_today, daily_goal, minutes_today, reviews_today, due_no
     )
 
 
-def effective_streak(streak, last_goal_date, today):
+FREEZE_EVERY = 7    # giữ chuỗi đủ 7 ngày -> được 1 "băng giữ chuỗi" (streak freeze)
+MAX_FREEZES = 2     # giữ tối đa 2 cái
+
+
+def _missed_days(last_goal_date, today):
+    """Số ngày bỏ lỡ giữa lần cuối và hôm nay (không tính hôm nay vì hôm nay vẫn còn thời gian)."""
+    return max(0, (today - last_goal_date).days - 1)
+
+
+def effective_streak(streak, last_goal_date, today, freezes=0):
     """Chuỗi ĐANG CÒN hiệu lực để hiển thị. Cột users.streak chỉ đổi khi có hoạt động nên sau khi bỏ lỡ ngày vẫn còn số cũ;
-    còn hiệu lực khi lần cuối là hôm nay hoặc hôm qua (hôm nay vẫn còn thời gian để giữ chuỗi)."""
+    còn hiệu lực khi lần cuối là hôm nay/hôm qua, hoặc số ngày bỏ lỡ <= số băng giữ chuỗi đang có."""
     if not streak or last_goal_date is None:
         return 0
-    return streak if last_goal_date >= today - timedelta(days=1) else 0
+    return streak if _missed_days(last_goal_date, today) <= (freezes or 0) else 0
+
+
+def advance_streak(streak, last_goal_date, today, freezes):
+    """(chuỗi mới, số băng còn lại) khi hôm nay đạt điều kiện. Ngày bỏ lỡ được "vá" bằng băng nếu đủ; đủ mỗi 7 ngày được thêm 1 băng."""
+    freezes = freezes or 0
+    if last_goal_date == today:
+        return streak or 0, freezes
+    if last_goal_date is None or not streak:
+        new = 1
+    else:
+        missed = _missed_days(last_goal_date, today)
+        if missed <= freezes:
+            new, freezes = streak + 1, freezes - missed
+        else:
+            new = 1
+    if new % FREEZE_EVERY == 0:
+        freezes = min(MAX_FREEZES, freezes + 1)
+    return new, freezes
 
 
 def next_streak(streak, last_goal_date, today):

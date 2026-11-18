@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import { PHRASE_GROUPS, PHRASE_ALL_ID, groupById, toPracticeWords } from './phrasesData';
 import FlashcardsMode from '../practice/FlashcardsMode.jsx';
 import QuizMode from '../practice/QuizMode.jsx';
-import { SpeakButton, PRIMARY_BTN, SECONDARY_BTN } from '../practice/ModeShell.jsx';
+import { SpeakButton } from '../practice/ModeShell.jsx';
+import { PRIMARY_BTN, SECONDARY_BTN } from '../practice/modeStyles.js';
 
 export default function PhraseFolderPage({ groupId, onBack }) {
   const [mode, setMode] = useState('list');   // list | flash | quiz

@@ -1,4 +1,4 @@
-// "Chim bay chọn nghĩa" (bay liên tục): logic thuần của game (không có canvas/React, test được bằng node).
+// Flappy Bird (bay liên tục): logic thuần của game (không có canvas/React, test được bằng node).
 // Mỗi từ một cột 2-4 ô trôi từ phải sang; cột chạm tới chim thì ô ngang tầm tâm chim là đáp án, cột vẫn trôi tiếp (không đứng yên).
 // Server (backend/app/utils/game_score.py) chấm lại từ `g.log` bằng cùng luật điểm/mạng/giãn cách.
 import { shuffle } from '../../utils/helpers';

@@ -1,10 +1,11 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
+import TranslatePage from "../../../features/translate/TranslatePage.jsx";
 import { useNavigate } from "react-router-dom";
 
 
-import SaveModal from "./SaveModal";
 import { speak } from "../../../utils/tts";   // modal dùng chung (DictionaryPage + WordDetailPage) - trước đây thiếu import -> crash khi bấm Lưu
-import { dictionaryApi, foldersApi, searchApi } from "../../../api/client";
+import { dictionaryApi, foldersApi, searchApi, translateApi } from "../../../api/client";
+import { queryKind, MAX_TRANSLATE_CHARS } from "./queryKind";
 
 
 // ─── Inject CSS Animations ───
@@ -41,21 +42,6 @@ function injectStyles() {
 
 // speak() dùng chung ở utils/tts.js (đọc theo giọng đã chọn trong Cài đặt)
 
-// ─── Loading Dots ───
-
-function LoadingDots() {
-  return (
-    <div style={{ display: "flex", gap: "6px", alignItems: "center", padding: "8px 0" }}>
-      {[0, 1, 2].map((i) => (
-        <span key={i} style={{
-          width: "8px", height: "8px", borderRadius: "50%",
-          background: "#0f766e", display: "inline-block",
-          animation: `bounce 1.2s ease-in-out ${i * 0.15}s infinite`,
-        }} />
-      ))}
-    </div>
-  );
-}
 
 // ─── Tab 1: Tra từ ───
 
@@ -66,6 +52,7 @@ function TraTuTab({ initialQuery = "" }) {
   const [searchError, setSearchError] = useState("");
   const [recentSearches, setRecentSearches] = useState([]);
   const [popularWords, setPopularWords] = useState([]);
+  const [translation, setTranslation] = useState(null);   // { text, status: 'loading'|'ok'|'error', result, target }
 
   // Lịch sử tra + "từ được lưu nhiều nhất" (STT 10) đều lấy từ database
   useEffect(() => {
@@ -82,14 +69,25 @@ function TraTuTab({ initialQuery = "" }) {
   }, []);
 
   // Tra từ: kiểm tra đầu vào rồi chuyển sang trang chi tiết (trang đó gọi từ điển thật, kho DB)
+  // Một ô cho cả hai việc: từ/cụm tiếng Anh ngắn -> tra từ; câu hoặc tiếng Việt -> dịch ngay bên dưới
+  const doTranslate = (text) => {
+    const target = /[àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ]/i.test(text) ? "en" : "vi";
+    setSuggestions({ q: "", list: [] });
+    setTranslation({ text, status: "loading", result: "", target });
+    translateApi.translate(text, "auto", target)
+      .then((res) => setTranslation({ text, status: "ok", result: res.translated, target }))
+      .catch((err) => setTranslation({ text, status: "error", result: err.message || "Không dịch được, thử lại sau.", target }));
+  };
+
   const doSearch = (q) => {
-    const key = q.trim().toLowerCase().replace(/\s+/g, " ");
-    if (!key) return;
-    if (!/^[a-z][a-z'\- ]{0,59}$/.test(key)) {
-      setSearchError("Chỉ nhập chữ cái tiếng Anh (tối đa 60 ký tự), ví dụ: accomplish.");
-      return;
-    }
+    const kind = queryKind(q);
+    if (kind === "empty") return;
+    if (kind === "too-long") { setSearchError(`Đoạn cần dịch tối đa ${MAX_TRANSLATE_CHARS} ký tự.`); return; }
     setSearchError("");
+    if (kind === "translate") { doTranslate(q.trim().replace(/\s+/g, " ")); return; }
+    const key = q.trim().toLowerCase().replace(/\s+/g, " ");
+    if (key.length > 60) { setSearchError("Từ cần tra tối đa 60 ký tự."); return; }
+    setTranslation(null);
     setSuggestions({ q: "", list: [] });
     navigate(`/app/dictionary/${encodeURIComponent(key)}`);
   };
@@ -106,7 +104,7 @@ function TraTuTab({ initialQuery = "" }) {
   // Gợi ý khi gõ: gọi API sau 250ms ngừng gõ (kho database + nguồn gợi ý trực tuyến), không gọi mỗi phím
   useEffect(() => {
     const q = query.trim();
-    if (!q) return undefined;
+    if (!q || queryKind(q) !== "word") return undefined;     // câu/tiếng Việt là để dịch: không gợi ý từ
     let cancelled = false;
     const t = setTimeout(() => {
       dictionaryApi.suggest(q)
@@ -127,7 +125,7 @@ function TraTuTab({ initialQuery = "" }) {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setSearchError(""); }}
             onKeyDown={(e) => { if (e.key === "Enter") doSearch(query); }}
-            placeholder="Nhập từ tiếng Anh để tra cứu..."
+            placeholder="Nhập từ để tra, hoặc câu / tiếng Việt để dịch..."
             style={{
               flex: 1, border: "none", background: "transparent", outline: "none",
               fontSize: "18px", color: "#f4f6f7", fontFamily: "Inter, sans-serif",
@@ -175,6 +173,30 @@ function TraTuTab({ initialQuery = "" }) {
 
       {searchError && (
         <p role="alert" style={{ maxWidth: "700px", margin: "-10px auto 16px", color: "#fca5a5", fontSize: "13.5px" }}>⚠️ {searchError}</p>
+      )}
+
+      {translation && (
+        <div role="status" style={{ maxWidth: "700px", margin: "0 auto 22px", padding: "16px 18px", borderRadius: "16px",
+                                     background: "rgba(20,184,166,0.06)", border: "0.8px solid rgba(20,184,166,0.3)" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", gap: "10px", fontSize: "12px", color: "#848f97", marginBottom: "8px" }}>
+            <span>🌐 Dịch {translation.target === "en" ? "Việt → Anh" : "Anh → Việt"}</span>
+            <button type="button" onClick={() => setTranslation(null)} aria-label="Đóng bản dịch"
+              style={{ border: "none", background: "transparent", color: "#848f97", cursor: "pointer", fontSize: "14px" }}>✕</button>
+          </div>
+          <p style={{ margin: "0 0 8px", color: "#a2acb3", fontSize: "14px" }}>{translation.text}</p>
+          {translation.status === "loading" && <p style={{ margin: 0, color: "#5eead4" }}>Đang dịch…</p>}
+          {translation.status === "error" && <p style={{ margin: 0, color: "#fca5a5" }}>⚠️ {translation.result}</p>}
+          {translation.status === "ok" && (
+            <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+              <p style={{ flex: 1, margin: 0, color: "#f4f6f7", fontSize: "17px", fontWeight: 600 }}>{translation.result}</p>
+              <button type="button" onClick={() => navigator.clipboard?.writeText(translation.result)}
+                style={{ padding: "6px 12px", borderRadius: "10px", border: "0.8px solid rgba(255,255,255,0.15)", background: "rgba(255,255,255,0.05)", color: "#dde2e5", cursor: "pointer", fontSize: "12.5px" }}>
+                Sao chép
+              </button>
+            </div>
+          )}
+          <p style={{ margin: "10px 0 0", fontSize: "12px", color: "#6b747c" }}>Mẹo: gõ một từ tiếng Anh để xem nghĩa chi tiết, gõ câu hoặc tiếng Việt để dịch.</p>
+        </div>
       )}
 
       {/* Gợi ý nhanh */}
@@ -384,6 +406,7 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
 
   const tabs = [
     { label: "🔍 Tra từ", component: <TraTuTab initialQuery={externalQuery} /> },
+    { label: "🌐 Dịch văn bản", component: <TranslatePage /> },
     { label: "📁 Thư mục", component: <ThuMucTab folders={folders} onRemoveWord={handleRemoveWord} /> },
   ];
     return (
@@ -420,7 +443,7 @@ export default function DictionaryPage({ initialQuery = "", onQueryUsed }) {
             Từ điển &amp; Dịch thuật
           </h1>
           <p style={{ fontFamily: "Inter,sans-serif", fontSize: "14px", color: "#6b747c", margin: 0 }}>
-            Tra cứu từ và quản lý từ vựng đã lưu của bạn
+            Tra cứu từ, dịch văn bản và quản lý từ vựng đã lưu của bạn
           </p>
         </div>
 

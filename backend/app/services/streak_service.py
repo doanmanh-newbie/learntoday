@@ -6,7 +6,7 @@ from app.models import User
 from app.models.learning_logs import LearningLog, VN_TZ
 from app.services.reminder_service import due_count
 from app.services.study_time import get_today_minutes
-from app.utils.streak import STUDY_MINUTES_GOAL, active_today, effective_streak, next_streak  # noqa: F401
+from app.utils.streak import STUDY_MINUTES_GOAL, active_today, effective_streak, next_streak, advance_streak  # noqa: F401
 
 
 def today_vn():
@@ -35,9 +35,10 @@ def update_streak_if_goal_met(user_id: str):
         reviews_today=reviews_today,
         due_now=due_count(user_id) if reviews_today else 0,       # chỉ cần đếm từ đến hạn khi đã ôn ít nhất 1 từ
     ):
-        return effective_streak(user.streak, user.last_goal_date, today)
+        return effective_streak(user.streak, user.last_goal_date, today, user.streak_freezes or 0)
 
-    user.streak = next_streak(user.streak, user.last_goal_date, today)
+    # Ngày bỏ lỡ được vá bằng "băng giữ chuỗi" nếu có; giữ đủ 7 ngày được thêm 1 băng (tối đa 2)
+    user.streak, user.streak_freezes = advance_streak(user.streak, user.last_goal_date, today, user.streak_freezes or 0)
     user.last_goal_date = today
     db.session.commit()
     return user.streak

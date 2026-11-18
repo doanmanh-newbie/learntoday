@@ -22,3 +22,14 @@
 - Sau mỗi nhóm từ mới có vòng "ôn nhanh 4 từ cũ" (chỉ luyện, không ghi vào lịch SRS).
 - Folder cụm từ là dữ liệu thật (`features/phrases/phrasesData.js`, 48 cụm, thêm cụm mới ở file này); mở bằng `/app/thuvien/phrase-<id>`.
 - Chế độ sáng: bỏ bóng/vầng sáng/hiệu ứng chuyển màu.
+
+## Đợt phản hồi 4 (2026-11-13)
+- Cài đặt: bỏ mục "Trình độ" (mục Đặt câu có bộ chọn riêng). Trình độ hiển thị ở Trang cá nhân, do **bài test trình độ** (`/app/kiem-tra-trinh-do`) ghi (`users.level_tested_at`).
+- Tra cứu: một ô cho cả tra từ và dịch (`queryKind.js`): từ/cụm ≤3 từ tiếng Anh → trang chi tiết; câu/tiếng Việt → dịch ngay. Nghĩa/ví dụ "chưa dịch" tự dịch qua `POST /api/translate/batch` (deep-translator, dự phòng Gemini).
+- Chế độ sáng: thẻ trắng trên nền xám nhạt, chữ phụ đậm hơn (tương phản ≥7:1), nút chính giữ màu xanh ngọc gốc (xem cuối `index.css`).
+- Tổng kết phiên (`SessionSummaryCard.jsx`): số từ, độ chính xác, 3 từ sai nhiều nhất, lời nhắc ngày mai (`GET /api/history/tomorrow`).
+- Băng giữ chuỗi: đủ 7 ngày liên tiếp +1 băng (tối đa 2), tự vá ngày lỡ (`utils/streak.py: advance_streak`).
+- Từ hay sai: danh mục tự động (`GET /api/history/hard-words`), luyện ở `/app/luyen-tap/hard`, trọng số theo số lần sai, sai thì gặp lại sau 3 câu. Học từ mới giờ cũng ghi số lần sai.
+- Học từ bài đọc: `/app/doc-bai`.  Phát âm: `/app/luyen-tap/speak` (Chrome/Edge).  Bảng xếp hạng tuần: `/app/xep-hang` (`/api/friends/*`, điểm = từ mới×10 + lượt ôn×5).
+- PWA: `public/manifest.webmanifest`, `public/sw.js` (chỉ đăng ký ở bản build), nhắc học trong Cài đặt.
+- Migration mới `f1a2b3c4d5e6` (streak_freezes, level_tested_at, bảng friendships) → chạy `flask db upgrade`.

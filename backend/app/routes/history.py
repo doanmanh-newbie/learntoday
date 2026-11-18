@@ -75,10 +75,44 @@ def get_stats():
         'learning_words': learning,
         'accuracy': accuracy,                       # % lượt ôn không sai lần nào
         'streak': user.effective_streak(),
+        'streak_freezes': user.streak_freezes or 0,
         'total_study_minutes': user.total_study_minutes or 0,
         'study_minutes_today': get_today_minutes(user),
         'badges': user._parse_badges(),
     }), 200
+
+
+@bp.route('/hard-words', methods=['GET'])
+@token_required
+def get_hard_words():
+    """Danh mục "từ hay sai": từ đã học có số lần sai > 0, sai nhiều nhất trước (frontend tính trọng số để lặp lại nhiều hơn)."""
+    limit = min(max(1, request.args.get('limit', 30, type=int)), 100)
+    rows = (
+        db.session.query(UserWord, Word)
+        .join(Word, Word.id == UserWord.word_id)
+        .filter(UserWord.user_id == request.user_id, UserWord.level >= 1, UserWord.wrong_count > 0, Word.deleted_at.is_(None))
+        .order_by(UserWord.wrong_count.desc(), UserWord.correct_count.asc())
+        .limit(limit)
+        .all()
+    )
+    words = []
+    for uw, word in rows:
+        item = word.to_dict()
+        item.update(level=uw.level, wrong_count=uw.wrong_count or 0, correct_count=uw.correct_count or 0)
+        words.append(item)
+    return jsonify({'words': words}), 200
+
+
+@bp.route('/tomorrow', methods=['GET'])
+@token_required
+def get_tomorrow():
+    """Số từ sẽ đến hạn ôn từ giờ tới hết ngày mai (giờ VN) - dùng cho lời nhắc ở màn tổng kết phiên."""
+    from datetime import datetime, timedelta
+    from app.models.learning_logs import VN_TZ, UTC_TZ
+    end_vn = (datetime.now(VN_TZ) + timedelta(days=2)).replace(hour=0, minute=0, second=0, microsecond=0)
+    end_utc = end_vn.astimezone(UTC_TZ).replace(tzinfo=None)
+    due = UserWord.query.filter(UserWord.user_id == request.user_id, UserWord.level > 0, UserWord.next_review < end_utc).count()
+    return jsonify({'due_tomorrow': due}), 200
 
 
 @bp.route('/logs', methods=['GET'])

@@ -27,6 +27,9 @@ class User(db.Model):
     last_heartbeat_at = db.Column(db.DateTime, nullable=True)
     last_reminder_date = db.Column(db.Date, nullable=True)   # ngày đã gửi email nhắc gần nhất (chống gửi trùng)
     tts_voice = db.Column(db.String(10), default='en-US')  # STT 15: en-US | en-GB
+    # Băng giữ chuỗi: tự vá ngày lỡ học (xem utils/streak.py). Trình độ do bài test đầu vào ghi.
+    streak_freezes = db.Column(db.Integer, default=0, server_default='0', nullable=False)
+    level_tested_at = db.Column(db.DateTime, nullable=True)
     badges = db.Column(db.Text, default='[]')  # JSON danh sách huy hiệu
 
     def __repr__(self):
@@ -38,6 +41,8 @@ class User(db.Model):
             'username': self.username,
             'email': self.email,
             'level': self.level,
+            'level_tested_at': self.level_tested_at.isoformat() if self.level_tested_at else None,
+            'streak_freezes': self.streak_freezes or 0,
             'streak': self.effective_streak(),
             'role': self.role,
             'daily_goal': self.daily_goal,
@@ -57,7 +62,7 @@ class User(db.Model):
         from datetime import datetime
         from app.models.learning_logs import VN_TZ
         from app.utils.streak import effective_streak
-        return effective_streak(self.streak, self.last_goal_date, datetime.now(VN_TZ).date())
+        return effective_streak(self.streak, self.last_goal_date, datetime.now(VN_TZ).date(), self.streak_freezes or 0)
 
     def _parse_badges(self):
         import json

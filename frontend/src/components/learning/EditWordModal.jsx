@@ -3,6 +3,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { wordsApi } from '../../api/client';
+import { getWordImage, setWordImage, shrinkImageFile } from '../../utils/wordImages';
 
 const POS_OPTIONS = [
   { value: 'n', label: 'Danh từ (noun)' },
@@ -62,9 +63,6 @@ function HighlightExample({ text, word, hideWord = true }) {
 // ── Main Modal ───────────────────────────────────────────────────────────
 export default function EditWordModal({ word, folders = [], onClose, onSave }) {
   const [form, setForm] = useState(() => {
-    // Ảnh người dùng đã chọn được giữ ở localStorage: đọc ngay lúc khởi tạo (không cần effect + setState)
-    let savedImage = null;
-    try { savedImage = JSON.parse(localStorage.getItem('word_images') || '{}')[word.id] || null; } catch { /* JSON hỏng */ }
     return {
       word: word.word || '',
       folder_id: word.folder_id || (folders[0]?.id ?? ''),
@@ -75,7 +73,7 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
       // nếu lấy nó làm giá trị form thì lưu lại sẽ ghi đè câu ví dụ thật bằng câu có "___".
       example_en: word.example || word.examples?.[0]?.en || '',
       example_vi: word.example_meaning || word.examples?.[0]?.vi || '',
-      image_url: savedImage || word.image_url || null,
+      image_url: word.image_url || null,      // ảnh người dùng đã chọn được nạp bất đồng bộ từ IndexedDB (useEffect bên dưới)
     };
   });
 
@@ -119,6 +117,12 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
     return () => { cancelled = true; };
   }, [form.word, form.pos, reqKey]);
 
+  useEffect(() => {
+    let alive = true;
+    getWordImage(word.id).then((img) => { if (alive && img) setForm((f) => ({ ...f, image_url: img })); });
+    return () => { alive = false; };
+  }, [word.id]);
+
   const handleChange = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
   };
@@ -129,15 +133,12 @@ export default function EditWordModal({ word, folders = [], onClose, onSave }) {
     if (!file.type.startsWith('image/')) { alert('Chọn file ảnh!'); return; }
     if (file.size > 5 * 1024 * 1024) { alert('Ảnh tối đa 5MB!'); return; }
 
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      setForm(f => ({ ...f, image_url: ev.target.result }));
-      // Lưu vào localStorage
-      const saved = JSON.parse(localStorage.getItem('word_images') || '{}');
-      saved[word.id] = ev.target.result;
-      localStorage.setItem('word_images', JSON.stringify(saved));
-    };
-    reader.readAsDataURL(file);
+    shrinkImageFile(file)
+      .then(async (dataUrl) => {
+        setForm(f => ({ ...f, image_url: dataUrl }));
+        await setWordImage(word.id, dataUrl);
+      })
+      .catch(() => alert('Không đọc được ảnh này, hãy thử ảnh khác.'));
   };
 
   const handleSave = () => {

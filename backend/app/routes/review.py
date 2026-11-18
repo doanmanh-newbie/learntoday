@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify
 
 from app import db
 from app.models import User, UserWord, Word
+from app.services.ticket_service import issue_ticket
 from app.utils.middleware import token_required
 
 bp = Blueprint('review', __name__, url_prefix='/api/review')
@@ -65,4 +66,7 @@ def get_due_words():
         item['next_review'] = uw.next_review.isoformat() if uw.next_review else None
         result.append(item)
 
-    return jsonify({'words': result, 'has_due_words': True}), 200
+    body = {'words': result, 'has_due_words': True}
+    if request.args.get('ticket') == '1':   # vé phiên học (chống gian lận, xem services/ticket_service.py)
+        body['ticket'] = issue_ticket(request.user_id, 'review', [w['id'] for w in result])
+    return jsonify(body), 200

@@ -201,6 +201,10 @@ class Config:
         ).split(',') if o.strip()
     ]
 
+    # Bắt buộc "vé phiên học" khi hoàn thành từ (chống gian lận tiến độ/bảng xếp hạng, xem services/ticket_service.py).
+    # Chỉ tắt khi cần tương thích client rất cũ.
+    STUDY_TICKET_REQUIRED = _env_bool('STUDY_TICKET_REQUIRED', True)
+
     # Cho phép trả chi tiết lỗi nội bộ về client (CHỈ nên bật khi phát triển)
     EXPOSE_ERRORS = os.environ.get('EXPOSE_ERRORS', '0') == '1'
 

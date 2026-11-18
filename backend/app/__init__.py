@@ -39,15 +39,15 @@ def create_app(config_object=Config):
     migrate.init_app(app, db)
 
     # Import tất cả models (để Alembic/SQLAlchemy nhìn thấy metadata)
-    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog, SearchHistory, UserMilestone, DictionaryEntry, LexiconEntry, GameRun  # noqa: F401
+    from .models import User, Folder, Word, FolderWord, UserWord, RefreshToken, LearningLog, SearchHistory, UserMilestone, DictionaryEntry, LexiconEntry, Friendship, StudyTicket, GameRun  # noqa: F401
 
     from .routes import (
         auth_bp, folders_bp, learning_bp, review_bp, words_bp,
         profile_bp, history_bp, search_bp, translate_bp, study_bp,
-        pass_test_bp, ai_practice_bp, dictionary_bp, game_bp,
+        pass_test_bp, ai_practice_bp, dictionary_bp, friends_bp, game_bp,
     )
     for bp in (auth_bp, folders_bp, learning_bp, review_bp, words_bp, profile_bp,
-               history_bp, search_bp, translate_bp, study_bp, pass_test_bp, ai_practice_bp, dictionary_bp, game_bp):
+               history_bp, search_bp, translate_bp, study_bp, pass_test_bp, ai_practice_bp, dictionary_bp, friends_bp, game_bp):
         app.register_blueprint(bp)
 
     from .utils.errors import register_error_handlers

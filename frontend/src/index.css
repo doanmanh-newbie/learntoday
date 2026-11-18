@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "./styles/theme.css";
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Noto+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800;900&family=Noto+Sans:wght@400;500;600&family=Be+Vietnam+Pro:wght@500;600;700;800&display=swap');
 
 body {
     font-family: var(--font-body);
@@ -298,11 +298,42 @@ nav::-webkit-scrollbar { display: none; }
 /* ── Chế độ sáng ─────────────────────────────────────────────────────────
    Giao diện được viết cho nền tối với nhiều màu inline, nên chế độ sáng đảo màu toàn trang rồi xoay sắc độ 180° để
    giữ nguyên màu thương hiệu (xanh ngọc vẫn là xanh ngọc); ảnh/video được đảo lại để không bị ngược màu. */
-html[data-theme="light"] { filter: invert(1) hue-rotate(180deg); background: #fff; }
+/* ══ CHẾ ĐỘ SÁNG ══
+   Cách làm: đảo màu toàn trang (invert + hue-rotate giữ nguyên tông xanh ngọc), rồi chỉnh lại những chỗ đảo màu bị xấu.
+   Các rule dưới viết theo màu Ở CHẾ ĐỘ TỐI (trước khi đảo): đen -> trắng, xám sáng -> xám đậm. */
+html[data-theme="light"] { filter: invert(1) hue-rotate(180deg) contrast(1.04); background: #fff; }
 html[data-theme="light"] img,
 html[data-theme="light"] video,
 html[data-theme="light"] canvas,
 html[data-theme="light"] .keep-color { filter: invert(1) hue-rotate(180deg); }
+/* Emoji được utils/emojiIcons.js bọc lại: hiện màu thật kể cả trong tiêu đề chữ tô gradient (chữ trong suốt) */
+html[data-theme="light"] span.keep-color { -webkit-text-fill-color: initial; }
+
+/* Nền trang xám xanh rất nhạt, thẻ trắng hẳn (đảo màu thô làm thẻ XÁM HƠN nền -> trông bẩn, ngược với giao diện sáng thông thường) */
+html[data-theme="light"] body,
+html[data-theme="light"] .app-shell,
+html[data-theme="light"] [style*="background: rgb(15, 18, 20)"] { background: #10161a !important; }
+html[data-theme="light"] [style*="background: rgba(255, 255, 255, 0.0"],
+html[data-theme="light"] [style*="background: rgb(22, 26, 29)"],
+html[data-theme="light"] [style*="background: rgb(26, 31, 34)"],
+html[data-theme="light"] [style*="background: rgb(29, 34, 38)"] { background: #000 !important; }
+/* Viền thẻ rõ hơn một chút trên nền trắng */
+html[data-theme="light"] [style*="solid rgba(255, 255, 255, 0.0"],
+html[data-theme="light"] [style*="solid rgba(255, 255, 255, 0.1"] { border-color: rgba(255, 255, 255, 0.16) !important; }
+
+/* Chữ phụ quá nhạt sau khi đảo (#6b747c, #848f97, #a2acb3) -> đậm hơn để đọc dễ */
+html[data-theme="light"] [style*="color: rgb(107, 116, 124)"],
+html[data-theme="light"] [style*="color: rgb(132, 143, 151)"] { color: #b4bdc3 !important; }
+html[data-theme="light"] [style*="color: rgb(162, 172, 179)"] { color: #c9d0d4 !important; }
+
+/* Outfit không có dấu tiếng Việt (ố, ệ... rơi sang font khác, chữ lệch dấu) và nét mảnh sau khi đảo màu -> dùng Be Vietnam Pro.
+   Chữ đảo màu mất khử răng cưa ClearType nên trông mảnh/mờ: dùng antialiasing xám cho đều nét. */
+html[data-theme="light"] { --font-display: 'Be Vietnam Pro', 'Inter', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+html[data-theme="light"] [style*="Outfit"],
+html[data-theme="light"] .btn-primary { font-family: 'Be Vietnam Pro', 'Inter', sans-serif !important; }
+
+/* Nút chính giữ đúng màu xanh ngọc đậm + chữ trắng như chế độ tối (đảo 2 lần = màu gốc) */
+html[data-theme="light"] [style*="linear-gradient(135deg, rgb(15, 118, 110)"] { filter: invert(1) hue-rotate(180deg); }
 
 /* Chế độ sáng cần ÍT hiệu ứng hơn chế độ tối: vầng sáng/đổ bóng neon đẹp trên nền tối nhưng chói và bẩn trên nền sáng.
    (đổi theme không dùng transition: hiệu ứng chuyển màu làm nhoè/nháy mắt) */

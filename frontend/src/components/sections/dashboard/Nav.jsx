@@ -1,4 +1,4 @@
-import { HomeIcon, RotateCcwIcon, BarChartIcon, BookIcon, PenIcon, BookOpenIcon } from "../../../icons/dashboard/index.jsx";
+import { HomeIcon, RotateCcwIcon, BookIcon, PenIcon, BookOpenIcon, SparklesIcon } from "../../../icons/dashboard/index.jsx";
 import { useNavigate } from "react-router-dom";
 
 const TABS = [
@@ -7,11 +7,11 @@ const TABS = [
   { id: "luyentap", icon: <PenIcon />, label: "Luyện tập" },
   { id: "thuvien", icon: <BookIcon />, label: "Thư viện" },
   { id: "dictionary", icon: <BookOpenIcon />, label: "Từ điển" },
-  { id: "thongke", icon: <BarChartIcon />, label: "Thống kê" },
+  { id: "trochoi", icon: <SparklesIcon />, label: "Trò chơi" },
 ];
 
 // Đặt câu / Kiểm tra nằm trong tab Luyện tập: vẫn sáng đúng tab khi đang ở đó
-const TAB_GROUP = { datcau: "luyentap", kiemtra: "luyentap" };
+const TAB_GROUP = { datcau: "luyentap", kiemtra: "luyentap", docbai: "luyentap", trinhdo: "luyentap", xephang: "luyentap" };
 
 export default function Nav({ activeTab: rawTab, setActiveTab }) {
   const activeTab = TAB_GROUP[rawTab] || rawTab;
@@ -26,7 +26,7 @@ export default function Nav({ activeTab: rawTab, setActiveTab }) {
   const TAB_PATHS = {
     dashboard: "/app",
     review: "/app/on-tap",
-    thongke: "/app/thongke",
+    trochoi: "/app/tro-choi",
     thuvien: "/app/thuvien",
     luyentap: "/app/luyen-tap",
     dictionary: "/app/dictionary",

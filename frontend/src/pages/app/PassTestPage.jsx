@@ -3,6 +3,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { passTestApi } from "../../api/client";
 import { HEARTBEAT_MS, SAVE_DEBOUNCE_MS, answeredCount, formatClock, formatHms, sameAnswers, sanitizeAnswers, secondsLeft } from "./passTimer";
 
+const nowMs = () => Date.now();   // gọi trong trình xử lý sự kiện (không phải lúc render)
+
 // STT 16: bài đọc hiểu 15 phút. Đồng hồ do SERVER đo (mở bài -> GET bắt đầu phiên; lưu tiến độ -> PUT; thoát -> POST leave).
 // Thoát giữa chừng thì câu đã trả lời được lưu và đồng hồ dừng; quay lại bấm "Tiếp tục". Hết giờ thì tự nộp bài.
 export default function PassTestPage() {
@@ -71,7 +73,7 @@ export default function PassTestPage() {
       savedRef.current = restored;
       setAnswersBoth(restored);
       setActive({ id, ...data });
-      setDeadline(Date.now() + remaining * 1000); setLeft(remaining);
+      setDeadline(nowMs() + remaining * 1000); setLeft(remaining);
       if (data.progress?.time_up) setTimeout(submitNow, 0);                      // mở lại đúng lúc đã hết giờ: nộp bản đã lưu
     } catch (err) { setError(err.message || "Chưa thể bắt đầu bài kiểm tra."); }
     finally { setBusy(false); }
